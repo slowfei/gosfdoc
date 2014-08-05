@@ -61,7 +61,7 @@ links:[http://www.slowfei.com][0]
 > [func Main()](#funcMain)<br/>
 > [type TestStruct struct][#]<br/>
 >> implements: [Test][#]<br/>
->>[func (* TestStruct) hello(str string) string](#func_TestStruct.hello)<a id="preview_TestStruct.hello"/><br/>
+>>[func (* TestStruct) hello(str string) string](#func_TestStruct.hello)<a id="preview_TestStruct.hello">&nbsp;</a><br/>
 >>[func (* TestStruct) hello2() string][#]<br/>
 >>
 
@@ -135,7 +135,7 @@ type TestStruct struct{
 }
 ```
 
-###[func (*TestStruct) hello](../../../src/github.com/slowfei/gosfdoc.go) <a id="func_TestStruct.hello"/> [↩](#preview_TestStruct.hello)|[#](#func_TestStruct.hello)
+###[func (*TestStruct) hello](../../../src/github.com/slowfei/gosfdoc.go) <a id="func_TestStruct.hello">&nbsp;</a> [↩](#preview_TestStruct.hello)|[#](#func_TestStruct.hello)
 > 函数介绍描述<br/>
 > <br/>
 > @param `str` 字符串传递<br/>
