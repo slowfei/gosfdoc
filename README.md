@@ -2,6 +2,8 @@
 # Welcome to gosfdoc
 ------
 
+测试锚点<a name="pookie"></a>
+
 &emsp;&emsp;gosfdoc 目的是规范代码文档生成，在写代码同时也可以进行文档的编写，不必等写完代码后再来编写文档，可以避免写文档的懒惰。
 将编写代码的点点滴滴都可以记录与文档中，让大脑有了大致的思路然后快速的编写代码，也可以让以后快速的了解代码。
 
@@ -61,7 +63,7 @@ links:[http://www.slowfei.com][0]
 > [func Main()](#funcMain)<br/>
 > [type TestStruct struct][#]<br/>
 >> implements: [Test][#]<br/>
->>[func (* TestStruct) hello(str string) string](#func_TestStruct.hello)<a id="preview_TestStruct.hello">&nbsp;</a><br/>
+>>[func (* TestStruct) hello(str string) string](#func_TestStruct.hello)<a name="preview_TestStruct.hello"></a><br/>
 >>[func (* TestStruct) hello2() string][#]<br/>
 >>
 
@@ -135,7 +137,8 @@ type TestStruct struct{
 }
 ```
 
-###[func (*TestStruct) hello](../../../src/github.com/slowfei/gosfdoc.go) <a id="func_TestStruct.hello">&nbsp;</a> [↩](#preview_TestStruct.hello)|[#](#func_TestStruct.hello)
+
+###[func (*TestStruct) hello](../../../src/github.com/slowfei/gosfdoc.go) [↩](#preview_TestStruct.hello)|[#](#func_TestStruct.hello)<a name="func_TestStruct.hello"></a>
 > 函数介绍描述<br/>
 > <br/>
 > @param `str` 字符串传递<br/>
