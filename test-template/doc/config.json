@@ -1,0 +1,19 @@
+{
+	"ContentJson"	: "content.json",
+
+	"Intro" 		: "intro.md",
+
+	"About" 		: "about.md",
+
+    "Languages"     :{
+        "default" : "简体中文", 
+        "en" : "English"
+    },
+
+	"Markdowns"	:{
+		"leafveingo" : [
+			{"Name":"github.com/slowfei/gosfdoc","Desc":"gosfdoc document generator"},
+			{"Name":"github.com/slowfei/leafveingo","Desc":"golang web framework"}
+		]
+	}
+}
