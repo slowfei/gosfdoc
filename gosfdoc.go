@@ -1,3 +1,13 @@
+//	The MIT License (MIT) - http://opensource.org/licenses/MIT
+//
+//	Copyright (c) 2014 slowfei
+//
+//  Create on 2014-08-16
+//  Update on 2014-08-22
+//  Email  slowfei#foxmail.com
+//  Home   http://www.slowfei.com
+
+//
 package gosfdoc
 
 import (
@@ -15,14 +25,6 @@ var (
 	//	document parser implement interface
 	_mapParser = make(map[string]DocParser)
 )
-
-/**
- *	document struct info
- */
-type Document struct {
-	Title   string
-	Content string
-}
 
 /**
  *	document parser
