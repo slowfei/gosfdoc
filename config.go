@@ -40,10 +40,16 @@ type MainConfig struct {
 }
 
 /**
+ *  document directory html javascript use config
  *
  *  output `config.json`
  */
 type DocConfig struct {
+	ContentJson string                   // content json file
+	IntroMd     string                   // intro markdown file
+	AboutMd     string                   // about markdown file
+	Languages   map[string]string        // key is directory name, value is show text
+	Markdowns   map[string][]PackageInfo // markdown info list
 }
 
 /**
@@ -53,12 +59,10 @@ type DocConfig struct {
  *  @return load error info
  */
 func configLoadByJson(jsonData []byte, c *MainConfig) error {
-
 	e2 := json.Unmarshal(jsonData, c)
 	if nil != e2 {
 		return e2
 	}
-
 	return nil
 }
 
