@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	_defaultConfigJson = `
+	_gosfdocConfigJson = `
     {
         "CodeLang"         : "go",
         "Outdir"           : "doc",
@@ -37,6 +37,13 @@ type MainConfig struct {
 	Languages   map[string]string   // document support the language. key is show text, value is lang dirctory name
 	FilterPaths []string            // filter directory path
 	FilePaths   map[string][]string // file path list. format:{"directory":["file1","file2"...]}
+}
+
+/**
+ *
+ *  output `config.json`
+ */
+type DocConfig struct {
 }
 
 /**
