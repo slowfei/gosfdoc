@@ -1,8 +1,9 @@
-package main
+package gosfdoc
 
 import (
-	"flag"
+	"bytes"
 	"fmt"
+	"github.com/slowfei/gosfdoc/lang/golang"
 )
 
 const (
@@ -11,50 +12,99 @@ const (
 )
 
 var (
-	_lang       = flag.String("lang", "go", "specify code language type. 'go|java|obj-c|javascript'")
-	_configFile = flag.String("config", "gosfdoc.json", "custom config file path.")
+	//	document parser implement interface
+	_mapParser = make(map[string]DocParser)
 )
 
 /**
- *  create config file
+ *	document struct info
  */
-func createConfigFile() {
-	// TODO
+type Document struct {
+	Title   string
+	Content string
 }
 
 /**
- *  print usage help
+ *	document parser
+ *
  */
-func usage() {
-	fmt.Println(APPNAME, "v"+VERSION)
-	fmt.Println("")
-	fmt.Println("usage help:")
-	fmt.Println("'" + APPNAME + " create' command init create default gosfdoc.json file, can be custom to modify file content.")
-	fmt.Println("'" + APPNAME + "' command by gosfdoc.json output document ")
-	fmt.Println("")
-	fmt.Println("command:")
-	flag.PrintDefaults()
-	fmt.Println("")
+type DocParser interface {
+
+	/**
+	 *	parser name
+	 *
+	 *	@return
+	 */
+	Name() string
+
+	/**
+	 *	check file
+	 *	detecting whether the file is a valid file
+	 *
+	 *	@return true is valid file
+	 */
+	CheckFilepath() bool
+
+	/**
+	 *	each file the content
+	 *	can be create keyword index and other operations
+	 *
+	 *	@param `index` while file index
+	 *	@param `fileCont` file content
+	 */
+	EachFile(index int, fileCont *bytes.Buffer)
+
+	/**
+	 *
+	 *
+	 */
+	// ParseDoc(fileCont *bytes.Buffer)
 }
 
-func main() {
-	flag.Usage = usage
-	flag.Parse()
+/**
+ *	init
+ */
+func init() {
+	AddParser(golang.NewParser())
+}
 
-	arg := flag.Args()[0]
-
-	if 0 != len(arg) {
-		switch arg {
-		case "help":
-			flag.Usage()
-		case "version":
-			fmt.Println(APPNAME, "v"+VERSION)
-		case "create":
-			createConfigFile()
-		default:
-			fmt.Println("invalid command parameter.")
-		}
-		return
+/**
+ *	add parser
+ *
+ *	@param parser
+ */
+func AddParser(parser DocParser) {
+	if nil != parser {
+		_mapParser[parser.Name()] = parser
 	}
+}
+
+/**
+ *	get parsers
+ *	key is parser name
+ *	value is parser implement
+ *
+ *	@return
+ */
+func MapParser() map[string]DocParser {
+	return _mapParser
+}
+
+/**
+ *  create config file
+ *
+ *	@param `path` directory path
+ *	@param `lang` specify code language, nil is all language, value is parser name.
+ */
+func CreateConfigFile(path string, lang string) {
+	fmt.Println("create :", path)
+}
+
+/**
+ *	build output document
+ *
+ *	@param `configPath` config file path
+ */
+func Output(configPath string) {
 
 }
