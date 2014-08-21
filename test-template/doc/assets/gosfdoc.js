@@ -160,7 +160,7 @@
             dataGosfdocJson = dataJson;
 
             parseContentJson(dataJson.ContentJson);
-            parseAbout(dataJson.About);
+            parseAbout(dataJson.AboutMd);
             parseLanguages(dataJson.Languages)
             
             var packageVal = getURIQuery(QUERY_KEY_PACKAGE);
@@ -225,7 +225,7 @@
         $(".segment.intro").css("paddingTop","");
         $("#main_sidebar a").removeClass('active');
 
-        parseIntro(dataGosfdocJson.Intro);
+        parseIntro(dataGosfdocJson.IntroMd);
 
         if ( $("#main_sidebar").hasClass('active')) {
             $('#btn_show_menu').click();

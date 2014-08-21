@@ -1,9 +1,9 @@
 {
 	"ContentJson"	: "content.json",
 
-	"Intro" 		: "intro.md",
+	"IntroMd" 		: "intro.md",
 
-	"About" 		: "about.md",
+	"AboutMd" 		: "about.md",
 
     "Languages"     :{
         "default" : "简体中文", 
