@@ -59,7 +59,7 @@ links:[http://www.slowfei.com][0]
 ------
 > [func Main()][#]<br/>
 > [type TestStruct struct][#]<br/>
->> implements: [Test][#]<br/>
+> implements: [Test][#]<br/>
 >>[func (* TestStruct) hello(str string) string](#func_TestStruct.hello)<a name="preview_TestStruct.hello"><a/><br/>
 >>[func (* TestStruct) hello2() string][#]<br/>
 >>
