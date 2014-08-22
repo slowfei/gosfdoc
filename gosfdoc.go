@@ -57,10 +57,28 @@ type DocParser interface {
 	EachFile(index int, fileCont *bytes.Buffer)
 
 	/**
+	 *	parse file document tag
 	 *
-	 *
+	 *	@param `fileCont` file content
+	 *	@return slice
 	 */
-	// ParseDoc(fileCont *bytes.Buffer)
+	ParseDoc(fileCont *bytes.Buffer) []Document
+
+	/**
+	 *	parse file preview tag
+	 *
+	 *	@param `fileCont` file content
+	 *	@return slice
+	 */
+	ParsePreview(fileCont *bytes.Buffer) []Preview
+
+	/**
+	 *	parse code block tag
+	 *
+	 *	@param `fileCont` file content
+	 *	@return slice
+	 */
+	ParseCodeblock(fileCont *bytes.Buffer) []CodeBlock
 }
 
 /**
