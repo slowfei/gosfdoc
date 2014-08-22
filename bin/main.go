@@ -8,8 +8,9 @@ import (
 )
 
 var (
-	_lang       *string = nil
-	_configFile         = flag.String("config", "gosfdoc.json", "custom config file path.")
+	_lang                *string = nil
+	_configFile                  = flag.String("config", "gosfdoc.json", "custom config file path.")
+	_specifyFileSuffixes         = flag.String("file-suffixes", "", "specify file suffixes, default all. e.g: \"go,java,js,m\"")
 )
 
 func init() {
