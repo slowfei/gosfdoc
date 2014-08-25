@@ -8,9 +8,8 @@ import (
 )
 
 var (
-	_lang                *string = nil
-	_configFile                  = flag.String("config", "gosfdoc.json", "custom config file path.")
-	_specifyFileSuffixes         = flag.String("file-suffixes", "", "specify file suffixes, default all. e.g: \"go,java,js,m\"")
+	_lang       *string = nil
+	_configFile         = flag.String("config", "gosfdoc.json", "custom config file path.")
 )
 
 func init() {
@@ -19,7 +18,7 @@ func init() {
 		impls = append(impls, k)
 	}
 	implstr := strings.Join(impls, ",")
-	_lang = flag.String("lang", "", "[\""+implstr+"\"] specify code language type, default all language.")
+	_lang = flag.String("lang", "", "[\""+implstr+"\"] specify code language type ',' separated, default all language.")
 }
 
 /**
