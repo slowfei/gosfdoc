@@ -11,15 +11,14 @@ import (
 var (
 	_gosfdocConfigJson = `
     {
-        "CodeLang"         : "go",
+        "CodeLang"         : ["go"],
         "Outdir"           : "doc",
         "CopyCode"         : false,
         "HtmlTitle"        : "Document",
         "DocTitle"         : "<b>Github:</b> gosfdoc.json set DocTitle",
         "MenuTitle"        : "<center><b>package</b></center>",
         "Languages"        : {"Default" : "default"},
-        "FilterPaths"      : [],
-        "FilePaths"        : {}
+        "FilterPaths"      : []
     }`
 )
 
@@ -28,15 +27,14 @@ var (
  *  output `gosfdoc.json` use
  */
 type MainConfig struct {
-	CodeLang    string              // code language
-	Outdir      string              // output document directory
-	CopyCode    bool                // whether output source code to document directory
-	HtmlTitle   string              // document html show title
-	DocTitle    string              // html top tabbar show title
-	MenuTitle   string              // html left menu show title
-	Languages   map[string]string   // document support the language. key is show text, value is lang dirctory name
-	FilterPaths []string            // filter directory path
-	FilePaths   map[string][]string // file path list. format:{"directory":["file1","file2"...]}
+	CodeLang    []string          // code languages
+	Outdir      string            // output document directory
+	CopyCode    bool              // whether output source code to document directory
+	HtmlTitle   string            // document html show title
+	DocTitle    string            // html top tabbar show title
+	MenuTitle   string            // html left menu show title
+	Languages   map[string]string // document support the language. key is show text, value is lang dirctory name
+	FilterPaths []string          // filter directory path
 }
 
 /**

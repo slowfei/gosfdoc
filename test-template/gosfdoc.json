@@ -1,5 +1,5 @@
 {
-    "CodeLang"         : "go",
+    "CodeLang"         : ["go"],
     "Outdir"           : "doc",
     "CopyCode"         : false,
     "HtmlTitle"        : "Document",
