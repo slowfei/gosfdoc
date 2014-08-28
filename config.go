@@ -1,6 +1,7 @@
 package gosfdoc
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"github.com/slowfei/gosfcore/utils/filemanager"
@@ -8,18 +9,21 @@ import (
 	"path/filepath"
 )
 
+const (
+	DEFAULT_CONFIG_FILE_NAME = "gosfdoc.json"
+)
+
 var (
-	_gosfdocConfigJson = `
-    {
-        "CodeLang"         : ["go"],
-        "Outdir"           : "doc",
-        "CopyCode"         : false,
-        "HtmlTitle"        : "Document",
-        "DocTitle"         : "<b>Github:</b> gosfdoc.json set DocTitle",
-        "MenuTitle"        : "<center><b>package</b></center>",
-        "Languages"        : {"Default" : "default"},
-        "FilterPaths"      : []
-    }`
+	_gosfdocConfigJson = `{
+    "CodeLang"         : [%v],
+    "Outdir"           : "doc",
+    "CopyCode"         : false,
+    "HtmlTitle"        : "Document",
+    "DocTitle"         : "<b>Document:</b>",
+    "MenuTitle"        : "<center><b>package</b></center>",
+    "Languages"        : {"default" : "Default"},
+    "FilterPaths"      : []
+}`
 )
 
 /**
@@ -33,8 +37,68 @@ type MainConfig struct {
 	HtmlTitle   string            // document html show title
 	DocTitle    string            // html top tabbar show title
 	MenuTitle   string            // html left menu show title
-	Languages   map[string]string // document support the language. key is show text, value is lang dirctory name
+	Languages   map[string]string // document support the language. key is lang dirctory name, value is show text
 	FilterPaths []string          // filter directory path
+}
+
+/**
+ *  check config param value
+ *  error value will update default.
+ *
+ *  @return error
+ *  @return bool    fatal error is false, pass is true. (pass does not mean that there are no errors)
+ */
+func (mc *MainConfig) Check() (error, bool) {
+	errBuf := bytes.NewBufferString("")
+	pass := true
+	if 0 == len(mc.CodeLang) {
+		errBuf.WriteString("CodeLang: specify code language type nil.\n")
+		pass = false
+	} else {
+		count := len(mc.CodeLang)
+		for i := 0; i < count; i++ {
+			lang := mc.CodeLang[i]
+			if _, ok := _mapParser[lang]; !ok {
+				errBuf.WriteString("CodeLang: not " + lang + " Parser.\n")
+			}
+		}
+	}
+
+	if 0 == len(mc.Outdir) {
+		errBuf.WriteString("Outdir: output directory is nil, will use 'doc' default directory.\n")
+		mc.Outdir = "doc"
+	}
+
+	if 0 == len(mc.HtmlTitle) {
+		mc.HtmlTitle = "Document"
+		errBuf.WriteString("HtmlTitle: to set the html title.\n")
+	}
+
+	if 0 == len(mc.DocTitle) {
+		mc.DocTitle = "<b>Document:</b>"
+		errBuf.WriteString("DocTitle: to set the doc title.\n")
+	}
+
+	if 0 == len(mc.MenuTitle) {
+		mc.MenuTitle = "<center><b>package</b></center>"
+		errBuf.WriteString("MenuTitle: to set the menu title.\n")
+	}
+
+	if 0 == len(mc.Languages) {
+		mc.Languages = map[string]string{"Default": "default"}
+		errBuf.WriteString("Languages: to set the default html text language.\n")
+	} else {
+		if _, ok := mc.Languages["default"]; !ok {
+			mc.Languages["default"] = "Default"
+			errBuf.WriteString("Languages: to set the default html text language.\n")
+		}
+	}
+
+	var err error = nil
+	if 0 != errBuf.Len() {
+		err = errors.New(errBuf.String())
+	}
+	return err, pass
 }
 
 /**
