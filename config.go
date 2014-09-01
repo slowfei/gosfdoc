@@ -15,6 +15,7 @@ const (
 
 var (
 	_gosfdocConfigJson = `{
+    "Path"             : %#v,
     "CodeLang"         : [%v],
     "Outdir"           : "doc",
     "CopyCode"         : false,
@@ -31,6 +32,7 @@ var (
  *  output `gosfdoc.json` use
  */
 type MainConfig struct {
+	Path        string            // operate absolute path
 	CodeLang    []string          // code languages
 	Outdir      string            // output document directory
 	CopyCode    bool              // whether output source code to document directory
@@ -38,7 +40,7 @@ type MainConfig struct {
 	DocTitle    string            // html top tabbar show title
 	MenuTitle   string            // html left menu show title
 	Languages   map[string]string // document support the language. key is lang dirctory name, value is show text
-	FilterPaths []string          // filter directory path
+	FilterPaths []string          // filter directory relative path
 }
 
 /**
@@ -51,6 +53,12 @@ type MainConfig struct {
 func (mc *MainConfig) Check() (error, bool) {
 	errBuf := bytes.NewBufferString("")
 	pass := true
+
+	if 0 == len(mc.Path) {
+		errBuf.WriteString("Path: please set the absolute path need to operate.\n")
+		pass = false
+	}
+
 	if 0 == len(mc.CodeLang) {
 		errBuf.WriteString("CodeLang: specify code language type nil.\n")
 		pass = false
