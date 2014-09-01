@@ -11,15 +11,96 @@
 package gosfdoc
 
 import (
-	"bytes"
+	"container/list"
+	"os"
+	// "regexp"
 )
 
 /**
- *  file info contain parser
+ *	file content buffer
  */
-type DocFile struct {
-	FileCont *bytes.Buffer //
-	Parser   DocParser     //
+type FileBuf struct {
+	path     string
+	fileInfo os.FileInfo
+	buf      []byte
+}
+
+func NewFileBuf(fileContent []byte) *FileBuf {
+	buf := new(FileBuf)
+	buf.buf = fileContent
+	return buf
+}
+
+/**
+ *	get file path
+ *
+ *	@return
+ */
+func (f *FileBuf) Path() string {
+	return f.path
+}
+
+/**
+ *	get file info
+ *
+ *	@return
+ */
+func (f *FileBuf) FileInfo() os.FileInfo {
+	return f.fileInfo
+}
+
+/**
+ *  source code file
+ */
+type CodeFile struct {
+	parser      DocParser //
+	FileCont    *FileBuf  //
+	PrivateDoc  bool      // if private document not output
+	PrivateCode bool      // if private source code not output
+}
+
+/**
+ *	source code file array
+ */
+type CodeFiles struct {
+	files *list.List
+}
+
+/**
+ *	new CodeFiles
+ */
+func NewCodeFiles() *CodeFiles {
+	cf := new(CodeFiles)
+	cf.files = list.New()
+	return cf
+}
+
+/**
+ *	add file
+ *
+ *	@param file
+ */
+func (c *CodeFiles) addFile(file CodeFile) {
+	if nil == c.files {
+		c.files = list.New()
+	}
+	c.files.PushBack(file)
+}
+
+/**
+ *	each CodeFile
+ *
+ *	@param `f` func return true continue
+ */
+func (c *CodeFiles) Each(f func(file CodeFile) bool) {
+	if nil == f {
+		return
+	}
+	for e := c.files.Front(); e != nil; e = e.Next() {
+		if !f(e.Value.(CodeFile)) {
+			break
+		}
+	}
 }
 
 /**
