@@ -13,11 +13,11 @@ package gosfdoc
 import (
 	"container/list"
 	"os"
-	// "regexp"
+	"regexp"
 )
 
 /**
- *	file content buffer
+ *  file content buffer
  */
 type FileBuf struct {
 	path     string
@@ -25,28 +25,56 @@ type FileBuf struct {
 	buf      []byte
 }
 
-func NewFileBuf(fileContent []byte) *FileBuf {
+/**
+ *  new file buffer
+ *
+ *  @param fileContent
+ *  @param replace regexp, replace text to empty(''), call regexp.ReplaceAll func
+ */
+func NewFileBuf(fileContent []byte, filter *regexp.Regexp) *FileBuf {
 	buf := new(FileBuf)
-	buf.buf = fileContent
+	if nil != filter {
+		buf.buf = filter.ReplaceAll(fileContent, nil)
+	} else {
+		buf.buf = fileContent
+	}
 	return buf
 }
 
 /**
- *	get file path
+ *  regexp find bytes
  *
- *	@return
+ *  @return
+ */
+func (f *FileBuf) Find(rex *regexp.Regexp) []byte {
+	return rex.Find(f.buf)
+}
+
+/**
+ *  get file path
+ *
+ *  @return
  */
 func (f *FileBuf) Path() string {
 	return f.path
 }
 
 /**
- *	get file info
+ *  get file info
  *
- *	@return
+ *  @return
  */
 func (f *FileBuf) FileInfo() os.FileInfo {
 	return f.fileInfo
+}
+
+/**
+ *  buffer to string
+ *
+ *  @return
+ */
+func (f *FileBuf) String() string {
+	return string(f.buf)
 }
 
 /**
@@ -60,14 +88,14 @@ type CodeFile struct {
 }
 
 /**
- *	source code file array
+ *  source code file list
  */
 type CodeFiles struct {
 	files *list.List
 }
 
 /**
- *	new CodeFiles
+ *  new CodeFiles
  */
 func NewCodeFiles() *CodeFiles {
 	cf := new(CodeFiles)
@@ -76,9 +104,9 @@ func NewCodeFiles() *CodeFiles {
 }
 
 /**
- *	add file
+ *  add file
  *
- *	@param file
+ *  @param file
  */
 func (c *CodeFiles) addFile(file CodeFile) {
 	if nil == c.files {
@@ -88,9 +116,9 @@ func (c *CodeFiles) addFile(file CodeFile) {
 }
 
 /**
- *	each CodeFile
+ *  each CodeFile
  *
- *	@param `f` func return true continue
+ *  @param `f` func return true continue
  */
 func (c *CodeFiles) Each(f func(file CodeFile) bool) {
 	if nil == f {
