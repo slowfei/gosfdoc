@@ -52,6 +52,16 @@ More references: [https://github.com/slowfei/gosfdoc][0]<br/>
 )
 
 /**
+ *	parse public document content
+ *
+ *	@param `fileBuf`
+ *	@return document array
+ */
+func ParseDocument(fileBuf *FileBuf) []Document {
+	return nil
+}
+
+/**
  *  commons parse file about content
  *
  *  @param `fileBuf`
