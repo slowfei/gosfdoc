@@ -81,10 +81,11 @@ func (f *FileBuf) String() string {
  *  source code file
  */
 type CodeFile struct {
-	parser      DocParser //
-	FileCont    *FileBuf  //
-	PrivateDoc  bool      // if private document not output
-	PrivateCode bool      // if private source code not output
+	parser      DocParser  // file parser
+	docs        []Document // current file public documents
+	FileCont    *FileBuf   // file buffer content
+	PrivateDoc  bool       // if private document not output
+	PrivateCode bool       // if private source code not output
 }
 
 /**
