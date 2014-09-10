@@ -16,6 +16,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/slowfei/gosfcore/utils/filemanager"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -51,6 +52,27 @@ var (
 	REXPrivateFile = regexp.MustCompile("#private-(doc|code){1}(-doc|-code)?")
 	TagPrivateCode = []byte("code")
 	TagPrivateDoc  = []byte("doc")
+	// private block tag ( //#private * //#private-end)
+	REXPrivateBlock = regexp.MustCompile("[^\\n]?//#private(\\s|.)*?//#private-end[\\s]?")
+
+	// parse about and intro block
+	/**[About|Intro]
+	 *	content text or markdown text
+	 */
+	//[About|Intro]
+	// content text or markdown text
+	//End
+	REXAbout = regexp.MustCompile("(/\\*\\*About[\\s]+(\\s|.)*?[\\s]+\\*/)|(//About[\\s]?([\\s]|.)*?//End)")
+	REXIntro = regexp.MustCompile("(/\\*\\*Intro[\\s]+(\\s|.)*?[\\s]+\\*/)|(//Intro[\\s]?([\\s]|.)*?//End)")
+
+	// parse public document content
+	/***[z-index-][title]
+	 *	document text or markdown text
+	 */
+	///[z-index-][title]
+	//	document text or markdown text
+	//End
+	REXDocument = regexp.MustCompile("TODO")
 )
 
 /**
@@ -106,14 +128,6 @@ type DocParser interface {
 	 *  @param `info`      file info
 	 */
 	EachFile(index int, fileCont *bytes.Buffer)
-
-	/**
-	 *  parse file document tag
-	 *
-	 *  @param `fileCont` file content
-	 *  @return slice
-	 */
-	ParseDoc(fileCont *bytes.Buffer) []Document
 
 	/**
 	 *  parse file preview tag
@@ -322,8 +336,11 @@ func OutputWithConfig(config *MainConfig, fileFunc FileResultFunc) (error, bool)
  *  @param `scanPath`
  *  @param `fileFunc`
  */
-func scanFiles(config *MainConfig, fileFunc FileResultFunc) (map[string][]CodeFiles, error) {
-	resultFiles := make(map[string][]CodeFiles)
+func scanFiles(config *MainConfig, fileFunc FileResultFunc) (map[string]*CodeFiles, error) {
+	var aboutBuf []byte = nil
+	var introBuf []byte = nil
+
+	resultFiles := make(map[string]*CodeFiles)
 
 	callFileFunc := func(p string, r OperateResult) error {
 		if nil != fileFunc {
@@ -338,11 +355,6 @@ func scanFiles(config *MainConfig, fileFunc FileResultFunc) (map[string][]CodeFi
 			return callFileFunc(path, ResultFileNotRead)
 		}
 
-		// 目录检测
-		if info.IsDir() {
-			//  TODO
-		}
-
 		fileName := info.Name()
 
 		//  系统或隐藏文件过滤
@@ -352,6 +364,14 @@ func scanFiles(config *MainConfig, fileFunc FileResultFunc) (map[string][]CodeFi
 			if 0 == strings.Index(fileName, sysFileName) {
 				return callFileFunc(path, ResultFileFilter)
 			}
+		}
+
+		// 目录检测
+		if info.IsDir() {
+			if _, ok := resultFiles[path]; !ok {
+				resultFiles[path] = NewCodeFiles()
+			}
+			return nil
 		}
 
 		//  无法找到后缀视为无效文件
@@ -371,8 +391,9 @@ func scanFiles(config *MainConfig, fileFunc FileResultFunc) (map[string][]CodeFi
 			return callFileFunc(path, ResultFileInvalid)
 		}
 
-		file, err := os.Open(path)
-		if err != nil {
+		//
+		file, openErr := os.Open(path)
+		if openErr != nil {
 			if nil != fileFunc {
 				fileFunc(path, ResultFileNotRead)
 			}
@@ -410,11 +431,82 @@ func scanFiles(config *MainConfig, fileFunc FileResultFunc) (map[string][]CodeFi
 			return callFileFunc(path, ResultFileFilter)
 		}
 
-		//  建立文件内容
-		// fileBuf := NewFileBufWithFile(file)
+		//  handle file content bytes
+		fileBytes, rFileErr := readFile(file, info.Size())
+		if nil != rFileErr {
+			return callFileFunc(path, ResultFileReadErr)
+		}
+
+		//	file buffer and filter private block
+		fileBuf := NewFileBuf(fileBytes, REXPrivateBlock)
+
+		//	parse about and intro
+		if nil == aboutBuf {
+			aboutBuf = ParseAbout(fileBuf)
+		}
+		if nil == introBuf {
+			introBuf = ParseIntro(fileBuf)
+		}
+
+		//	TODO ParseDocument
+
+		//	pack CodeFile
+		var files *CodeFiles = nil
+		var ok bool = false
+		pathDir := filepath.Dir(path)
+
+		if files, ok = resultFiles[pathDir]; !ok {
+			files = NewCodeFiles()
+			resultFiles[pathDir] = files
+		}
+
+		codeFile := CodeFile{}
+		codeFile.FileCont = fileBuf
+		codeFile.PrivateCode = isCode
+		codeFile.PrivateDoc = isDoc
+		codeFile.parser = parser
+
+		files.addFile(codeFile)
 
 		return nil
-	})
+
+	}) // end Walk file
+
+	if nil == aboutBuf {
+		aboutBuf = _defaultAbout
+	}
+	if nil == introBuf {
+		introBuf = _defaultIntro
+	}
 
 	return resultFiles, nil
+}
+
+/**
+ *  read file bytes
+ *
+ *  @param `r`
+ *  @param `fileSize`
+ */
+func readFile(r io.Reader, fileSize int64) (b []byte, err error) {
+	var capacity int64
+
+	if fileSize < 1e9 {
+		capacity = fileSize
+	}
+
+	buf := bytes.NewBuffer(make([]byte, 0, capacity+bytes.MinRead))
+	defer func() {
+		e := recover()
+		if e == nil {
+			return
+		}
+		if panicErr, ok := e.(error); ok && panicErr == bytes.ErrTooLarge {
+			err = panicErr
+		} else {
+			panic(e)
+		}
+	}()
+	_, err = buf.ReadFrom(r)
+	return buf.Bytes(), err
 }
