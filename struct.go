@@ -28,10 +28,12 @@ type FileBuf struct {
 /**
  *  new file buffer
  *
- *  @param fileContent
+ *  @param `fileContent`
+ *  @param `path` file path
+ *  @param `info` file info
  *  @param replace regexp, replace text to empty(''), call regexp.ReplaceAll func
  */
-func NewFileBuf(fileContent []byte, filter *regexp.Regexp) *FileBuf {
+func NewFileBuf(fileContent []byte, path string, info os.FileInfo, filter *regexp.Regexp) *FileBuf {
 	buf := new(FileBuf)
 	if nil != filter {
 		buf.buf = filter.ReplaceAll(fileContent, nil)
