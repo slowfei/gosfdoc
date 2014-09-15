@@ -44,10 +44,21 @@ func NewFileBuf(fileContent []byte, filter *regexp.Regexp) *FileBuf {
 /**
  *  regexp find bytes
  *
+ *  @param `rex`
  *  @return
  */
 func (f *FileBuf) Find(rex *regexp.Regexp) []byte {
 	return rex.Find(f.buf)
+}
+
+/**
+ *  regexp find all bytes
+ *
+ *  @param `rex`
+ *  @return
+ */
+func (f *FileBuf) FinaAll(rex *regexp.Regexp) [][]byte {
+	return rex.FindAll(f.buf, -1)
 }
 
 /**
