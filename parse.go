@@ -2,6 +2,7 @@ package gosfdoc
 
 import (
 	"bytes"
+	"github.com/slowfei/gosfcore/utils/strings"
 	"regexp"
 	// "fmt"
 )
@@ -58,7 +59,44 @@ More references: [https://github.com/slowfei/gosfdoc][0]<br/>
  *	@return document array
  */
 func ParseDocument(fileBuf *FileBuf) []Document {
-	return nil
+	var resultDocs []Document = nil
+
+	docsBuf := fileBuf.FinaAll(REXDocument)
+	docsCount := len(docsBuf)
+
+	if 0 != len(docsCount) {
+		resultDocs = make([]Document, 0, docsCount)
+	}
+
+	for i := 0; i < docsCount; i++ {
+		docStruct := Document{}
+		buf := docsBuf[i]
+
+		lines := bytes.Split(buf, []byte("\n"))
+		linesCount := len(lines)
+
+		//	title and index parse
+		indexTitleLine := lines[0]
+		indexTitleMatch := REXDocIndexTitle.FindSubmatch(indexTitleLine)
+		//	index 0 is source string
+		//	index 1 is "///" || "/***"
+		//	index 2 is "index-" index string
+		//	index 3 is title
+
+		if 4 == len(indexTitleMatch) {
+			// extract title and z-index
+			docStruct.SortTag = SFStringsUtil.ToInt(string(indexTitleMatch[2]))
+			docStruct.Title = string(indexTitleMatch[3])
+		}
+
+		//	content parse
+		contentBuf = bytes.NewBuffer(nil)
+		for i := 1; i < linesCount-1; i++ {
+
+		}
+	}
+
+	return resultDocs
 }
 
 /**
@@ -92,12 +130,12 @@ func parseAboutAndIntro(fileBuf *FileBuf, rex *regexp.Regexp) []byte {
 	var prefixTag []byte = nil
 	prefixLen := 0
 
-	aboutBuf := fileBuf.Find(rex)
+	buf := fileBuf.Find(rex)
 
-	if 0 < len(aboutBuf) {
+	if 0 < len(buf) {
 		appendLine := bytes.NewBuffer(nil)
 
-		lines := bytes.Split(aboutBuf, []byte("\n"))
+		lines := bytes.Split(buf, []byte("\n"))
 		linesCount := len(lines)
 
 		for i := 1; i < linesCount-1; i++ {
