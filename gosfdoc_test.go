@@ -2,9 +2,55 @@ package gosfdoc
 
 import (
 	"bytes"
-	// "strings"
+	"strings"
 	"testing"
 )
+
+/**
+ *
+ */
+func TestParseDocument(t *testing.T) {
+	strTest := `
+/***1-title1
+ *  content_1
+ */
+
+/***2-title2
+ *  content_2
+ */
+
+func test2(){
+}
+
+///3-title3
+//  content_3
+//End
+
+func test2(){
+}
+
+`
+
+	documents := ParseDocument(NewFileBuf([]byte(strTest), nil))
+
+	if 3 != len(documents) {
+		t.Fatalf("3 != len(documents)")
+		return
+	}
+
+	if documents[0].SortTag != 1 || documents[0].Title != "title1" || -1 == strings.Index(documents[0].Content, "content_1") {
+		t.Fatalf("ErrorParse: %v %v \n%v", documents[0].SortTag, documents[0].Title, documents[0].Content)
+	}
+
+	if documents[1].SortTag != 2 || documents[1].Title != "title2" || -1 == strings.Index(documents[1].Content, "content_2") {
+		t.Fatalf("ErrorParse: %v %v \n%v", documents[1].SortTag, documents[1].Title, documents[1].Content)
+	}
+
+	if documents[2].SortTag != 3 || documents[2].Title != "title3" || -1 == strings.Index(documents[2].Content, "content_3") {
+		t.Fatalf("ErrorParse: %v %v \n%v", documents[2].SortTag, documents[2].Title, documents[2].Content)
+	}
+
+}
 
 /**
  *
@@ -95,7 +141,7 @@ func func_name() {
 // 
 //  More references: [https://github.com/slowfei/gosfdoc][0]<br/>
 //  The MIT license (MIT) - [http://opensource.org/licenses/MIT][1]
-//
+temp
 //  Copyright (c) 2014 slowfei<br/>
 //  Email: slowfei#foxmail.com
 //
@@ -112,7 +158,7 @@ func func_name() {
  * 
  *  More references: [https://github.com/slowfei/gosfdoc][0]<br/>
  *  The MIT license (MIT) - [http://opensource.org/licenses/MIT][1]
- *
+temp
  *  Copyright (c) 2014 slowfei<br/>
  *  Email: slowfei#foxmail.com
  *
@@ -138,7 +184,7 @@ func func_name() {
 	lineNumber := len(bytes.Split(newBuf, []byte("\n")))
 
 	if 15 != lineNumber {
-		// t.Log(string(newBuf))
+		t.Log(string(newBuf))
 		t.Fatal("About: Target Line 14, parse Line error:", lineNumber)
 	}
 
