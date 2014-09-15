@@ -2,9 +2,49 @@ package gosfdoc
 
 import (
 	"bytes"
+	// "strings"
 	"testing"
 )
 
+/**
+ *
+ */
+func TestREXDocument(t *testing.T) {
+	str := `
+/***1-title1
+ *  content_1
+ */
+
+ /***2-
+  *  content_2
+  */
+
+////3-title3
+// content_3
+//End
+
+///4-
+// content_4
+//End
+
+`
+	results := REXDocument.FindAllString(str, -1)
+
+	if 4 != len(results) {
+		t.Fatal("find result num fatal.")
+	}
+
+	str2 := `///1234-title`
+	subResult := REXDocIndexTitle.FindStringSubmatch(str2)
+	if subResult[2] != "1234-" {
+		t.Fatal("substring index fatal.")
+	}
+
+}
+
+/**
+ *
+ */
 func TestREXPrivateBlock(t *testing.T) {
 	str := `
 func test1(){
@@ -37,6 +77,9 @@ func test5(){
 	}
 }
 
+/**
+ *
+ */
 func TestREXParseAboutAndIntro(t *testing.T) {
 	strTest := `
 
