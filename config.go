@@ -1,3 +1,13 @@
+//  The MIT License (MIT) - http://opensource.org/licenses/MIT
+//
+//  Copyright (c) 2014 slowfei
+//
+//  Create on 2014-08-16
+//  Update on 2014-09-18
+//  Email  slowfei#foxmail.com
+//  Home   http://www.slowfei.com
+
+//
 package gosfdoc
 
 import (
@@ -15,7 +25,7 @@ const (
 
 var (
 	_gosfdocConfigJson = `{
-    "Path"             : %#v,
+    "ScanPath"         : %#v,
     "CodeLang"         : [%v],
     "Outdir"           : "doc",
     "CopyCode"         : false,
@@ -32,7 +42,8 @@ var (
  *  output `gosfdoc.json` use
  */
 type MainConfig struct {
-	Path        string            // operate absolute path
+	path        string            // private handle path, save console command path.
+	ScanPath    string            // scan document info file path, relative or absolute path, is "/" scan current console path.
 	CodeLang    []string          // code languages
 	Outdir      string            // output document directory
 	CopyCode    bool              // whether output source code to document directory
@@ -40,7 +51,7 @@ type MainConfig struct {
 	DocTitle    string            // html top tabbar show title
 	MenuTitle   string            // html left menu show title
 	Languages   map[string]string // document support the language. key is lang dirctory name, value is show text
-	FilterPaths []string          // filter directory relative path
+	FilterPaths []string          // filter path, relative or absolute path
 }
 
 /**
@@ -54,9 +65,16 @@ func (mc *MainConfig) Check() (error, bool) {
 	errBuf := bytes.NewBufferString("")
 	pass := true
 
-	if 0 == len(mc.Path) {
-		errBuf.WriteString("Path: please set the absolute path need to operate.\n")
+	mc.path = SFFileManager.GetCmdDir()
+
+	if 0 == len(mc.ScanPath) {
+		errBuf.WriteString("ScanPath: please set document scan path.\n")
 		pass = false
+	}
+	if "/" == mc.ScanPath {
+		mc.ScanPath = mc.path
+	} else if !filepath.IsAbs(mc.ScanPath) {
+		mc.ScanPath = filepath.Join(mc.path, mc.ScanPath)
 	}
 
 	if 0 == len(mc.CodeLang) {
@@ -106,6 +124,16 @@ func (mc *MainConfig) Check() (error, bool) {
 	if 0 != errBuf.Len() {
 		err = errors.New(errBuf.String())
 	}
+
+	if pass {
+		for i := 0; i < len(mc.FilterPaths); i++ {
+			p := mc.FilterPaths[i]
+			if !filepath.IsAbs(p) {
+				mc.FilterPaths[i] = filepath.Join(mc.ScanPath, p)
+			}
+		}
+	}
+
 	return err, pass
 }
 
