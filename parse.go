@@ -1,3 +1,13 @@
+//  The MIT License (MIT) - http://opensource.org/licenses/MIT
+//
+//  Copyright (c) 2014 slowfei
+//
+//  Create on 2014-09-10
+//  Update on 2014-09-18
+//  Email  slowfei#foxmail.com
+//  Home   http://www.slowfei.com
+
+//
 package gosfdoc
 
 import (
@@ -5,6 +15,13 @@ import (
 	"github.com/slowfei/gosfcore/utils/strings"
 	"regexp"
 	// "fmt"
+	"os"
+	"strings"
+)
+
+const (
+	DOC_FILE_SUFFIX = ".doc"     // document file suffix
+	NIL_DOC_NAME    = "document" // nilDocParser struct use
 )
 
 var (
@@ -51,6 +68,48 @@ More references: [https://github.com/slowfei/gosfdoc][0]<br/>
 	_tagStar   = []byte("*")  // comments (*)
 	_tagDSlash = []byte("//") // double slash
 )
+
+/**
+ *	nil document parser
+ *	specifically for .doc file serve
+ */
+type nilDocParser struct {
+}
+
+/**
+ *	see DocParser interface
+ */
+func (n *nilDocParser) Name() string {
+	return NIL_DOC_NAME
+}
+
+/**
+ *	see DocParser interface
+ */
+func (n *nilDocParser) CheckFile(path string, info os.FileInfo) bool {
+	return strings.HasSuffix(path, DOC_FILE_SUFFIX)
+}
+
+/**
+ *	see DocParser interface
+ */
+func (n *nilDocParser) EachIndexFile(filebuf *FileBuf) {
+
+}
+
+/**
+ *	see DocParser interface
+ */
+func (n *nilDocParser) ParsePreview(fileCont *bytes.Buffer) []Preview {
+	return nil
+}
+
+/**
+ *	see DocParser interface
+ */
+func (n *nilDocParser) ParseCodeblock(fileCont *bytes.Buffer) []CodeBlock {
+	return nil
+}
 
 /**
  *  parse public document content
