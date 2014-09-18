@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-22
-//  Update on 2014-09-18
+//  Update on 2014-09-19
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -12,8 +12,41 @@ package gosfdoc
 
 import (
 	"container/list"
+	"github.com/slowfei/gosfcore/encoding/json"
+	"io/ioutil"
 	"os"
 	"regexp"
+)
+
+var (
+	_defaultAbout = []byte(`
+## About
+------
+
+gosfdoc document generator
+
+More references: [https://github.com/slowfei/gosfdoc][0]<br/>
+The MIT license (MIT) - [http://opensource.org/licenses/MIT][1]
+
+Copyright (c) 2014 slowfei<br/>
+Email: slowfei#foxmail.com
+
+[0]:https://github.com/slowfei/gosfdoc
+[1]:http://opensource.org/licenses/MIT
+`)
+
+	_defaultIntro = []byte(`
+##Document Introduction
+
+Sorry! Document author did not write any information.
+
+----
+This is a good tool, Can help you make beautiful documents.
+
+More references: [https://github.com/slowfei/gosfdoc][0]<br/>
+
+[0]:https://github.com/slowfei/gosfdoc
+`)
 )
 
 /**
@@ -152,6 +185,57 @@ type ContentJson struct {
 	HtmlTitle string // html document title
 	DocTitle  string // html top show title
 	MenuTitle string // html left menu title
+}
+
+/**
+ *	output write file path
+ */
+func (c ContentJson) WriteFilepath(path string) error {
+	json, err := SFJson.NewJson(c, "", "")
+	if nil != err {
+		return err
+	}
+	return json.WriteFilepath(path, true)
+}
+
+/**
+ *	markdown about
+ */
+type About struct {
+	Content []byte
+}
+
+/**
+ *	output file
+ *
+ *	@param `path` output full path
+ *	@return
+ */
+func (a *About) WriteFilepath(path string) error {
+	if nil == a.Content {
+		a.Content = _defaultAbout
+	}
+	return ioutil.WriteFile(path, a.Content, 0660)
+}
+
+/**
+ *	markdown intro
+ */
+type Intro struct {
+	Content []byte
+}
+
+/**
+ *	output file
+ *
+ *	@param `path` output full path
+ *	@return
+ */
+func (c *Intro) WriteFilepath(path string) error {
+	if nil == c.Content {
+		c.Content = _defaultIntro
+	}
+	return ioutil.WriteFile(path, c.Content, 0660)
 }
 
 /**
