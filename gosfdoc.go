@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-16
-//  Update on 2014-08-22
+//  Update on 2014-09-19
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -25,8 +25,16 @@ import (
 )
 
 const (
-	APPNAME = "gosfdoc"
-	VERSION = "0.0.1.000"
+	APPNAME = "gosfdoc"   //
+	VERSION = "0.0.1.000" //
+
+	DIR_NAME_MAIN_MARKDOWN    = "md"      // save markdown file main directory name
+	DIR_NAME_MARKDOWN_DEFAULT = "default" // markdown default directory
+	DIR_NAME_SOURCE_CODE      = "src"     // source code save directory
+
+	FILE_NAME_ABOUT_MD     = "about.md"
+	FILE_NAME_INTRO_MD     = "intro.md"
+	FILE_NAME_CONTENT_JSON = "content.json"
 )
 
 var (
@@ -57,7 +65,7 @@ var (
 
 	// parse about and intro block
 	/**[About|Intro]
-	 *	content text or markdown text
+	 *  content text or markdown text
 	 */
 	//[About|Intro]
 	// content text or markdown text
@@ -67,10 +75,10 @@ var (
 
 	// parse public document content
 	/***[z-index-][title]
-	 *	document text or markdown text
+	 *  document text or markdown text
 	 */
 	///[z-index-][title]
-	//	document text or markdown text
+	//  document text or markdown text
 	//End
 	REXDocument      = regexp.MustCompile("(/\\*\\*\\*[^\\*\\s](.+)\\n(\\s|.)*?\\*/)|(///[^/\\s](.+)\\n(\\s|.)*?//[Ee][Nn][Dd])")
 	REXDocIndexTitle = regexp.MustCompile("(/\\*\\*\\*|///)(\\d*-)?(.*)?")
@@ -124,11 +132,9 @@ type DocParser interface {
 	 *  each file the content
 	 *  can be create keyword index and other operations
 	 *
-	 *  @param `index`     while file index
-	 *  @param `fileCont`  file content
-	 *  @param `info`      file info
+	 *  @param `filebuf`    file content buf
 	 */
-	EachFile(index int, fileCont *bytes.Buffer)
+	EachIndexFile(filebuf *FileBuf)
 
 	/**
 	 *  parse file preview tag
@@ -151,7 +157,7 @@ type DocParser interface {
  *  init
  */
 func init() {
-
+	AddParser(new(nilDocParser))
 }
 
 /**
@@ -208,6 +214,26 @@ func readConfigFile(filepath string) (config *MainConfig, err error, pass bool) 
 	config = mainConfig
 
 	return
+}
+
+/**
+ *  get source code directory svae path
+ *
+ *  @param `config`
+ *  @return full path
+ */
+func dirpathSourceCode(config *MainConfig) string {
+	return filepath.Join(config.Outdir, DIR_NAME_SOURCE_CODE)
+}
+
+/**
+ *  get default markdown directory save path
+ *
+ *  @param `config`
+ *  @return full path
+ */
+func dirpathMarkdownDefault(config *MainConfig) string {
+	return filepath.Join(config.Outdir, DIR_NAME_MAIN_MARKDOWN, DIR_NAME_MARKDOWN_DEFAULT)
 }
 
 /**
@@ -319,14 +345,38 @@ func OutputWithConfig(config *MainConfig, fileFunc FileResultFunc) (error, bool)
 	if !pass {
 		return err, pass
 	}
-	scanPath := config.Path
+	scanPath := config.ScanPath
 
 	isExists, isDir, _ := SFFileManager.Exists(scanPath)
 	if !isExists || !isDir {
-		return errors.New(fmt.Sprintf("invalid operate path: %v", scanPath)), false
+		return errors.New(fmt.Sprintf("invalid scan path path: %v", scanPath)), false
 	}
 
-	scanFiles(config, fileFunc)
+	files, about, intro, scanErr := scanFiles(config, fileFunc)
+	if nil != scanErr {
+		return scanErr, false
+	}
+
+	// output markdown defualt directory path
+	mdDefaultPath := dirpathMarkdownDefault(config)
+
+	//  output content.json
+	contentPath := filepath.Join(mdDefaultPath, FILE_NAME_CONTENT_JSON)
+	contentStruct := ContentJson{
+		HtmlTitle: config.HtmlTitle,
+		DocTitle:  config.DocTitle,
+		MenuTitle: config.MenuTitle,
+	}
+	contentStruct.WriteFilepath(contentPath)
+
+	//  output about.md and intro.md
+	about.WriteFilepath(filepath.Join(mdDefaultPath, FILE_NAME_ABOUT_MD))
+	intro.WriteFilepath(filepath.Join(mdDefaultPath, FILE_NAME_INTRO_MD))
+
+	//  TODO 等待测试
+	if nil != files {
+
+	}
 
 	return nil, true
 }
@@ -334,14 +384,20 @@ func OutputWithConfig(config *MainConfig, fileFunc FileResultFunc) (error, bool)
 /**
  *  scan files
  *
- *  @param `scanPath`
+ *  @param `config`
  *  @param `fileFunc`
+ *  @return `resultFiles` map[string]*CodeFiles
+ *  @return `aboutBuf`
+ *  @return `introBuf`
+ *  @return `resultErr`
  */
-func scanFiles(config *MainConfig, fileFunc FileResultFunc) (map[string]*CodeFiles, error) {
-	var aboutBuf []byte = nil
-	var introBuf []byte = nil
+func scanFiles(config *MainConfig, fileFunc FileResultFunc) (
+	resultFiles map[string]*CodeFiles,
+	about *About,
+	intro *Intro,
+	resultErr error) {
 
-	resultFiles := make(map[string]*CodeFiles)
+	resultFiles = make(map[string]*CodeFiles)
 
 	callFileFunc := func(p string, r OperateResult) error {
 		if nil != fileFunc {
@@ -350,7 +406,7 @@ func scanFiles(config *MainConfig, fileFunc FileResultFunc) (map[string]*CodeFil
 		return nil
 	}
 
-	filepath.Walk(config.Path, func(path string, info os.FileInfo, err error) error {
+	resultErr = filepath.Walk(config.ScanPath, func(path string, info os.FileInfo, err error) error {
 
 		if nil != err || nil == info {
 			return callFileFunc(path, ResultFileNotRead)
@@ -358,13 +414,25 @@ func scanFiles(config *MainConfig, fileFunc FileResultFunc) (map[string]*CodeFil
 
 		fileName := info.Name()
 
-		//  系统或隐藏文件过滤
-		sysCount := len(_sysFilters)
-		for i := 0; i < sysCount; i++ {
+		// 1. system file filter
+		for i := 0; i < len(_sysFilters); i++ {
 			sysFileName := _sysFilters[i]
 			if 0 == strings.Index(fileName, sysFileName) {
 				return callFileFunc(path, ResultFileFilter)
 			}
+		}
+
+		// 2. filter custom path
+		for i := 0; i < len(config.FilterPaths); i++ {
+			fpath := config.FilterPaths[i]
+			if 0 == strings.Index(path, fpath) {
+				return callFileFunc(path, ResultFileFilter)
+			}
+		}
+
+		// filter document output dir
+		if 0 == strings.Index(path, config.Outdir) {
+			return callFileFunc(path, ResultFileFilter)
 		}
 
 		// 目录检测
@@ -380,7 +448,7 @@ func scanFiles(config *MainConfig, fileFunc FileResultFunc) (map[string]*CodeFil
 			return callFileFunc(path, ResultFileInvalid)
 		}
 
-		//  find parser
+		// 3. check file and find parser
 		var parser DocParser = nil
 		for _, vp := range _mapParser {
 			if vp.CheckFile(path, info) {
@@ -392,7 +460,6 @@ func scanFiles(config *MainConfig, fileFunc FileResultFunc) (map[string]*CodeFil
 			return callFileFunc(path, ResultFileInvalid)
 		}
 
-		//
 		file, openErr := os.Open(path)
 		if openErr != nil {
 			if nil != fileFunc {
@@ -416,19 +483,19 @@ func scanFiles(config *MainConfig, fileFunc FileResultFunc) (map[string]*CodeFil
 			return callFileFunc(path, ResultFileInvalid)
 		}
 
-		// check //#private-doc //#private-code //#private-doc-code
+		// 4. check file private tag //#private-doc //#private-code //#private-doc-code
 		privateTag := REXPrivateFile.Find(firstLine)
-		isCode := false
-		isDoc := false
+		isPCode := false
+		isPDoc := false
 		if nil != privateTag && 0 != len(privateTag) {
 			if 0 < bytes.Index(privateTag, TagPrivateCode) {
-				isCode = true
+				isPCode = true
 			}
 			if 0 < bytes.Index(privateTag, TagPrivateDoc) {
-				isDoc = true
+				isPDoc = true
 			}
 		}
-		if isCode && isDoc {
+		if isPCode && isPDoc {
 			return callFileFunc(path, ResultFileFilter)
 		}
 
@@ -438,20 +505,27 @@ func scanFiles(config *MainConfig, fileFunc FileResultFunc) (map[string]*CodeFil
 			return callFileFunc(path, ResultFileReadErr)
 		}
 
-		//	file buffer and filter private block
-		fileBuf := NewFileBuf(fileBytes, REXPrivateBlock)
+		// 5. filter private block and create file buffer
+		fileBuf := NewFileBuf(fileBytes, path, info, REXPrivateBlock)
 
-		//	parse about and intro
-		if nil == aboutBuf {
-			aboutBuf = ParseAbout(fileBuf)
+		// 6. parse about and intro
+		if nil == about {
+			about = ParseAbout(fileBuf)
 		}
-		if nil == introBuf {
-			introBuf = ParseIntro(fileBuf)
+		if nil == intro {
+			intro = ParseIntro(fileBuf)
 		}
 
-		//	TODO ParseDocument
+		// 7. parse documents
+		var documents []Document = nil
+		if !isPDoc {
+			documents = ParseDocument(fileBuf)
+		}
 
-		//	pack CodeFile
+		// 8. create file index
+		parser.EachIndexFile(fileBuf)
+
+		//  pack CodeFile
 		var files *CodeFiles = nil
 		var ok bool = false
 		pathDir := filepath.Dir(path)
@@ -463,24 +537,17 @@ func scanFiles(config *MainConfig, fileFunc FileResultFunc) (map[string]*CodeFil
 
 		codeFile := CodeFile{}
 		codeFile.FileCont = fileBuf
-		codeFile.PrivateCode = isCode
-		codeFile.PrivateDoc = isDoc
+		codeFile.PrivateCode = isPCode
+		codeFile.PrivateDoc = isPDoc
 		codeFile.parser = parser
+		codeFile.docs = documents
 
 		files.addFile(codeFile)
 
 		return nil
-
 	}) // end Walk file
 
-	if nil == aboutBuf {
-		aboutBuf = _defaultAbout
-	}
-	if nil == introBuf {
-		introBuf = _defaultIntro
-	}
-
-	return resultFiles, nil
+	return
 }
 
 /**
