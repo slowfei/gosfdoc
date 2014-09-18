@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-09-10
-//  Update on 2014-09-18
+//  Update on 2014-09-19
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -25,34 +25,6 @@ const (
 )
 
 var (
-	_defaultAbout = []byte(`
-## About
-------
-
-gosfdoc document generator
-
-More references: [https://github.com/slowfei/gosfdoc][0]<br/>
-The MIT license (MIT) - [http://opensource.org/licenses/MIT][1]
-
-Copyright (c) 2014 slowfei<br/>
-Email: slowfei#foxmail.com
-
-[0]:https://github.com/slowfei/gosfdoc
-[1]:http://opensource.org/licenses/MIT
-`)
-
-	_defaultIntro = []byte(`
-##Document Introduction
-
-Sorry! Document author did not write any information.
-
-----
-This is a good tool, Can help you make beautiful documents.
-
-More references: [https://github.com/slowfei/gosfdoc][0]<br/>
-
-[0]:https://github.com/slowfei/gosfdoc
-`)
 
 	//  主要用于去除注释的前缀
 	_prefixFilterTags = [][]byte{
@@ -198,8 +170,8 @@ func ParseDocument(fileBuf *FileBuf) []Document {
  *  @param `fileBuf`
  *  @return about content
  */
-func ParseAbout(fileBuf *FileBuf) []byte {
-	return parseAboutAndIntro(fileBuf, REXAbout)
+func ParseAbout(fileBuf *FileBuf) *About {
+	return &About{Content: parseAboutAndIntro(fileBuf, REXAbout)}
 }
 
 /**
@@ -208,8 +180,8 @@ func ParseAbout(fileBuf *FileBuf) []byte {
  *  @param `fileBuf`
  *  @return introduction content
  */
-func ParseIntro(fileBuf *FileBuf) []byte {
-	return parseAboutAndIntro(fileBuf, REXIntro)
+func ParseIntro(fileBuf *FileBuf) *Intro {
+	return &Intro{Content: parseAboutAndIntro(fileBuf, REXIntro)}
 }
 
 /**
