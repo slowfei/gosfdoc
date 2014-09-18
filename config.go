@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-16
-//  Update on 2014-09-18
+//  Update on 2014-09-19
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -93,6 +93,10 @@ func (mc *MainConfig) Check() (error, bool) {
 	if 0 == len(mc.Outdir) {
 		errBuf.WriteString("Outdir: output directory is nil, will use 'doc' default directory.\n")
 		mc.Outdir = "doc"
+	}
+
+	if !filepath.IsAbs(mc.Outdir) {
+		mc.Outdir = filepath.Join(mc.path, mc.Outdir)
 	}
 
 	if 0 == len(mc.HtmlTitle) {
