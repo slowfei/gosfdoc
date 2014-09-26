@@ -13,6 +13,7 @@ package gosfdoc
 import (
 	"container/list"
 	"github.com/slowfei/gosfcore/encoding/json"
+	"github.com/slowfei/gosfcore/utils/filemanager"
 	"io/ioutil"
 	"os"
 	"regexp"
@@ -74,6 +75,15 @@ func NewFileBuf(fileContent []byte, path string, info os.FileInfo, filter *regex
 		buf.buf = fileContent
 	}
 	return buf
+}
+
+/**
+ *	out file
+ *
+ *	@param `path` out path
+ */
+func (f *FileBuf) WriteFilepath(path string) error {
+	return SFFileManager.WirteFilepath(path, f.buf)
 }
 
 /**
@@ -206,13 +216,22 @@ type About struct {
 }
 
 /**
+ *	new default about
+ *
+ *	@return pointer type
+ */
+func NewDefaultAbout() *About {
+	return &About{Content: _defaultAbout}
+}
+
+/**
  *	output file
  *
  *	@param `path` output full path
  *	@return
  */
 func (a *About) WriteFilepath(path string) error {
-	if nil == a.Content {
+	if 0 == len(a.Content) {
 		a.Content = _defaultAbout
 	}
 	return ioutil.WriteFile(path, a.Content, 0660)
@@ -226,13 +245,22 @@ type Intro struct {
 }
 
 /**
+ *	new default intro
+ *
+ *	@return pointer type
+ */
+func NewDefaultIntro() *Intro {
+	return &Intro{Content: _defaultIntro}
+}
+
+/**
  *	output file
  *
  *	@param `path` output full path
  *	@return
  */
 func (c *Intro) WriteFilepath(path string) error {
-	if nil == c.Content {
+	if 0 == len(c.Content) {
 		c.Content = _defaultIntro
 	}
 	return ioutil.WriteFile(path, c.Content, 0660)
