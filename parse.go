@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-09-10
-//  Update on 2014-09-19
+//  Update on 2014-09-23
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	DOC_FILE_SUFFIX = ".doc"     // document file suffix
+	DOC_FILE_SUFFIX = ".dc"      // document file suffix(document comments)
 	NIL_DOC_NAME    = "document" // nilDocParser struct use
 )
 
@@ -171,7 +171,14 @@ func ParseDocument(fileBuf *FileBuf) []Document {
  *  @return about content
  */
 func ParseAbout(fileBuf *FileBuf) *About {
-	return &About{Content: parseAboutAndIntro(fileBuf, REXAbout)}
+	data := parseAboutAndIntro(fileBuf, REXAbout)
+
+	var result *About = nil
+	if 0 != len(data) {
+		result = &About{Content: data}
+	}
+
+	return result
 }
 
 /**
@@ -181,7 +188,14 @@ func ParseAbout(fileBuf *FileBuf) *About {
  *  @return introduction content
  */
 func ParseIntro(fileBuf *FileBuf) *Intro {
-	return &Intro{Content: parseAboutAndIntro(fileBuf, REXIntro)}
+	data := parseAboutAndIntro(fileBuf, REXIntro)
+
+	var result *Intro = nil
+	if 0 != len(data) {
+		result = &Intro{Content: data}
+	}
+
+	return result
 }
 
 /**
