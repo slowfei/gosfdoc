@@ -95,6 +95,8 @@ const (
 	ResultFileNotRead
 	ResultFileReadErr
 	ResultFileFilter
+	ResultFileOutFail
+	ResultDebugErr
 )
 
 /**
@@ -223,7 +225,21 @@ func readConfigFile(filepath string) (config *MainConfig, err error, pass bool) 
  *  @return full path
  */
 func dirpathSourceCode(config *MainConfig) string {
-	return filepath.Join(config.Outdir, DIR_NAME_SOURCE_CODE)
+	path := filepath.Join(config.Outdir, DIR_NAME_SOURCE_CODE)
+
+	exists, isDir, err := SFFileManager.Exists(path)
+	if !exists {
+		err = os.MkdirAll(path, os.ModePerm)
+		if nil != err {
+			panic(fmt.Sprintln(path, err.Error()))
+		}
+	} else if !isDir {
+		panic(fmt.Sprintln(path, "has been occupied."))
+	} else if nil != err {
+		panic(fmt.Sprintln(path, err.Error()))
+	}
+
+	return path
 }
 
 /**
@@ -233,7 +249,22 @@ func dirpathSourceCode(config *MainConfig) string {
  *  @return full path
  */
 func dirpathMarkdownDefault(config *MainConfig) string {
-	return filepath.Join(config.Outdir, DIR_NAME_MAIN_MARKDOWN, DIR_NAME_MARKDOWN_DEFAULT)
+	path := filepath.Join(config.Outdir, DIR_NAME_MAIN_MARKDOWN, DIR_NAME_MARKDOWN_DEFAULT)
+
+	exists, isDir, err := SFFileManager.Exists(path)
+
+	if nil != err {
+		panic(fmt.Sprintln(path, err.Error()))
+	} else if !exists {
+		err = os.MkdirAll(path, os.ModePerm)
+		if nil != err {
+			panic(fmt.Sprintln(err.Error()))
+		}
+	} else if !isDir {
+		panic(fmt.Sprintln(path, "has been occupied."))
+	}
+
+	return path
 }
 
 /**
@@ -345,6 +376,7 @@ func OutputWithConfig(config *MainConfig, fileFunc FileResultFunc) (error, bool)
 	if !pass {
 		return err, pass
 	}
+	config.setAbspath()
 	scanPath := config.ScanPath
 
 	isExists, isDir, _ := SFFileManager.Exists(scanPath)
@@ -367,18 +399,90 @@ func OutputWithConfig(config *MainConfig, fileFunc FileResultFunc) (error, bool)
 		DocTitle:  config.DocTitle,
 		MenuTitle: config.MenuTitle,
 	}
-	contentStruct.WriteFilepath(contentPath)
-
-	//  output about.md and intro.md
-	about.WriteFilepath(filepath.Join(mdDefaultPath, FILE_NAME_ABOUT_MD))
-	intro.WriteFilepath(filepath.Join(mdDefaultPath, FILE_NAME_INTRO_MD))
-
-	//  TODO 等待测试
-	if nil != files {
-
+	contentErr := contentStruct.WriteFilepath(contentPath)
+	if nil != contentErr {
+		fileFunc(contentPath, ResultFileOutFail)
 	}
 
+	//  output about.md and intro.md
+	if nil == about {
+		about = NewDefaultAbout()
+	}
+	if nil == intro {
+		intro = NewDefaultIntro()
+	}
+	aboutPath := filepath.Join(mdDefaultPath, FILE_NAME_ABOUT_MD)
+	aboutErr := about.WriteFilepath(aboutPath)
+	if nil != aboutErr {
+		fileFunc(aboutPath, ResultFileOutFail)
+	}
+	introPath := filepath.Join(mdDefaultPath, FILE_NAME_INTRO_MD)
+	introErr := intro.WriteFilepath(introPath)
+	if nil != introErr {
+		fileFunc(introPath, ResultFileOutFail)
+	}
+
+	//
+	codeFilesOut(config, files, fileFunc)
+
 	return nil, true
+}
+
+/**
+ *	map[string]*CodeFiles
+ *	source code and markdown output
+ *
+ *	@param `config`
+ *	@param `files`
+ *	@param `fileFunc`
+ */
+func codeFilesOut(config *MainConfig, files map[string]*CodeFiles, fileFunc FileResultFunc) {
+
+	scanPath := config.ScanPath
+	outPathPrefix := filepath.Join(scanPath, config.OutAppendPath)
+
+	// 1.FOR Directory
+	for dirPath, codefiles := range files {
+		relativePath := ""
+
+		if 0 == strings.Index(dirPath, scanPath) {
+			relativePath = dirPath[:len(scanPath)]
+		} else {
+			if nil != fileFunc {
+				fileFunc(dirPath, ResultDebugErr)
+			}
+			fmt.Println("map CodeFiles save path error.")
+			fmt.Println("ScanPath:", scanPath)
+			fmt.Println("CodeFiles Dirpath:", dirPath)
+			continue
+		}
+
+		outDir := filepath.Join(outPathPrefix, relativePath)
+
+		// 2.FOR Files
+		codefiles.Each(func(code CodeFile) bool {
+			// 3. source code check
+			if !code.PrivateCode {
+				outPath := filepath.Join(outDir, code.FileCont.FileInfo().Name())
+
+				err := code.FileCont.WriteFilepath(outPath)
+
+				if nil != err && nil != fileFunc {
+					fileFunc(code.FileCont.path, ResultFileOutFail)
+				}
+			}
+
+			//	TODO 下一步操作解析markdown
+
+			// 4. parse Preview and CodeBlock
+			if !code.PrivateDoc {
+
+			}
+			return true
+		})
+
+		// 5.output markdown
+	}
 }
 
 /**
@@ -444,7 +548,7 @@ func scanFiles(config *MainConfig, fileFunc FileResultFunc) (
 		}
 
 		//  无法找到后缀视为无效文件
-		if 0 >= strings.LastIndex(".", fileName) {
+		if 0 >= strings.LastIndex(fileName, ".") {
 			return callFileFunc(path, ResultFileInvalid)
 		}
 
@@ -470,7 +574,7 @@ func scanFiles(config *MainConfig, fileFunc FileResultFunc) (
 		defer file.Close()
 
 		//  在特定的字节数查询换行符号，如果未查询到换行符就判定为无效的文件
-		firstLineBuf := make([]byte, 4096*2)
+		firstLineBuf := make([]byte, 1024) //4096
 		rn, readErr := file.Read(firstLineBuf)
 
 		if -1 >= rn || nil != readErr {
@@ -494,13 +598,15 @@ func scanFiles(config *MainConfig, fileFunc FileResultFunc) (
 			if 0 < bytes.Index(privateTag, TagPrivateDoc) {
 				isPDoc = true
 			}
+			// remove private tag
+			firstLine = bytes.Replace(firstLine, privateTag, nil, 1)
 		}
 		if isPCode && isPDoc {
 			return callFileFunc(path, ResultFileFilter)
 		}
 
 		//  handle file content bytes
-		fileBytes, rFileErr := readFile(file, info.Size())
+		fileBytes, rFileErr := readFile(firstLine, file, info.Size())
 		if nil != rFileErr {
 			return callFileFunc(path, ResultFileReadErr)
 		}
@@ -553,10 +659,11 @@ func scanFiles(config *MainConfig, fileFunc FileResultFunc) (
 /**
  *  read file bytes
  *
+ *  @param `beforeReadData` append before read data
  *  @param `r`
  *  @param `fileSize`
  */
-func readFile(r io.Reader, fileSize int64) (b []byte, err error) {
+func readFile(beforeReadData []byte, r io.Reader, fileSize int64) (b []byte, err error) {
 	var capacity int64
 
 	if fileSize < 1e9 {
@@ -564,6 +671,7 @@ func readFile(r io.Reader, fileSize int64) (b []byte, err error) {
 	}
 
 	buf := bytes.NewBuffer(make([]byte, 0, capacity+bytes.MinRead))
+	buf.Write(beforeReadData)
 	defer func() {
 		e := recover()
 		if e == nil {
@@ -575,6 +683,8 @@ func readFile(r io.Reader, fileSize int64) (b []byte, err error) {
 			panic(e)
 		}
 	}()
+
 	_, err = buf.ReadFrom(r)
+
 	return buf.Bytes(), err
 }

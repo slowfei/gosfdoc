@@ -27,22 +27,30 @@ func (g *GolangParser) Name() string {
 	return GO_NAME
 }
 
-func (g *GolangParser) CheckFilepath() bool {
+/**
+ *	see DocParser interface
+ */
+func (g *GolangParser) CheckFile(path string, info os.FileInfo) bool {
 	return false
 }
 
-func (g *GolangParser) EachFile(index int, fileCont *bytes.Buffer, info os.FileInfo) {
+/**
+ *	see DocParser interface
+ */
+func (g *GolangParser) EachIndexFile(filebuf *gosfdoc.FileBuf) {
 
 }
 
-func (g *GolangParser) ParseDoc(fileCont *bytes.Buffer) []gosfdoc.Document {
-	return nil
-}
-
+/**
+ *	see DocParser interface
+ */
 func (g *GolangParser) ParsePreview(fileCont *bytes.Buffer) []gosfdoc.Preview {
 	return nil
 }
 
+/**
+ *	see DocParser interface
+ */
 func (g *GolangParser) ParseCodeblock(fileCont *bytes.Buffer) []gosfdoc.CodeBlock {
 	return nil
 }
