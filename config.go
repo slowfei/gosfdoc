@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-16
-//  Update on 2014-09-19
+//  Update on 2014-09-25
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -28,6 +28,7 @@ var (
     "ScanPath"         : %#v,
     "CodeLang"         : [%v],
     "Outdir"           : "doc",
+    "OutAppendPath"    : "",
     "CopyCode"         : false,
     "HtmlTitle"        : "Document",
     "DocTitle"         : "<b>Document:</b>",
@@ -42,16 +43,42 @@ var (
  *  output `gosfdoc.json` use
  */
 type MainConfig struct {
-	path        string            // private handle path, save console command path.
-	ScanPath    string            // scan document info file path, relative or absolute path, is "/" scan current console path.
-	CodeLang    []string          // code languages
-	Outdir      string            // output document directory
-	CopyCode    bool              // whether output source code to document directory
-	HtmlTitle   string            // document html show title
-	DocTitle    string            // html top tabbar show title
-	MenuTitle   string            // html left menu show title
-	Languages   map[string]string // document support the language. key is lang dirctory name, value is show text
-	FilterPaths []string          // filter path, relative or absolute path
+	path          string            // private handle path, save console command path.
+	ScanPath      string            // scan document info file path, relative or absolute path, is "/" scan current console path.
+	CodeLang      []string          // code languages
+	Outdir        string            // output document directory
+	OutAppendPath string            // append output source code and markdown relative path(scan path join). defalut ""
+	CopyCode      bool              // whether output source code to document directory
+	HtmlTitle     string            // document html show title
+	DocTitle      string            // html top tabbar show title
+	MenuTitle     string            // html left menu show title
+	Languages     map[string]string // document support the language. key is lang dirctory name, value is show text
+	FilterPaths   []string          // filter path, relative or absolute path
+}
+
+/**
+ *	set absolute path
+ */
+func (mc *MainConfig) setAbspath() {
+
+	mc.path = SFFileManager.GetCmdDir()
+
+	if 0 == len(mc.ScanPath) || "/" == mc.ScanPath {
+		mc.ScanPath = mc.path
+	} else if !filepath.IsAbs(mc.ScanPath) {
+		mc.ScanPath = filepath.Join(mc.path, mc.ScanPath)
+	}
+
+	if !filepath.IsAbs(mc.Outdir) {
+		mc.Outdir = filepath.Join(mc.ScanPath, mc.Outdir)
+	}
+
+	for i := 0; i < len(mc.FilterPaths); i++ {
+		p := mc.FilterPaths[i]
+		if !filepath.IsAbs(p) {
+			mc.FilterPaths[i] = filepath.Join(mc.ScanPath, p)
+		}
+	}
 }
 
 /**
@@ -71,11 +98,6 @@ func (mc *MainConfig) Check() (error, bool) {
 		errBuf.WriteString("ScanPath: please set document scan path.\n")
 		pass = false
 	}
-	if "/" == mc.ScanPath {
-		mc.ScanPath = mc.path
-	} else if !filepath.IsAbs(mc.ScanPath) {
-		mc.ScanPath = filepath.Join(mc.path, mc.ScanPath)
-	}
 
 	if 0 == len(mc.CodeLang) {
 		errBuf.WriteString("CodeLang: specify code language type nil.\n")
@@ -93,10 +115,6 @@ func (mc *MainConfig) Check() (error, bool) {
 	if 0 == len(mc.Outdir) {
 		errBuf.WriteString("Outdir: output directory is nil, will use 'doc' default directory.\n")
 		mc.Outdir = "doc"
-	}
-
-	if !filepath.IsAbs(mc.Outdir) {
-		mc.Outdir = filepath.Join(mc.path, mc.Outdir)
 	}
 
 	if 0 == len(mc.HtmlTitle) {
@@ -127,15 +145,6 @@ func (mc *MainConfig) Check() (error, bool) {
 	var err error = nil
 	if 0 != errBuf.Len() {
 		err = errors.New(errBuf.String())
-	}
-
-	if pass {
-		for i := 0; i < len(mc.FilterPaths); i++ {
-			p := mc.FilterPaths[i]
-			if !filepath.IsAbs(p) {
-				mc.FilterPaths[i] = filepath.Join(mc.ScanPath, p)
-			}
-		}
 	}
 
 	return err, pass
