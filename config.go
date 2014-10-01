@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-16
-//  Update on 2014-09-25
+//  Update on 2014-09-30
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -21,15 +21,17 @@ import (
 
 const (
 	DEFAULT_CONFIG_FILE_NAME = "gosfdoc.json"
+	DEFAULT_OUTPATH          = "doc"
 )
 
 var (
 	_gosfdocConfigJson = `{
     "ScanPath"         : %#v,
     "CodeLang"         : [%v],
-    "Outdir"           : "doc",
+    "Outpath"          : "doc",
     "OutAppendPath"    : "",
     "CopyCode"         : false,
+    "CodeLinkRoot"     : true,
     "HtmlTitle"        : "Document",
     "DocTitle"         : "<b>Document:</b>",
     "MenuTitle"        : "<center><b>package</b></center>",
@@ -46,13 +48,14 @@ type MainConfig struct {
 	path          string            // private handle path, save console command path.
 	ScanPath      string            // scan document info file path, relative or absolute path, is "/" scan current console path.
 	CodeLang      []string          // code languages
-	Outdir        string            // output document directory
+	Outpath       string            // output document path, relative or absolute path.
 	OutAppendPath string            // append output source code and markdown relative path(scan path join). defalut ""
-	CopyCode      bool              // whether output source code to document directory
+	CopyCode      bool              // copy source code to document directory. default false
+	CodeLinkRoot  bool              // source code link to root directory, 'CopyCode' is true was invalid default true
 	HtmlTitle     string            // document html show title
 	DocTitle      string            // html top tabbar show title
 	MenuTitle     string            // html left menu show title
-	Languages     map[string]string // document support the language. key is lang dirctory name, value is show text
+	Languages     map[string]string // document support the language. key is directory name, value is show text.
 	FilterPaths   []string          // filter path, relative or absolute path
 }
 
@@ -69,8 +72,10 @@ func (mc *MainConfig) setAbspath() {
 		mc.ScanPath = filepath.Join(mc.path, mc.ScanPath)
 	}
 
-	if !filepath.IsAbs(mc.Outdir) {
-		mc.Outdir = filepath.Join(mc.ScanPath, mc.Outdir)
+	if 0 == len(mc.Outpath) {
+		mc.Outpath = filepath.Join(mc.ScanPath, DEFAULT_OUTPATH)
+	} else if !filepath.IsAbs(mc.Outpath) {
+		mc.Outpath = filepath.Join(mc.ScanPath, mc.Outpath)
 	}
 
 	for i := 0; i < len(mc.FilterPaths); i++ {
@@ -112,9 +117,9 @@ func (mc *MainConfig) Check() (error, bool) {
 		}
 	}
 
-	if 0 == len(mc.Outdir) {
+	if 0 == len(mc.Outpath) {
 		errBuf.WriteString("Outdir: output directory is nil, will use 'doc' default directory.\n")
-		mc.Outdir = "doc"
+		mc.Outpath = DEFAULT_OUTPATH
 	}
 
 	if 0 == len(mc.HtmlTitle) {
