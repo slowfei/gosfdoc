@@ -21,6 +21,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -134,25 +135,25 @@ type DocParser interface {
 	 *  each file the content
 	 *  can be create keyword index and other operations
 	 *
-	 *  @param `filebuf`    file content buf
+	 *  @param `filebuf`    file content buffer
 	 */
 	EachIndexFile(filebuf *FileBuf)
 
 	/**
 	 *  parse file preview tag
 	 *
-	 *  @param `fileCont` file content
+	 *  @param `filebuf` file content buffer
 	 *  @return slice
 	 */
-	ParsePreview(fileCont *bytes.Buffer) []Preview
+	ParsePreview(filebuf *FileBuf) []Preview
 
 	/**
 	 *  parse code block tag
 	 *
-	 *  @param `fileCont` file content
+	 *  @param `filebuf` file content buffer
 	 *  @return slice
 	 */
-	ParseCodeblock(fileCont *bytes.Buffer) []CodeBlock
+	ParseCodeblock(filebuf *FileBuf) []CodeBlock
 }
 
 /**
@@ -219,14 +220,11 @@ func readConfigFile(filepath string) (config *MainConfig, err error, pass bool) 
 }
 
 /**
- *  get source code directory svae path
+ *	create directory path
  *
- *  @param `config`
- *  @return full path
+ *	@param `path`
  */
-func dirpathSourceCode(config *MainConfig) string {
-	path := filepath.Join(config.Outdir, DIR_NAME_SOURCE_CODE)
-
+func dirpathMkall(path string) {
 	exists, isDir, err := SFFileManager.Exists(path)
 	if !exists {
 		err = os.MkdirAll(path, os.ModePerm)
@@ -238,8 +236,6 @@ func dirpathSourceCode(config *MainConfig) string {
 	} else if nil != err {
 		panic(fmt.Sprintln(path, err.Error()))
 	}
-
-	return path
 }
 
 /**
@@ -249,20 +245,9 @@ func dirpathSourceCode(config *MainConfig) string {
  *  @return full path
  */
 func dirpathMarkdownDefault(config *MainConfig) string {
-	path := filepath.Join(config.Outdir, DIR_NAME_MAIN_MARKDOWN, DIR_NAME_MARKDOWN_DEFAULT)
+	path := filepath.Join(config.Outpath, DIR_NAME_MAIN_MARKDOWN, DIR_NAME_MARKDOWN_DEFAULT)
 
-	exists, isDir, err := SFFileManager.Exists(path)
-
-	if nil != err {
-		panic(fmt.Sprintln(path, err.Error()))
-	} else if !exists {
-		err = os.MkdirAll(path, os.ModePerm)
-		if nil != err {
-			panic(fmt.Sprintln(err.Error()))
-		}
-	} else if !isDir {
-		panic(fmt.Sprintln(path, "has been occupied."))
-	}
+	dirpathMkall(path)
 
 	return path
 }
@@ -389,7 +374,7 @@ func OutputWithConfig(config *MainConfig, fileFunc FileResultFunc) (error, bool)
 		return scanErr, false
 	}
 
-	// output markdown defualt directory path
+	// markdown defualt directory path
 	mdDefaultPath := dirpathMarkdownDefault(config)
 
 	//  output content.json
@@ -439,14 +424,22 @@ func OutputWithConfig(config *MainConfig, fileFunc FileResultFunc) (error, bool)
 func codeFilesOut(config *MainConfig, files map[string]*CodeFiles, fileFunc FileResultFunc) {
 
 	scanPath := config.ScanPath
-	outPathPrefix := filepath.Join(scanPath, config.OutAppendPath)
+	appendPath := config.OutAppendPath
+
+	//	source code ouput path operation
+	//	projectroot/doc/src/[appendpath/main.go]
+	isLinkRoot := config.CodeLinkRoot
+	outCodeDir := ""
+	if config.CopyCode {
+		outCodeDir = filepath.Join(config.Outpath, DIR_NAME_SOURCE_CODE)
+	}
 
 	// 1.FOR Directory
 	for dirPath, codefiles := range files {
-		relativePath := ""
+		relativeDirPath := ""
 
 		if 0 == strings.Index(dirPath, scanPath) {
-			relativePath = dirPath[:len(scanPath)]
+			relativeDirPath = dirPath[len(scanPath):]
 		} else {
 			if nil != fileFunc {
 				fileFunc(dirPath, ResultDebugErr)
@@ -457,31 +450,72 @@ func codeFilesOut(config *MainConfig, files map[string]*CodeFiles, fileFunc File
 			continue
 		}
 
-		outDir := filepath.Join(outPathPrefix, relativePath)
+		//	append custom path prefix
+		relativeDirPath = filepath.Join(appendPath, relativeDirPath)
+
+		previews := make([]Preview, 0, 0)
+		blocks := make([]CodeBlock, 0, 0)
+		documents := make([]Document, 0, 0)
+		filesName := make([]string, 0, codefiles.files.Len())
 
 		// 2.FOR Files
 		codefiles.Each(func(code CodeFile) bool {
 			// 3. source code check
 			if !code.PrivateCode {
-				outPath := filepath.Join(outDir, code.FileCont.FileInfo().Name())
+				switch code.parser.(type) {
+				case *nilDocParser:
+				default:
+					var outErr error = nil
+					fileName := code.FileCont.FileInfo().Name()
 
-				err := code.FileCont.WriteFilepath(outPath)
+					if 0 != len(outCodeDir) {
+						outPath := filepath.Join(outCodeDir, relativeDirPath, fileName)
+						outErr = code.FileCont.WriteFilepath(outPath)
+					}
 
-				if nil != err && nil != fileFunc {
-					fileFunc(code.FileCont.path, ResultFileOutFail)
+					if nil == outErr {
+						if 0 != len(outCodeDir) || isLinkRoot {
+							filesName = append(filesName, fileName)
+						}
+					} else if nil != fileFunc {
+						fileFunc(code.FileCont.path, ResultFileOutFail)
+					}
 				}
 			}
 
-			//	TODO 下一步操作解析markdown
-
-			// 4. parse Preview and CodeBlock
+			// 4. parse Preview and CodeBlock and Document
 			if !code.PrivateDoc {
+				ps := code.parser.ParsePreview(code.FileCont)
+				bs := code.parser.ParseCodeblock(code.FileCont)
 
+				if 0 != len(ps) {
+					previews = append(previews, ps...)
+				}
+
+				if 0 != len(bs) {
+					blocks = append(blocks, bs...)
+				}
+
+				if 0 != len(code.docs) {
+					documents = append(documents, code.docs...)
+				}
 			}
 			return true
 		})
 
+		//
+		sort.Sort(SortSet{previews: previews})
+		sort.Sort(SortSet{codeBlocks: blocks})
+		sort.Sort(SortSet{documents: documents})
+
 		// 5.output markdown
+		mdBytes := ParseMarkdown(documents, previews, blocks, filesName, relativeDirPath)
+		if 0 != len(mdBytes) {
+
+		}
+
+		//	TODO 等待ParseMarkdown 然后输出文件
+
 	}
 }
 
@@ -535,7 +569,7 @@ func scanFiles(config *MainConfig, fileFunc FileResultFunc) (
 		}
 
 		// filter document output dir
-		if 0 == strings.Index(path, config.Outdir) {
+		if 0 == strings.Index(path, config.Outpath) {
 			return callFileFunc(path, ResultFileFilter)
 		}
 
