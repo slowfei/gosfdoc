@@ -2,9 +2,50 @@ package gosfdoc
 
 import (
 	"bytes"
+	"fmt"
+	"sort"
 	"strings"
 	"testing"
 )
+
+func TestParseMarkdown(t *testing.T) {
+	count := 3
+
+	docs := make([]Document, count, count)
+	pres := make([]Preview, count, count)
+	blocks := make([]CodeBlock, count, count)
+
+	for i := 1; i <= count; i++ {
+		doc := Document{}
+		doc.SortTag = i
+		doc.Title = fmt.Sprintf("Document_title_%d", i)
+		doc.Content = fmt.Sprintf("\ndocument markdown syntax content %d\n", i)
+		docs[i-1] = doc
+
+		pre := Preview{}
+		//	TODO
+		pres[i-1] = pre
+	}
+}
+
+/**
+ *
+ */
+func TestSortSet(t *testing.T) {
+	pres := make([]Preview, 5, 5)
+
+	pres[0] = Preview{SortTag: "4"}
+	pres[1] = Preview{SortTag: "2"}
+	pres[2] = Preview{SortTag: "5"}
+	pres[3] = Preview{SortTag: "3"}
+	pres[4] = Preview{SortTag: "1"}
+
+	sort.Sort(SortSet{previews: pres})
+
+	if "1" != pres[0].SortTag {
+		t.Fail()
+	}
+}
 
 /**
  *
@@ -31,7 +72,7 @@ func test2(){
 
 `
 
-	documents := ParseDocument(NewFileBuf([]byte(strTest), nil))
+	documents := ParseDocument(NewFileBuf([]byte(strTest), "", nil, nil))
 
 	if 3 != len(documents) {
 		t.Fatalf("3 != len(documents)")
@@ -116,7 +157,7 @@ func test3(){
 func test5(){
 }
     `
-	bf := NewFileBuf([]byte(str), REXPrivateBlock)
+	bf := NewFileBuf([]byte(str), "", nil, REXPrivateBlock)
 
 	if bf.String() != strResult {
 		t.Fatalf("private block replace failed.")
@@ -180,18 +221,18 @@ temp
  }
 `
 
-	newBuf := ParseAbout(NewFileBuf([]byte(strTest), nil))
-	lineNumber := len(bytes.Split(newBuf, []byte("\n")))
+	newBuf := ParseAbout(NewFileBuf([]byte(strTest), "", nil, nil))
+	lineNumber := len(bytes.Split(newBuf.Content, []byte("\n")))
 
 	if 15 != lineNumber {
-		t.Log(string(newBuf))
+		t.Log(string(newBuf.Content))
 		t.Fatal("About: Target Line 14, parse Line error:", lineNumber)
 	}
 
-	newBuf = ParseIntro(NewFileBuf([]byte(strTest), nil))
-	lineNumber = len(bytes.Split(newBuf, []byte("\n")))
+	newBuf2 := ParseIntro(NewFileBuf([]byte(strTest), "", nil, nil))
+	lineNumber = len(bytes.Split(newBuf2.Content, []byte("\n")))
 	if 5 != lineNumber {
-		t.Log(string(newBuf))
+		t.Log(string(newBuf2.Content))
 		t.Fatal("Intro: Target Line 5, parse Line error:", lineNumber)
 	}
 

@@ -15,5 +15,14 @@
 			{"Name":"github.com/slowfei/gosfdoc","Desc":"gosfdoc document generator"},
 			{"Name":"github.com/slowfei/leafveingo","Desc":"golang web framework"}
 		]
-	}
+	},
+
+    "Files":{
+        "/":[
+            {"Filename":"gosfdoc.go"}
+        ],
+        "/router/":[
+            {"Filename":"temp.go"}
+        ]
+    }
 }
