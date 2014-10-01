@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-22
-//  Update on 2014-09-19
+//  Update on 2014-09-27
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -287,21 +287,82 @@ type Document struct {
  *  preview struct info
  */
 type Preview struct {
-	SortTag  int       // sort tag
-	ShowText string    // show plain text
-	Anchor   string    // preferably unique, with the func link
-	DescText string    // markdown brief description or implement objects, can empty.
-	Children []Preview //
+	SortTag  string // sort tag
+	Level    int    // hierarchy level show. 0 is >, 1 is >>, 3 is >>> ...(markdown syntax)
+	ShowText string // show plain text
+	Anchor   string // preferably unique, with the func link
+	DescText string // markdown brief description or implement objects, can empty.
 }
 
 /**
  *  body code block struct
  */
 type CodeBlock struct {
-	SortTag    int    // sort tag
-	Title      string // function name or custom title
-	Desc       string // description markdown text or plain text
-	Code       string // show code text
-	SourceLink string // source code link text
-	Anchor     string // function anchor text. with the Preview link
+	SortTag        string // sort tag
+	MenuTitle      string // left navigation menu title
+	Title          string // function name or custom title
+	Anchor         string // function anchor text.
+	Desc           string // description markdown text or plain text
+	Code           string // show code text
+	CodeLang       string // source code lang type string
+	SourceFileName string // source code file name
+	FileLines      []int  // block where the file line [5,10] is L5-L10
+}
+
+/**
+ *	Preview,CodeBlock,Document sort implement
+ */
+type SortSet struct {
+	previews   []Preview
+	documents  []Document
+	codeBlocks []CodeBlock
+}
+
+/**
+ *	sort Len() implement
+ */
+func (s SortSet) Len() int {
+
+	if 0 != len(s.previews) {
+		return len(s.previews)
+	} else if 0 != len(s.documents) {
+		return len(s.documents)
+	} else if 0 != len(s.codeBlocks) {
+		return len(s.codeBlocks)
+	} else {
+		return 0
+	}
+
+}
+
+/**
+ *	sort Less(...) implement
+ */
+func (s SortSet) Less(i, j int) bool {
+
+	if 0 != len(s.previews) {
+		return s.previews[i].SortTag < s.previews[j].SortTag
+	} else if 0 != len(s.documents) {
+		return s.documents[i].SortTag < s.documents[j].SortTag
+	} else if 0 != len(s.codeBlocks) {
+		return s.codeBlocks[i].SortTag < s.codeBlocks[j].SortTag
+	} else {
+		return false
+	}
+
+}
+
+/**
+ *	sort Swap(...) implement
+ */
+func (s SortSet) Swap(i, j int) {
+
+	if 0 != len(s.previews) {
+		s.previews[i], s.previews[j] = s.previews[j], s.previews[i]
+	} else if 0 != len(s.documents) {
+		s.documents[i], s.documents[j] = s.documents[j], s.documents[i]
+	} else if 0 != len(s.codeBlocks) {
+		s.codeBlocks[i], s.codeBlocks[j] = s.codeBlocks[j], s.codeBlocks[i]
+	}
+
 }
