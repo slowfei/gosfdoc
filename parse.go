@@ -12,16 +12,17 @@ package gosfdoc
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/slowfei/gosfcore/utils/strings"
-	"regexp"
-	// "fmt"
 	"os"
+	"regexp"
 	"strings"
 )
 
 const (
 	DOC_FILE_SUFFIX = ".dc"      // document file suffix(document comments)
 	NIL_DOC_NAME    = "document" // nilDocParser struct use
+
 )
 
 var (
@@ -72,15 +73,155 @@ func (n *nilDocParser) EachIndexFile(filebuf *FileBuf) {
 /**
  *	see DocParser interface
  */
-func (n *nilDocParser) ParsePreview(fileCont *bytes.Buffer) []Preview {
+func (n *nilDocParser) ParsePreview(filebuf *FileBuf) []Preview {
 	return nil
 }
 
 /**
  *	see DocParser interface
  */
-func (n *nilDocParser) ParseCodeblock(fileCont *bytes.Buffer) []CodeBlock {
+func (n *nilDocParser) ParseCodeblock(filebuf *FileBuf) []CodeBlock {
 	return nil
+}
+
+/**
+ *	prese Preview Document CodeBlock array to markdown
+ *
+ *	@param `documents` after sorting
+ *	@param `previews`  after sorting
+ *	@param `blocks`	   after sorting
+ *	@param `filesName` file names
+ *	@param `relPath`   before code file name join path
+ *	@return bytes
+ */
+func ParseMarkdown(documents []Document, previews []Preview, blocks []CodeBlock,
+	filesName []string, relPath string) []byte {
+
+	relPath = strings.TrimPrefix(relPath, "/")
+	relPath = strings.TrimSuffix(relPath, "/")
+	joinSymbol := ""
+	if 0 != len(relPath) {
+		joinSymbol = "/"
+	}
+
+	buf := bytes.NewBuffer([]byte{'\n'})
+
+	for _, doc := range documents {
+		// ## Welcome to gosfdoc
+		// ------
+		//
+		// markdown syntax content
+		//
+		buf.WriteString("## " + doc.Title + "\n------\n")
+		buf.WriteString(doc.Content)
+		buf.WriteByte('\n')
+	}
+
+	if 0 != len(previews) {
+		// ## Preview
+		// ------
+		// > [func Main()][#]<br/>
+		// > [type TestStruct struct][#]<br/>
+		// > implements: [Test][#]<br/>
+		// >>[func (* TestStruct) hello(str string) string](#func_TestStruct.hello)<a name="preview_TestStruct.hello"><a/><br/>
+		// >>[func (* TestStruct) hello2() string][#]<br/>
+		buf.WriteString("## Preview\n------\n")
+		for _, pre := range previews {
+			angle := ">"
+			for i := 0; i < pre.Level; i++ {
+				angle += ">"
+			}
+
+			if 0 == len(pre.Anchor) {
+				pre.Anchor = "(javascript:;)"
+				// [show text](javascript:;)
+			} else {
+				pre.Anchor = fmt.Sprintf("(#f_%s)<a name=\"p_%s\"><a/><br/>", pre.Anchor, pre.Anchor)
+				// [show test](#f_anchor)<a name="p_anchor"><a/><br/>
+			}
+			buf.WriteString(angle + " [" + pre.ShowText + "]" + pre.Anchor)
+			buf.WriteByte('\n')
+		}
+		buf.WriteByte('\n')
+	}
+
+	// out associate files
+	if 0 != len(filesName) {
+		// ###Package files
+		// [a.go](#) [b.go](#) [c.go](#)
+		buf.WriteString("### Directory files\n")
+		for _, name := range filesName {
+			joinPath := relPath + joinSymbol + name
+			buf.WriteString(fmt.Sprintf("[%s](%s) ", name, joinPath))
+		}
+		buf.WriteByte('\n')
+	}
+
+	if 0 != len(blocks) {
+		isLinkCode := 0 != len(filesName)
+		// ## Func Details
+		// ------
+		// ###[func (*TestStruct) hello](src.html?f=gosfdoc.go#L17) <a name="func_TestStruct.hello"><a/> [↩](#preview_TestStruct.hello)|[#](#func_TestStruct.hello)
+		// > 函数介绍描述<br/>
+		// > <br/>
+		// > @param `str` 字符串传递<br/>
+		// > @return `v1` 返回参数v1<br/>
+		// > @return v2 返回参数v2<br/>
+		//
+		// ```go
+		// func (* TestStruct) hello(str string) (v1,v2 string)
+		// ```
+		currentMenuTitle := ""
+
+		for _, block := range blocks {
+
+			if 0 != len(block.MenuTitle) && currentMenuTitle != block.MenuTitle {
+				buf.WriteString("## " + block.MenuTitle + "\n------\n")
+				currentMenuTitle = block.MenuTitle
+			}
+
+			if 0 != len(block.Title) {
+				joinPath := "javascript:;"
+				if isLinkCode && 0 != len(block.SourceFileName) {
+					lineStr := ""
+
+					lineLen := len(block.FileLines)
+					if 1 == lineLen {
+						lineStr = fmt.Sprintf("#L%d", block.FileLines[0])
+					} else if 2 == lineLen {
+						lineStr = fmt.Sprintf("#L%d-L%d", block.FileLines[0], block.FileLines[1])
+					}
+
+					joinPath = "src.html?f=" + relPath + joinSymbol + block.SourceFileName + lineStr
+				}
+
+				anchor := ""
+				if 0 != len(block.Anchor) {
+					anchor = fmt.Sprintf("<a name=\"f_%s\"><a/> [↩](#p_%s) | [#](#f_%s)", block.Anchor, block.Anchor, block.Anchor)
+				}
+
+				buf.WriteString(fmt.Sprintf("### [%s](%s) %s", block.Title, joinPath, anchor))
+				buf.WriteByte('\n')
+			}
+
+			if 0 != len(block.Desc) {
+				//	content description
+				descLines := strings.Split(block.Desc, "\n")
+				for _, desc := range descLines {
+					buf.WriteString(fmt.Sprintf("> %s<br/>", desc))
+				}
+				buf.WriteByte('\n')
+			}
+
+			// code
+			if 0 != len(block.Code) {
+				buf.WriteString(fmt.Sprintf("```%s\n%s\n```\n", block.CodeLang, block.Code))
+				buf.WriteByte('\n')
+			}
+
+		}
+	}
+	return buf.Bytes()
 }
 
 /**
