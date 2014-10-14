@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-16
-//  Update on 2014-09-19
+//  Update on 2014-10-07
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -19,6 +19,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -32,6 +33,8 @@ const (
 	DIR_NAME_MAIN_MARKDOWN    = "md"      // save markdown file main directory name
 	DIR_NAME_MARKDOWN_DEFAULT = "default" // markdown default directory
 	DIR_NAME_SOURCE_CODE      = "src"     // source code save directory
+
+	FILE_SUFFIX_MARKDOWN = ".md"
 
 	FILE_NAME_ABOUT_MD     = "about.md"
 	FILE_NAME_INTRO_MD     = "intro.md"
@@ -154,6 +157,15 @@ type DocParser interface {
 	 *  @return slice
 	 */
 	ParseCodeblock(filebuf *FileBuf) []CodeBlock
+
+	/**
+	 *	parse directory package info
+	 *	each file directory parse string join
+	 *
+	 *	@param `filebuf`
+	 *	@return string file parse the only string
+	 */
+	ParsePackageInfo(filebuf *FileBuf) string
 }
 
 /**
@@ -304,8 +316,22 @@ func CreateConfigFile(dirPath string, langs []string) (error, bool) {
 			codeLangs = codeLangs[:len(codeLangs)-1]
 		}
 
+		cmdDir := SFFileManager.GetCmdDir()
+		appendPath := filepath.Base(cmdDir)
+
+		//	考虑到如果没有项目名称，base获取的是src追加的路径则为空
+		//	$GOPATH/src
+		//	$GOPATH/src/projectname
+		if "src" == appendPath {
+			appendPath = ""
+		}
+
 		// 将指定的语言保存进默认配置信息中。
-		defaultConfigText := fmt.Sprintf(_gosfdocConfigJson, SFFileManager.GetCmdDir(), codeLangs)
+		// 默认初始值：
+		//	ScanPath = command directory
+		//	CodeLang = implement parser the code language
+		//	OutAppendPath = command directory base name
+		defaultConfigText := fmt.Sprintf(_gosfdocConfigJson, cmdDir, codeLangs, filepath.Base(cmdDir))
 
 		fileErr := ioutil.WriteFile(filePath, []byte(defaultConfigText), 0660)
 		if nil != fileErr {
@@ -407,8 +433,11 @@ func OutputWithConfig(config *MainConfig, fileFunc FileResultFunc) (error, bool)
 		fileFunc(introPath, ResultFileOutFail)
 	}
 
-	//
-	codeFilesOut(config, files, fileFunc)
+	// output source code file and markdown document file
+	outCodeFiles(config, files, fileFunc)
+
+	// output html assets file
+	outAssets(config, fileFunc)
 
 	return nil, true
 }
@@ -420,8 +449,9 @@ func OutputWithConfig(config *MainConfig, fileFunc FileResultFunc) (error, bool)
  *	@param `config`
  *	@param `files`
  *	@param `fileFunc`
+ *	@return []PackageInfo
  */
-func codeFilesOut(config *MainConfig, files map[string]*CodeFiles, fileFunc FileResultFunc) {
+func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, fileFunc FileResultFunc) []PackageInfo {
 
 	scanPath := config.ScanPath
 	appendPath := config.OutAppendPath
@@ -434,8 +464,13 @@ func codeFilesOut(config *MainConfig, files map[string]*CodeFiles, fileFunc File
 		outCodeDir = filepath.Join(config.Outpath, DIR_NAME_SOURCE_CODE)
 	}
 
+	//	markdown file save directory
+	mdDir := dirpathMarkdownDefault(config)
+	packInfos := make([]PackageInfo, 0, len(files))
+
 	// 1.FOR Directory
 	for dirPath, codefiles := range files {
+		fileLen := codefiles.files.Len()
 		relativeDirPath := ""
 
 		if 0 == strings.Index(dirPath, scanPath) {
@@ -456,7 +491,8 @@ func codeFilesOut(config *MainConfig, files map[string]*CodeFiles, fileFunc File
 		previews := make([]Preview, 0, 0)
 		blocks := make([]CodeBlock, 0, 0)
 		documents := make([]Document, 0, 0)
-		filesName := make([]string, 0, codefiles.files.Len())
+		filesName := make([]string, 0, fileLen)
+		packStrList := make([]string, 0, fileLen)
 
 		// 2.FOR Files
 		codefiles.Each(func(code CodeFile) bool {
@@ -471,6 +507,9 @@ func codeFilesOut(config *MainConfig, files map[string]*CodeFiles, fileFunc File
 					if 0 != len(outCodeDir) {
 						outPath := filepath.Join(outCodeDir, relativeDirPath, fileName)
 						outErr = code.FileCont.WriteFilepath(outPath)
+						if nil == outErr && nil != fileFunc {
+							fileFunc(outPath, ResultFileSuccess)
+						}
 					}
 
 					if nil == outErr {
@@ -500,6 +539,13 @@ func codeFilesOut(config *MainConfig, files map[string]*CodeFiles, fileFunc File
 					documents = append(documents, code.docs...)
 				}
 			}
+
+			// 5. parse package info
+			packInfo := code.parser.ParsePackageInfo(code.FileCont)
+			if 0 != len(packInfo) {
+				packStrList = append(packStrList, packInfo)
+			}
+
 			return true
 		})
 
@@ -511,12 +557,55 @@ func codeFilesOut(config *MainConfig, files map[string]*CodeFiles, fileFunc File
 		// 5.output markdown
 		mdBytes := ParseMarkdown(documents, previews, blocks, filesName, relativeDirPath)
 		if 0 != len(mdBytes) {
+			//	markdown file name is directory base name + suffix
+			mdFileName := filepath.Base(dirPath) + FILE_SUFFIX_MARKDOWN
+			outPath := filepath.Join(mdDir, relativeDirPath, mdFileName)
 
+			err := SFFileManager.WirteFilepath(outPath, mdBytes)
+			result := ResultFileSuccess
+
+			if nil != err {
+				result = ResultFileOutFail
+			} else {
+				info := PackageInfo{}
+				info.Name = path.Join(relativeDirPath, mdFileName)
+
+				joinStr := strings.Join(packStrList, ";")
+				newStr := strings.Replace(joinStr, "\n", ", ", -1)
+				info.Desc = newStr
+
+				packInfos = append(packInfos)
+			}
+
+			if nil != fileFunc {
+				fileFunc(outPath, result)
+			}
 		}
 
-		//	TODO 等待ParseMarkdown 然后输出文件
+	} // end for dirPath, codefiles := range files
 
-	}
+	return packInfos
+}
+
+/**
+ *
+ */
+func outAssets(config *MainConfig, fileFunc FileResultFunc) {
+	//	TODO
+}
+
+/**
+ *	TODO
+ */
+func outHTML() {
+
+}
+
+/**
+ *	TODO
+ */
+func outHTMLConfig() {
+
 }
 
 /**
