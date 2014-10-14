@@ -1,7 +1,10 @@
 {
+    "ScanPath"         : "",
     "CodeLang"         : ["go"],
-    "Outdir"           : "doc",
+    "Outpath"          : "doc",
+    "OutAppendPath"    : "",
     "CopyCode"         : false,
+    "CodeLinkRoot"     : true,
     "HtmlTitle"        : "Document",
     "DocTitle"         : "<b>Github:</b> gosfdoc.json set DocTitle",
     "MenuTitle"        : "<center><b>package</b></center>",
