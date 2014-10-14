@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-09-10
-//  Update on 2014-09-23
+//  Update on 2014-10-07
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -85,6 +85,13 @@ func (n *nilDocParser) ParseCodeblock(filebuf *FileBuf) []CodeBlock {
 }
 
 /**
+ *	see DocParser interface
+ */
+func (n *nilDocParser) ParsePackageInfo(filebuf *FileBuf) string {
+	return ""
+}
+
+/**
  *	prese Preview Document CodeBlock array to markdown
  *
  *	@param `documents` after sorting
@@ -127,20 +134,26 @@ func ParseMarkdown(documents []Document, previews []Preview, blocks []CodeBlock,
 		// >>[func (* TestStruct) hello2() string][#]<br/>
 		buf.WriteString("## Preview\n------\n")
 		for _, pre := range previews {
+			buf.WriteByte('\n')
 			angle := ">"
 			for i := 0; i < pre.Level; i++ {
 				angle += ">"
 			}
 
+			anchor := ""
 			if 0 == len(pre.Anchor) {
-				pre.Anchor = "(javascript:;)"
+				anchor = "(javascript:;)"
 				// [show text](javascript:;)
 			} else {
-				pre.Anchor = fmt.Sprintf("(#f_%s)<a name=\"p_%s\"><a/><br/>", pre.Anchor, pre.Anchor)
+				anchor = fmt.Sprintf("(#f_%s)<a name=\"p_%s\"><a/>", pre.Anchor, pre.Anchor)
 				// [show test](#f_anchor)<a name="p_anchor"><a/><br/>
 			}
-			buf.WriteString(angle + " [" + pre.ShowText + "]" + pre.Anchor)
-			buf.WriteByte('\n')
+			buf.WriteString(angle + " [" + pre.ShowText + "]" + anchor + "\n")
+
+			if 0 != len(pre.DescText) {
+				buf.WriteByte('\n')
+				buf.WriteString(angle + " " + pre.DescText + "\n")
+			}
 		}
 		buf.WriteByte('\n')
 	}
@@ -149,7 +162,7 @@ func ParseMarkdown(documents []Document, previews []Preview, blocks []CodeBlock,
 	if 0 != len(filesName) {
 		// ###Package files
 		// [a.go](#) [b.go](#) [c.go](#)
-		buf.WriteString("### Directory files\n")
+		buf.WriteString("<br/>\n### Directory files\n")
 		for _, name := range filesName {
 			joinPath := relPath + joinSymbol + name
 			buf.WriteString(fmt.Sprintf("[%s](%s) ", name, joinPath))
@@ -158,6 +171,7 @@ func ParseMarkdown(documents []Document, previews []Preview, blocks []CodeBlock,
 	}
 
 	if 0 != len(blocks) {
+		buf.WriteByte('\n')
 		isLinkCode := 0 != len(filesName)
 		// ## Func Details
 		// ------
@@ -200,25 +214,24 @@ func ParseMarkdown(documents []Document, previews []Preview, blocks []CodeBlock,
 					anchor = fmt.Sprintf("<a name=\"f_%s\"><a/> [↩](#p_%s) | [#](#f_%s)", block.Anchor, block.Anchor, block.Anchor)
 				}
 
-				buf.WriteString(fmt.Sprintf("### [%s](%s) %s", block.Title, joinPath, anchor))
-				buf.WriteByte('\n')
+				buf.WriteString(fmt.Sprintf("### [%s](%s) %s\n", block.Title, joinPath, anchor))
 			}
 
 			if 0 != len(block.Desc) {
 				//	content description
 				descLines := strings.Split(block.Desc, "\n")
 				for _, desc := range descLines {
-					buf.WriteString(fmt.Sprintf("> %s<br/>", desc))
+					buf.WriteString(fmt.Sprintf("> %s<br/>\n", desc))
 				}
 				buf.WriteByte('\n')
 			}
 
 			// code
 			if 0 != len(block.Code) {
-				buf.WriteString(fmt.Sprintf("```%s\n%s\n```\n", block.CodeLang, block.Code))
-				buf.WriteByte('\n')
+				buf.WriteString(fmt.Sprintf("\n```%s\n%s\n```\n\n", block.CodeLang, block.Code))
 			}
 
+			buf.WriteByte('\n')
 		}
 	}
 	return buf.Bytes()
