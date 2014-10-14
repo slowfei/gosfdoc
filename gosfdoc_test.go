@@ -11,21 +11,62 @@ import (
 func TestParseMarkdown(t *testing.T) {
 	count := 3
 
-	docs := make([]Document, count, count)
-	pres := make([]Preview, count, count)
-	blocks := make([]CodeBlock, count, count)
+	relPath := ""
+	filesName := []string{"main.go"}
+	docs := make([]Document, 0, count)
+	pres := make([]Preview, 0, count)
+	blocks := make([]CodeBlock, 0, count)
 
 	for i := 1; i <= count; i++ {
 		doc := Document{}
 		doc.SortTag = i
 		doc.Title = fmt.Sprintf("Document_title_%d", i)
 		doc.Content = fmt.Sprintf("\ndocument markdown syntax content %d\n", i)
-		docs[i-1] = doc
+		docs = append(docs, doc)
 
 		pre := Preview{}
-		//	TODO
-		pres[i-1] = pre
+		pre.Level = 0
+		pre.ShowText = fmt.Sprintf("type TestStruct%d struct", i)
+		pre.Anchor = fmt.Sprintf("temp.TestStruct%d", i)
+		pre.DescText = "implements: [Test](javascript:;)"
+		pres = append(pres, pre)
+
+		pre2 := Preview{}
+		pre2.Level = 1
+		pre2.ShowText = fmt.Sprintf("func (* TestStruct) Hello%d(str string) string", i)
+		pre2.Anchor = fmt.Sprintf("temp.TestStruct.Hello%d", i)
+		pres = append(pres, pre2)
+
+		pre3 := Preview{}
+		pre3.Level = 1
+		pre3.ShowText = fmt.Sprintf("func (* TestStruct) Hello2_%d(str string) string", i)
+		pre3.Anchor = fmt.Sprintf("temp.TestStruct.Hello2_%d", i)
+		pres = append(pres, pre3)
+
+		block := CodeBlock{}
+		block.Title = fmt.Sprintf("type TestStruct%d struct", i)
+		block.Anchor = fmt.Sprintf("temp.TestStruct%d", i)
+		block.Desc = `
+函数介绍描述
+
+@param 'v1' 字符串传递
+@param 'v2' 字符串传递
+@return
+		`
+		block.Code = `
+type TestStruct struct{
+	temp string
+}
+`
+		block.CodeLang = "go"
+		block.MenuTitle = "Func Details"
+		block.SourceFileName = "main.go"
+		block.FileLines = []int{10, 20}
+		blocks = append(blocks, block)
 	}
+
+	body := ParseMarkdown(docs, pres, blocks, filesName, relPath)
+	t.Log(string(body))
 }
 
 /**
