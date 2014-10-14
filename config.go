@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-16
-//  Update on 2014-09-30
+//  Update on 2014-10-10
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -29,7 +29,7 @@ var (
     "ScanPath"         : %#v,
     "CodeLang"         : [%v],
     "Outpath"          : "doc",
-    "OutAppendPath"    : "",
+    "OutAppendPath"    : %#v,
     "CopyCode"         : false,
     "CodeLinkRoot"     : true,
     "HtmlTitle"        : "Document",
@@ -117,8 +117,21 @@ func (mc *MainConfig) Check() (error, bool) {
 		}
 	}
 
+	if 0 != len(mc.OutAppendPath) && filepath.IsAbs(mc.OutAppendPath) {
+		errBuf.WriteString("OutAppendPath: please use relative path.\n")
+
+		//	这里主要怕效验不通过后强制执行，所以强行修改默认的OutAppendPath
+		tempPath := filepath.Base(mc.path)
+		if "src" == tempPath {
+			tempPath = ""
+		}
+		mc.OutAppendPath = tempPath
+
+		pass = false
+	}
+
 	if 0 == len(mc.Outpath) {
-		errBuf.WriteString("Outdir: output directory is nil, will use 'doc' default directory.\n")
+		errBuf.WriteString("Outpath: output directory is nil, will use 'doc' default directory.\n")
 		mc.Outpath = DEFAULT_OUTPATH
 	}
 
