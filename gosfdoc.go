@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-16
-//  Update on 2014-10-07
+//  Update on 2014-10-29
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -16,6 +16,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/slowfei/gosfcore/utils/filemanager"
+	"github.com/slowfei/gosfdoc/assets"
 	"io"
 	"io/ioutil"
 	"os"
@@ -33,12 +34,21 @@ const (
 	DIR_NAME_MAIN_MARKDOWN    = "md"      // save markdown file main directory name
 	DIR_NAME_MARKDOWN_DEFAULT = "default" // markdown default directory
 	DIR_NAME_SOURCE_CODE      = "src"     // source code save directory
+	DIR_NAME_ASSETS           = "assets"  // html use assets file directory
 
 	FILE_SUFFIX_MARKDOWN = ".md"
 
 	FILE_NAME_ABOUT_MD     = "about.md"
 	FILE_NAME_INTRO_MD     = "intro.md"
 	FILE_NAME_CONTENT_JSON = "content.json"
+
+	FILE_NAME_GOSFDOC_MIN_CSS    = "gosfdoc.min.css"
+	FILE_NAME_ASSETS_MIN_JS      = "assets.min.js"
+	FILE_NAME_GOSFDOC_MIN_JS     = "gosfdoc.min.js"
+	FILE_NAME_GOSFDOC_SRC_MIN_JS = "gosfdoc.src.min.js"
+
+	FILE_NAME_HTML_INDEX = "index.html"
+	FILE_NAME_HTML_SRC   = "src.html"
 )
 
 var (
@@ -258,6 +268,17 @@ func dirpathMkall(path string) {
  */
 func dirpathMarkdownDefault(config *MainConfig) string {
 	path := filepath.Join(config.Outpath, DIR_NAME_MAIN_MARKDOWN, DIR_NAME_MARKDOWN_DEFAULT)
+
+	dirpathMkall(path)
+
+	return path
+}
+
+/**
+ *	get assets directory save path
+ */
+func dirpathAssets(config *MainConfig) string {
+	path := filepath.Join(config.Outpath, DIR_NAME_ASSETS)
 
 	dirpathMkall(path)
 
@@ -574,7 +595,7 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, fileFunc File
 				newStr := strings.Replace(joinStr, "\n", ", ", -1)
 				info.Desc = newStr
 
-				packInfos = append(packInfos)
+				packInfos = append(packInfos, info)
 			}
 
 			if nil != fileFunc {
@@ -588,23 +609,97 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, fileFunc File
 }
 
 /**
+ *	output assets file
  *
+ *	@param `config`
+ *	@param `fileFunc`
  */
 func outAssets(config *MainConfig, fileFunc FileResultFunc) {
-	//	TODO
+
+	dirpath := dirpathAssets(config)
+
+	assetsPath := filepath.Join(dirpath, FILE_NAME_ASSETS_MIN_JS)
+	err := SFFileManager.WirteFilepath(assetsPath, []byte(assets.ASSETS_MIN_JS))
+
+	if nil != err {
+		fileFunc(assetsPath, ResultFileOutFail)
+	}
+
+	gosfdocPath := filepath.Join(dirpath, FILE_NAME_GOSFDOC_MIN_JS)
+	err = SFFileManager.WirteFilepath(gosfdocPath, []byte(assets.GOSFDOC_MIN_JS))
+
+	if nil != err {
+		fileFunc(gosfdocPath, ResultFileOutFail)
+	}
+
+	gosfdocsrcPath := filepath.Join(dirpath, FILE_NAME_GOSFDOC_SRC_MIN_JS)
+
+	if config.CopyCode {
+		err = SFFileManager.WirteFilepath(gosfdocsrcPath, []byte(assets.GOSFDOC_SRC_MIN_JS))
+	} else {
+		err = SFFileManager.WirteFilepath(gosfdocsrcPath, []byte(assets.GOSFDOC_SRC_MIN_JS_ROOT))
+	}
+
+	if nil != err {
+		fileFunc(gosfdocsrcPath, ResultFileOutFail)
+	}
+
+	gosfdoccssPath := filepath.Join(dirpath, FILE_NAME_GOSFDOC_MIN_CSS)
+	err = SFFileManager.WirteFilepath(gosfdoccssPath, []byte(assets.GOSFDOC_MIN_CSS))
+
+	if nil != err {
+		fileFunc(gosfdoccssPath, ResultFileOutFail)
+	}
+
 }
 
 /**
- *	TODO
+ *	output html file, index.html src.html
+ *
+ *	@param `config`
+ *	@param `fileFunc`
  */
-func outHTML() {
+func outHTML(config *MainConfig, fileFunc FileResultFunc) {
+
+	indexPath := filepath.Join(config.Outpath, FILE_NAME_HTML_INDEX)
+	err := SFFileManager.WirteFilepath(indexPath, []byte(assets.HTML_INDEX))
+
+	if nil != err {
+		fileFunc(indexPath, ResultFileOutFail)
+	}
+
+	srcPath := filepath.Join(config.Outpath, FILE_NAME_HTML_SRC)
+	err = SFFileManager.WirteFilepath(srcPath, []byte(assets.HTML_SRC))
+
+	if nil != err {
+		fileFunc(srcPath, ResultFileOutFail)
+	}
 
 }
 
 /**
- *	TODO
+ *	output html used config.json
+ *
+ *	@param `config`
+ *	@param `fileFunc`
  */
-func outHTMLConfig() {
+func outHTMLConfig(config *MainConfig, fileFunc FileResultFunc, packageInfos []PackageInfo) {
+	// type DocConfig struct {
+	// ContentJson string                   // content json file
+	// IntroMd     string                   // intro markdown file
+	// AboutMd     string                   // about markdown file
+	// Languages   map[string]string        // key is directory name, value is show text
+	// Markdowns   map[string][]PackageInfo // markdown info list
+	// Files       map[string][]string
+	// }
+
+	docConfig := DocConfig{}
+	docConfig.ContentJson = FILE_NAME_CONTENT_JSON
+	docConfig.IntroMd = FILE_NAME_INTRO_MD
+	docConfig.AboutMd = FILE_NAME_ABOUT_MD
+	docConfig.Languages = config.Languages
+
+	//	TODO 目前先需要确定页面后才进行Markdowns和Files的输出问题。
 
 }
 
