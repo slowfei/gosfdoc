@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-16
-//  Update on 2014-10-10
+//  Update on 2014-10-29
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -51,7 +51,7 @@ type MainConfig struct {
 	Outpath       string            // output document path, relative or absolute path.
 	OutAppendPath string            // append output source code and markdown relative path(scan path join). defalut ""
 	CopyCode      bool              // copy source code to document directory. default false
-	CodeLinkRoot  bool              // source code link to root directory, 'CopyCode' is true was invalid default true
+	CodeLinkRoot  bool              // source code link to root directory, 'CopyCode' is true was invalid, default true
 	HtmlTitle     string            // document html show title
 	DocTitle      string            // html top tabbar show title
 	MenuTitle     string            // html left menu show title
@@ -179,6 +179,7 @@ type DocConfig struct {
 	AboutMd     string                   // about markdown file
 	Languages   map[string]string        // key is directory name, value is show text
 	Markdowns   map[string][]PackageInfo // markdown info list
+	Files       map[string][]string      // source code file links
 }
 
 /**
