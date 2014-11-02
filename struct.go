@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-22
-//  Update on 2014-09-27
+//  Update on 2014-10-31
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -189,6 +189,15 @@ func (c *CodeFiles) Each(f func(file CodeFile) bool) {
 }
 
 /**
+ *	file list storage length
+ *
+ *	@return file number
+ */
+func (c *CodeFiles) FilesLen() int {
+	return c.files.Len()
+}
+
+/**
  *  output `content.json`
  */
 type ContentJson struct {
@@ -270,8 +279,15 @@ func (c *Intro) WriteFilepath(path string) error {
  *  package info
  */
 type PackageInfo struct {
-	Name string // package name plain text
-	Desc string // description plain text
+	MenuName string // type belongs
+	Name     string // package name plain text
+	Desc     string // description plain text
+}
+
+type FileLink struct {
+	MenuName string // type belongs
+	Link     string // a tag link
+	Text     string // a tag show text
 }
 
 /**
