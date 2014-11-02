@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-09-10
-//  Update on 2014-10-07
+//  Update on 2014-10-31
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -110,10 +110,11 @@ func ParseMarkdown(documents []Document, previews []Preview, blocks []CodeBlock,
 	if 0 != len(relPath) {
 		joinSymbol = "/"
 	}
-
+	isWrite := false
 	buf := bytes.NewBuffer([]byte{'\n'})
 
 	for _, doc := range documents {
+		isWrite = true
 		// ## Welcome to gosfdoc
 		// ------
 		//
@@ -125,6 +126,7 @@ func ParseMarkdown(documents []Document, previews []Preview, blocks []CodeBlock,
 	}
 
 	if 0 != len(previews) {
+		isWrite = true
 		// ## Preview
 		// ------
 		// > [func Main()][#]<br/>
@@ -160,6 +162,7 @@ func ParseMarkdown(documents []Document, previews []Preview, blocks []CodeBlock,
 
 	// out associate files
 	if 0 != len(filesName) {
+		isWrite = true
 		// ###Package files
 		// [a.go](#) [b.go](#) [c.go](#)
 		buf.WriteString("<br/>\n### Directory files\n")
@@ -171,6 +174,7 @@ func ParseMarkdown(documents []Document, previews []Preview, blocks []CodeBlock,
 	}
 
 	if 0 != len(blocks) {
+		isWrite = true
 		buf.WriteByte('\n')
 		isLinkCode := 0 != len(filesName)
 		// ## Func Details
@@ -234,7 +238,12 @@ func ParseMarkdown(documents []Document, previews []Preview, blocks []CodeBlock,
 			buf.WriteByte('\n')
 		}
 	}
-	return buf.Bytes()
+
+	if isWrite {
+		return buf.Bytes()
+	} else {
+		return nil
+	}
 }
 
 /**
