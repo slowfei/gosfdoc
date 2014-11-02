@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-16
-//  Update on 2014-10-29
+//  Update on 2014-10-31
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -352,7 +352,7 @@ func CreateConfigFile(dirPath string, langs []string) (error, bool) {
 		//	ScanPath = command directory
 		//	CodeLang = implement parser the code language
 		//	OutAppendPath = command directory base name
-		defaultConfigText := fmt.Sprintf(_gosfdocConfigJson, cmdDir, codeLangs, filepath.Base(cmdDir))
+		defaultConfigText := fmt.Sprintf(_gosfdocConfigJson, cmdDir, codeLangs, appendPath)
 
 		fileErr := ioutil.WriteFile(filePath, []byte(defaultConfigText), 0660)
 		if nil != fileErr {
@@ -416,7 +416,7 @@ func OutputWithConfig(config *MainConfig, fileFunc FileResultFunc) (error, bool)
 		return errors.New(fmt.Sprintf("invalid scan path path: %v", scanPath)), false
 	}
 
-	files, about, intro, scanErr := scanFiles(config, fileFunc)
+	files, keys, about, intro, scanErr := scanFiles(config, fileFunc)
 	if nil != scanErr {
 		return scanErr, false
 	}
@@ -455,10 +455,13 @@ func OutputWithConfig(config *MainConfig, fileFunc FileResultFunc) (error, bool)
 	}
 
 	// output source code file and markdown document file
-	outCodeFiles(config, files, fileFunc)
+	packInfos, fileLinks := outCodeFiles(config, files, keys, fileFunc)
 
 	// output html assets file
 	outAssets(config, fileFunc)
+
+	// output config.json
+	outHTMLConfig(config, fileFunc, packInfos, fileLinks)
 
 	return nil, true
 }
@@ -469,10 +472,12 @@ func OutputWithConfig(config *MainConfig, fileFunc FileResultFunc) (error, bool)
  *
  *	@param `config`
  *	@param `files`
+ *	@param `keys` sorted files key(paths)
  *	@param `fileFunc`
- *	@return []PackageInfo
+ *	@return map[string][]PackageInfo
+ *	@return map[string][]string
  */
-func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, fileFunc FileResultFunc) []PackageInfo {
+func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, keys []string, fileFunc FileResultFunc) (packInfos []PackageInfo, fileLinks []FileLink) {
 
 	scanPath := config.ScanPath
 	appendPath := config.OutAppendPath
@@ -487,11 +492,18 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, fileFunc File
 
 	//	markdown file save directory
 	mdDir := dirpathMarkdownDefault(config)
-	packInfos := make([]PackageInfo, 0, len(files))
+
+	//	return result make
+	packInfos = make([]PackageInfo, 0, len(files))
+	fileLinks = make([]FileLink, 0, 0)
 
 	// 1.FOR Directory
-	for dirPath, codefiles := range files {
-		fileLen := codefiles.files.Len()
+	for _, key := range keys {
+		// dirPath, codefiles
+		dirPath := key
+		codefiles := files[key]
+
+		filesLen := codefiles.FilesLen()
 		relativeDirPath := ""
 
 		if 0 == strings.Index(dirPath, scanPath) {
@@ -506,14 +518,44 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, fileFunc File
 			continue
 		}
 
+		//	TODO 左侧导航中菜单列表的分类名称暂时不使用，使用""空字符串代替，主要考虑到不如何进行展示，并且在提取分配名考虑到别的语言可能不通用
+		/*
+			以下为GO语言的展示方案，但是其他语言有待商议(目前分类名称以""空字符串代替，这里只是演示想展示的想法不是目前实际的操作)
+			当目录下没有源文件或文件时以当前目录喂分类名称显示
+
+			index.html
+			gosfdoc
+				github.com/slowfei/gosfdoc
+				github.com/slowfei/gosfdoc/assets
+			lang
+				github.com/slowfei/gosfdoc/lang/golang
+				github.com/slowfei/gosfdoc/lang/java
+				github.com/slowfei/gosfdoc/lang/javascript
+				github.com/slowfei/gosfdoc/lang/objc
+
+			src.html
+			gosfdoc
+				github.com/slowfei/gosfdoc.go
+				github.com/slowfei/config.go
+				github.com/slowfei/parse.go
+				github.com/slowfei/gosfdoc/assets/assets.go
+				github.com/slowfei/gosfdoc/assets/html.go
+			lang
+				github.com/slowfei/gosfdoc/lang/golang/golang.go
+				github.com/slowfei/gosfdoc/lang/java/java.go
+				github.com/slowfei/gosfdoc/lang/javascript/javascript.go
+				github.com/slowfei/gosfdoc/lang/objc/objc.go
+		*/
+		menuName := "" // 暂时设定空字符串
+
 		//	append custom path prefix
 		relativeDirPath = filepath.Join(appendPath, relativeDirPath)
 
 		previews := make([]Preview, 0, 0)
 		blocks := make([]CodeBlock, 0, 0)
 		documents := make([]Document, 0, 0)
-		filesName := make([]string, 0, fileLen)
-		packStrList := make([]string, 0, fileLen)
+		filesName := make([]string, 0, filesLen)
+		packStrList := make([]string, 0, filesLen)
 
 		// 2.FOR Files
 		codefiles.Each(func(code CodeFile) bool {
@@ -524,9 +566,10 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, fileFunc File
 				default:
 					var outErr error = nil
 					fileName := code.FileCont.FileInfo().Name()
+					joinName := filepath.Join(relativeDirPath, fileName)
 
 					if 0 != len(outCodeDir) {
-						outPath := filepath.Join(outCodeDir, relativeDirPath, fileName)
+						outPath := filepath.Join(outCodeDir, joinName)
 						outErr = code.FileCont.WriteFilepath(outPath)
 						if nil == outErr && nil != fileFunc {
 							fileFunc(outPath, ResultFileSuccess)
@@ -536,6 +579,13 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, fileFunc File
 					if nil == outErr {
 						if 0 != len(outCodeDir) || isLinkRoot {
 							filesName = append(filesName, fileName)
+
+							fileLink := FileLink{}
+							fileLink.Link = joinName
+							fileLink.Text = joinName
+							fileLink.MenuName = menuName
+
+							fileLinks = append(fileLinks, fileLink)
 						}
 					} else if nil != fileFunc {
 						fileFunc(code.FileCont.path, ResultFileOutFail)
@@ -594,6 +644,7 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, fileFunc File
 				joinStr := strings.Join(packStrList, ";")
 				newStr := strings.Replace(joinStr, "\n", ", ", -1)
 				info.Desc = newStr
+				info.MenuName = menuName
 
 				packInfos = append(packInfos, info)
 			}
@@ -605,7 +656,7 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, fileFunc File
 
 	} // end for dirPath, codefiles := range files
 
-	return packInfos
+	return
 }
 
 /**
@@ -682,8 +733,10 @@ func outHTML(config *MainConfig, fileFunc FileResultFunc) {
  *
  *	@param `config`
  *	@param `fileFunc`
+ *	@param `packInfos`
+ *	@param `fileLinks`
  */
-func outHTMLConfig(config *MainConfig, fileFunc FileResultFunc, packageInfos []PackageInfo) {
+func outHTMLConfig(config *MainConfig, fileFunc FileResultFunc, packInfos []PackageInfo, fileLinks []FileLink) {
 	// type DocConfig struct {
 	// ContentJson string                   // content json file
 	// IntroMd     string                   // intro markdown file
@@ -699,7 +752,7 @@ func outHTMLConfig(config *MainConfig, fileFunc FileResultFunc, packageInfos []P
 	docConfig.AboutMd = FILE_NAME_ABOUT_MD
 	docConfig.Languages = config.Languages
 
-	//	TODO 目前先需要确定页面后才进行Markdowns和Files的输出问题。
+	//	TODO packInfos fileLinks 考虑下如何进行排序输出
 
 }
 
@@ -709,17 +762,20 @@ func outHTMLConfig(config *MainConfig, fileFunc FileResultFunc, packageInfos []P
  *  @param `config`
  *  @param `fileFunc`
  *  @return `resultFiles` map[string]*CodeFiles
+ *	@return `keyPaths`  resultFiles sorted key(paths)
  *  @return `aboutBuf`
  *  @return `introBuf`
  *  @return `resultErr`
  */
 func scanFiles(config *MainConfig, fileFunc FileResultFunc) (
 	resultFiles map[string]*CodeFiles,
+	keyPaths []string,
 	about *About,
 	intro *Intro,
 	resultErr error) {
 
 	resultFiles = make(map[string]*CodeFiles)
+	keyPaths = make([]string, 0, 0)
 
 	callFileFunc := func(p string, r OperateResult) error {
 		if nil != fileFunc {
@@ -761,6 +817,7 @@ func scanFiles(config *MainConfig, fileFunc FileResultFunc) (
 		if info.IsDir() {
 			if _, ok := resultFiles[path]; !ok {
 				resultFiles[path] = NewCodeFiles()
+				keyPaths = append(keyPaths, path)
 			}
 			return nil
 		}
