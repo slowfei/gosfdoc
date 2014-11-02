@@ -11,13 +11,16 @@
 //-------------------------------------------------------
 
 ;(function($){
+    var GOSFDOC_JSON = "config.json";
     var $_preCode = null;
     var _codeArrayKey = "CodeArray";
     var _windowWhich = -1;
     var _rexLine = /^(#L\d+|#L\d+[-]L\d+)$/;
-    var _sourceDir = "../";
+    var _sourceDir = "src/";
     
     $(function(){
+
+        init();
 
         hljs.configure({tabReplace: '    ',useBR:false});
         $_preCode = $("#main_content pre code");
@@ -99,14 +102,6 @@
             $("#main_sidebar .item a.item[href='"+filepath+"']").addClass('active');
         }
 
-        var $aItems=$("#main_sidebar .item a.item");
-        $aItems.click(function(event) {
-            if ($(this).hasClass('active')) {return false;}
-            window.location.hash = '';
-            window.location.search = 'f='+$(this).attr('href');
-            return false;
-        });
-
         //  keydown
         $(window).keydown(function(event) {
             if ( 1 <= $(".line_number.active",$_preCode).length ) {
@@ -119,6 +114,62 @@
         });
 
     });
+
+    /**
+     *  init config
+     */
+    function init(){
+        $("#menu_title").html("<center>Loading...</center>");
+        $.ajax({
+           url: GOSFDOC_JSON,
+           async:false,
+           cache:false,
+           type: 'GET',
+           dataType: 'json'
+       })
+       .done(function(dataJson) {
+            $("#menu_title").html("<center>Files</center>");
+
+            var $sidebarItem = $('<div class=item></div>');
+            //  each markdowns
+            $.each(dataJson.Files, function(index, val) {
+
+                $.each(val, function(projectName, items) {
+
+                    var $menu = $('<div class="menu"></div>');
+                    var $itemTitle = $('<b>'+projectName+'</b>');
+
+                    $.each(items, function(pkeKey, fileInfo) {
+                        var fileName = fileInfo.Filename;
+                        var linkHref = fileName;
+                        
+                        var $item = $('<a class="item" href='+linkHref+'>'+fileName+'</a>');
+
+                        $item.click(function() {
+                            if ($(this).hasClass('active')) {return false;}
+                            window.location.hash = '';
+                            window.location.search = 'f='+$(this).attr('href');
+                            return false;
+                        });
+
+                        $menu.append($item);
+                    });
+
+                    $sidebarItem.append($itemTitle);
+                    $sidebarItem.append($menu);
+                   
+                    return false;
+
+                });// end  $.each(val, function(projectName, items)
+
+            });// end  $.each(dataJson.Markdowns, function(index, val)
+
+            $("#main_sidebar").append($sidebarItem);
+       })
+       .fail(function(jqXHR, textStatus, errorThrown) {
+             $("#menu_title").html('<center>Load "config.json" Error.</center>');
+       });
+    }
     
     /**
      *  load source code file

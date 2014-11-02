@@ -136,7 +136,7 @@ type TestStruct struct{
 }
 ```
 
-###[func (*TestStruct) hello](../../../src/github.com/slowfei/gosfdoc.go) <a name="func_TestStruct.hello"><a/> [↩](#preview_TestStruct.hello)|[#](#func_TestStruct.hello)
+###[func (*TestStruct) hello](src.html?f=github.com/slowfei/gosfdoc.go) <a name="func_TestStruct.hello"><a/> [↩](#preview_TestStruct.hello)|[#](#func_TestStruct.hello)
 > 函数介绍描述<br/>
 > <br/>
 > @param `str` 字符串传递<br/>

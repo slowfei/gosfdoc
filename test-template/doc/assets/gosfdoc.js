@@ -148,7 +148,7 @@
      *  init doc
      */
     function initDoc(){
-
+    
        $.ajax({
            url: GOSFDOC_JSON,
            async:false,
@@ -161,39 +161,51 @@
 
             parseContentJson(dataJson.ContentJson);
             parseAbout(dataJson.AboutMd);
-            parseLanguages(dataJson.Languages)
+            parseLanguages(dataJson.Languages);
             
             var packageVal = getURIQuery(QUERY_KEY_PACKAGE);
             var checkPackage = false;
             
-            $.each(dataJson.Markdowns, function(projectName, itempath) {
-                var $menu = $('<div class="menu"></div>');
-                var $sidebarItem = $('<div class=item><b>'+projectName+'</b></div>');
+            var $sidebarItem = $('<div class=item></div>');
+            //  each markdowns
+            $.each(dataJson.Markdowns, function(index, val) {
 
-                $.each(itempath, function(index, packageInfo) {
-                    var packageName = packageInfo.Name;
+                $.each(val, function(projectName, items) {
 
-                    var mdpath = packageName + MD_FILE_SUFFIX;
-                    if (mdpath == packageVal) {
-                        checkPackage = true;
-                    }
-                    var $item = $('<a class="item" href=?p='+mdpath+'>'+packageName+'</a>');
+                    var $menu = $('<div class="menu"></div>');
+                    var $itemTitle = $('<b>'+projectName+'</b>');
 
-                    $item.click(function() {
-                        if(!$(this).hasClass('active')){
-                            $(window).scrollTop(0);
-                            setURIQuery(mdpath,false,false);
-                            parsePackageMarkdown(mdpath);
+                    $.each(items, function(pkeKey, packageInfo) {
+                        var packageName = packageInfo.Name;
+
+                        var mdpath = packageName + MD_FILE_SUFFIX;
+                        if (mdpath == packageVal) {
+                            checkPackage = true;
                         }
-                        return false;
+                        var $item = $('<a class="item" href=?p='+mdpath+'>'+packageName+'</a>');
+
+                        $item.click(function() {
+                            if(!$(this).hasClass('active')){
+                                $(window).scrollTop(0);
+                                setURIQuery(mdpath,false,false);
+                                parsePackageMarkdown(mdpath);
+                            }
+                            return false;
+                        });
+
+                        $menu.append($item);
                     });
 
-                    $menu.append($item);
-                });
+                    $sidebarItem.append($itemTitle);
+                    $sidebarItem.append($menu);
+                   
+                    return false;
 
-                $sidebarItem.append($menu);
-                $("#main_sidebar").append($sidebarItem);
-            });
+                });// end  $.each(val, function(projectName, items)
+
+            });// end  $.each(dataJson.Markdowns, function(index, val)
+
+            $("#main_sidebar").append($sidebarItem);
 
             
             if (checkPackage) {
@@ -233,34 +245,43 @@
        
         var $contentPackage = $('<div class="ui list"></div>');
 
-        $.each(dataGosfdocJson.Markdowns, function(projectName, itempath) {
-            var $listItem = $('<div class="item"></div>');
-            var $listContent = $('<div class="content"><div class="header">'+projectName+'</div></div>');
-            var $list = $('<div class="list"></div>');
-           
-            $.each(itempath, function(index, packageInfo) {
-                var packageName = packageInfo.Name;
-                var mdpath = packageName + MD_FILE_SUFFIX;
+        //  each markdowns
+       $.each(dataGosfdocJson.Markdowns, function(index, val) {
+            
+            $.each(val, function(projectName, items) {
+                var $listItem = $('<div class="item"></div>');
+                var $listContent = $('<div class="content"><div class="header">'+projectName+'</div></div>');
+                var $list = $('<div class="list"></div>');
               
-                var $item = $('<div class="item"><div class="content"><a class="header" href=?p='+mdpath+'>'+packageName+'</a><div class="description">'+packageInfo.Desc+'</div></div></div>')
+                $.each(items, function(pkeKey, packageInfo) {
+                    var packageName = packageInfo.Name;
+                    var packageDesc = packageInfo.Desc;
+                    var mdpath = packageName + MD_FILE_SUFFIX;
+              
+                    var $item = $('<div class="item"><div class="content"><a class="header" href=?p='+mdpath+'>'+packageName+'</a><div class="description">'+packageDesc+'</div></div></div>')
                 
-                $("a",$item).click(function() {
-                    $(window).scrollTop(0);
-                    if(!$(this).hasClass('active')){
-                        setURIQuery(mdpath,false,false);
-                    }
-                    parsePackageMarkdown(mdpath);
-                    return false;
+                    $("a",$item).click(function() {
+                        $(window).scrollTop(0);
+                        if(!$(this).hasClass('active')){
+                            setURIQuery(mdpath,false,false);
+                        }
+                        parsePackageMarkdown(mdpath);
+                        return false;
+                    });
+
+                    $list.append($item);
                 });
 
-                $list.append($item);
-            });
+                $listItem.append($listContent);
+                $listItem.append($list);
+                $contentPackage.append($listItem);
 
-            $listItem.append($listContent);
-            $listItem.append($list);
+                return false;
 
-            $contentPackage.append($listItem);
-        });
+            });// end  $.each(val, function(projectName, items)
+
+        });// end  $.each(dataJson.Markdowns, function(index, val)
+
 
         $mainContent.attr('mdpath', null);
         $mainContent.empty().html($contentPackage);
@@ -512,17 +533,29 @@
         var $langElements = $("#language_value");
         $langElements.empty();
 
-        $.each(langJson, function(key, val) {
+        $.each(langJson, function(index, val) {
+
+            var key = "";
+            var mapVal = "";
+
+            $.each(val, function(mk, mv) {
+                key = mk;
+                mapVal = mv;
+                return false;
+            });
+
             if ( 0 == showText.length ) {
-                showText = val;
+                showText = mapVal;
             }
 
             if ( key == _language ) {
-                showText = val;
+                showText = mapVal;
             }
 
-            var html = '<div class="item" data-value="'+key+'">'+val+'</div>';
+            var html = '<div class="item" data-value="'+key+'">'+mapVal+'</div>';
             $langElements.append(html);
+
+
         });
 
         $("#language_text").text(showText);
