@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-09-10
-//  Update on 2014-10-31
+//  Update on 2014-11-05
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -168,7 +168,7 @@ func ParseMarkdown(documents []Document, previews []Preview, blocks []CodeBlock,
 		buf.WriteString("<br/>\n### Directory files\n")
 		for _, name := range filesName {
 			joinPath := relPath + joinSymbol + name
-			buf.WriteString(fmt.Sprintf("[%s](%s) ", name, joinPath))
+			buf.WriteString(fmt.Sprintf("[%s](src.html?f=%s) ", name, joinPath))
 		}
 		buf.WriteByte('\n')
 	}
