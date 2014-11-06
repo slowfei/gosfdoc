@@ -12,13 +12,15 @@
 
 	"Markdowns"	:[
         {
-            "project name":[
+            "MenuName":"project name",
+            "List":[
                 {"Name":"github.com/slowfei/gosfdoc","Desc":"gosfdoc document generator"},
                 {"Name":"github.com/slowfei/leafveingo","Desc":"golang web framework"}
             ]
         },
         {
-            "project name-2":[
+            "MenuName":"project name-1-",
+            "List":[
                 {"Name":"github.com/slowfei/gosfdoc1","Desc":"gosfdoc document generator"},
                 {"Name":"github.com/slowfei/leafveingo1","Desc":"golang web framework"}
             ]
@@ -27,13 +29,15 @@
 
     "Files":[
         {
-            "project name":[
+            "MenuName":"project name",
+            "List":[
                 {"Filename":"gosfdoc.go"},
                 {"Filename":"gosfdoc1.go"}
             ]
         },
         {
-            "project name-2":[
+            "MenuName":"project name-2-",
+            "List":[
                 {"Filename":"github.com/slowfei/gosfdoc.go"},
                 {"Filename":"gosfdoc3.go"}
             ]

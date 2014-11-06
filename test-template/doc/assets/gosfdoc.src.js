@@ -131,36 +131,31 @@
             $("#menu_title").html("<center>Files</center>");
 
             var $sidebarItem = $('<div class=item></div>');
-            //  each markdowns
+            //  each Files
             $.each(dataJson.Files, function(index, val) {
 
-                $.each(val, function(projectName, items) {
+                var projectName = val.MenuName;
+                var $menu = $('<div class="menu"></div>');
+                var $itemTitle = $('<b>'+projectName+'</b>');
 
-                    var $menu = $('<div class="menu"></div>');
-                    var $itemTitle = $('<b>'+projectName+'</b>');
+                $.each(val.List, function(listIndex, fileInfo) {
+                    var fileName = fileInfo.Filename;
+                    var linkHref = fileName;
+                    
+                    var $item = $('<a class="item" href='+linkHref+'>'+fileName+'</a>');
 
-                    $.each(items, function(pkeKey, fileInfo) {
-                        var fileName = fileInfo.Filename;
-                        var linkHref = fileName;
-                        
-                        var $item = $('<a class="item" href='+linkHref+'>'+fileName+'</a>');
-
-                        $item.click(function() {
-                            if ($(this).hasClass('active')) {return false;}
-                            window.location.hash = '';
-                            window.location.search = 'f='+$(this).attr('href');
-                            return false;
-                        });
-
-                        $menu.append($item);
+                    $item.click(function() {
+                        if ($(this).hasClass('active')) {return false;}
+                        window.location.hash = '';
+                        window.location.search = 'f='+$(this).attr('href');
+                        return false;
                     });
 
-                    $sidebarItem.append($itemTitle);
-                    $sidebarItem.append($menu);
-                   
-                    return false;
+                    $menu.append($item);
+                });
 
-                });// end  $.each(val, function(projectName, items)
+                $sidebarItem.append($itemTitle);
+                $sidebarItem.append($menu);
 
             });// end  $.each(dataJson.Markdowns, function(index, val)
 

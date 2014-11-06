@@ -170,38 +170,33 @@
             //  each markdowns
             $.each(dataJson.Markdowns, function(index, val) {
 
-                $.each(val, function(projectName, items) {
+                var projectName = val.MenuName;
+                var $menu = $('<div class="menu"></div>');
+                var $itemTitle = $('<b>'+projectName+'</b>');
 
-                    var $menu = $('<div class="menu"></div>');
-                    var $itemTitle = $('<b>'+projectName+'</b>');
+                $.each(val.List, function(listIndex, packageInfo) {
+                    var packageName = packageInfo.Name;
 
-                    $.each(items, function(pkeKey, packageInfo) {
-                        var packageName = packageInfo.Name;
+                    var mdpath = packageName + MD_FILE_SUFFIX;
+                    if (mdpath == packageVal) {
+                        checkPackage = true;
+                    }
+                    var $item = $('<a class="item" href=?p='+mdpath+'>'+packageName+'</a>');
 
-                        var mdpath = packageName + MD_FILE_SUFFIX;
-                        if (mdpath == packageVal) {
-                            checkPackage = true;
+                    $item.click(function() {
+                        if(!$(this).hasClass('active')){
+                            $(window).scrollTop(0);
+                            setURIQuery(mdpath,false,false);
+                            parsePackageMarkdown(mdpath);
                         }
-                        var $item = $('<a class="item" href=?p='+mdpath+'>'+packageName+'</a>');
-
-                        $item.click(function() {
-                            if(!$(this).hasClass('active')){
-                                $(window).scrollTop(0);
-                                setURIQuery(mdpath,false,false);
-                                parsePackageMarkdown(mdpath);
-                            }
-                            return false;
-                        });
-
-                        $menu.append($item);
+                        return false;
                     });
 
-                    $sidebarItem.append($itemTitle);
-                    $sidebarItem.append($menu);
-                   
-                    return false;
+                    $menu.append($item);
+                });
 
-                });// end  $.each(val, function(projectName, items)
+                $sidebarItem.append($itemTitle);
+                $sidebarItem.append($menu);
 
             });// end  $.each(dataJson.Markdowns, function(index, val)
 
@@ -248,37 +243,33 @@
         //  each markdowns
        $.each(dataGosfdocJson.Markdowns, function(index, val) {
             
-            $.each(val, function(projectName, items) {
-                var $listItem = $('<div class="item"></div>');
-                var $listContent = $('<div class="content"><div class="header">'+projectName+'</div></div>');
-                var $list = $('<div class="list"></div>');
-              
-                $.each(items, function(pkeKey, packageInfo) {
-                    var packageName = packageInfo.Name;
-                    var packageDesc = packageInfo.Desc;
-                    var mdpath = packageName + MD_FILE_SUFFIX;
-              
-                    var $item = $('<div class="item"><div class="content"><a class="header" href=?p='+mdpath+'>'+packageName+'</a><div class="description">'+packageDesc+'</div></div></div>')
-                
-                    $("a",$item).click(function() {
-                        $(window).scrollTop(0);
-                        if(!$(this).hasClass('active')){
-                            setURIQuery(mdpath,false,false);
-                        }
-                        parsePackageMarkdown(mdpath);
-                        return false;
-                    });
-
-                    $list.append($item);
+            var projectName = val.MenuName;
+            var $listItem = $('<div class="item"></div>');
+            var $listContent = $('<div class="content"><div class="header">'+projectName+'</div></div>');
+            var $list = $('<div class="list"></div>');
+          
+            $.each(val.List, function(listIndex, packageInfo) {
+                var packageName = packageInfo.Name;
+                var packageDesc = packageInfo.Desc;
+                var mdpath = packageName + MD_FILE_SUFFIX;
+          
+                var $item = $('<div class="item"><div class="content"><a class="header" href=?p='+mdpath+'>'+packageName+'</a><div class="description">'+packageDesc+'</div></div></div>')
+            
+                $("a",$item).click(function() {
+                    $(window).scrollTop(0);
+                    if(!$(this).hasClass('active')){
+                        setURIQuery(mdpath,false,false);
+                    }
+                    parsePackageMarkdown(mdpath);
+                    return false;
                 });
 
-                $listItem.append($listContent);
-                $listItem.append($list);
-                $contentPackage.append($listItem);
+                $list.append($item);
+            });
 
-                return false;
-
-            });// end  $.each(val, function(projectName, items)
+            $listItem.append($listContent);
+            $listItem.append($list);
+            $contentPackage.append($listItem);
 
         });// end  $.each(dataJson.Markdowns, function(index, val)
 

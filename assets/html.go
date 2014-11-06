@@ -30,8 +30,15 @@ const HTML_INDEX = `<!DOCTYPE html>
 
     <title></title>
     
+    <!-- <link rel="stylesheet" type="text/css" href="assets/semantic/semantic.css"> -->
+    <!-- <link rel="stylesheet" type="text/css" href="assets/highlight/default.min.css"> -->
+    <!-- <link rel="stylesheet" type="text/css" href="assets/gosfdoc.css"> -->
     <link rel="stylesheet" type="text/css" href="assets/gosfdoc.min.css">
 
+    <!-- <script src="assets/jquery/jquery-2.1.1.min.js"></script> -->
+    <!-- <script src="assets/semantic/semantic.js"></script> -->
+    <!-- <script src="assets/highlight/highlight.pack.js"></script> -->
+    <!-- <script src="assets/marked/marked.js" charset="UTF-8"></script> -->
     <script src="assets/assets.min.js"></script>
     <script src="assets/gosfdoc.min.js"></script>
 
@@ -44,7 +51,7 @@ const HTML_INDEX = `<!DOCTYPE html>
 
         <!-- range menu item -->
         <!-- <div class="item">
-            <b>leafveingo</b>
+            <b>project name</b>
             <div class="menu">
                 <a class="item" href="?p=github.com/slowfei/leafveingo.md">github.com/slowfei/leafveingo</a>
                 <a class="item" href="#">github.com/slowfei/leafveingo/router</a>
@@ -129,28 +136,35 @@ const HTML_SRC = `<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>source code</title>
-
+    
+    <!-- <link rel="stylesheet" type="text/css" href="assets/semantic/semantic.css"> -->
+    <!-- <link rel="stylesheet" type="text/css" href="assets/highlight/default.min.css"> -->
+    <!-- <link rel="stylesheet" type="text/css" href="assets/gosfdoc.css"> -->
     <link rel="stylesheet" type="text/css" href="assets/gosfdoc.min.css">
 
+    <!-- <script src="assets/jquery/jquery-2.1.1.min.js"></script> -->
+    <!-- <script src="assets/semantic/semantic.js"></script> -->
+    <!-- <script src="assets/highlight/highlight.pack.js"></script> -->
+    <!-- <script src="assets/marked/marked.js" charset="UTF-8"></script> -->
     <script src="assets/assets.min.js"></script>
     <script src="assets/gosfdoc.src.min.js"></script>
 
 </head>
 <body class="side pushed src" ontouchstart>
     <div id="main_sidebar" class="ui large floating vertical inverted labeled sidebar menu active">
-        <div class="item" id="menu_title ">
+        <div class="item" id="menu_title">
             <center>Files</center>
         </div>
-        
+
         <!-- range menu item -->
-        <div class="item">
-            <b>leafveingo</b>
+        <!-- <div class="item">
+            <b>project name</b>
             <div class="menu">
                 <a class="item" href="gosfdoc.go">gosfdoc.go</a>
                 <a class="item" href="index.html">router.go</a>
                 <a class="item" href="router/temp.go">router/temp.go</a>
             </div>
-        </div>
+        </div> -->
         
     </div>
     <div id="btn_show_menu" class="ui launch black right attached button src">
