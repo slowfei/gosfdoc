@@ -1,7 +1,16 @@
+//  The MIT License (MIT) - http://opensource.org/licenses/MIT
+//
+//  Copyright (c) 2014 slowfei
+//
+//  Create on 2014-11-05
+//  Update on 2014-11-05
+//  Email  slowfei#foxmail.com
+//  Home   http://www.slowfei.com
+
+//	golang implement parser
 package golang
 
 import (
-	"bytes"
 	"github.com/slowfei/gosfdoc"
 	"os"
 )
@@ -31,7 +40,7 @@ func (g *GolangParser) Name() string {
  *	see DocParser interface
  */
 func (g *GolangParser) CheckFile(path string, info os.FileInfo) bool {
-	return false
+	return true
 }
 
 /**
@@ -44,13 +53,20 @@ func (g *GolangParser) EachIndexFile(filebuf *gosfdoc.FileBuf) {
 /**
  *	see DocParser interface
  */
-func (g *GolangParser) ParsePreview(fileCont *bytes.Buffer) []gosfdoc.Preview {
+func (g *GolangParser) ParsePreview(filebuf *gosfdoc.FileBuf) []gosfdoc.Preview {
 	return nil
 }
 
 /**
  *	see DocParser interface
  */
-func (g *GolangParser) ParseCodeblock(fileCont *bytes.Buffer) []gosfdoc.CodeBlock {
+func (g *GolangParser) ParseCodeblock(filebuf *gosfdoc.FileBuf) []gosfdoc.CodeBlock {
 	return nil
+}
+
+/**
+ *	see DocParser interface
+ */
+func (n *GolangParser) ParsePackageInfo(filebuf *gosfdoc.FileBuf) string {
+	return ""
 }

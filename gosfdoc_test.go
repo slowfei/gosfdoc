@@ -97,9 +97,11 @@ func TestParseDocument(t *testing.T) {
  *  content_1
  */
 
-/***2-title2
+/***title2
  *  content_2
  */
+
+
 
 func test2(){
 }
@@ -124,7 +126,7 @@ func test2(){
 		t.Fatalf("ErrorParse: %v %v \n%v", documents[0].SortTag, documents[0].Title, documents[0].Content)
 	}
 
-	if documents[1].SortTag != 2 || documents[1].Title != "title2" || -1 == strings.Index(documents[1].Content, "content_2") {
+	if documents[1].SortTag != 0 || documents[1].Title != "title2" || -1 == strings.Index(documents[1].Content, "content_2") {
 		t.Fatalf("ErrorParse: %v %v \n%v", documents[1].SortTag, documents[1].Title, documents[1].Content)
 	}
 
