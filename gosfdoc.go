@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-16
-//  Update on 2014-10-31
+//  Update on 2014-11-05
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/slowfei/gosfcore/encoding/json"
 	"github.com/slowfei/gosfcore/utils/filemanager"
 	"github.com/slowfei/gosfdoc/assets"
 	"io"
@@ -47,8 +48,9 @@ const (
 	FILE_NAME_GOSFDOC_MIN_JS     = "gosfdoc.min.js"
 	FILE_NAME_GOSFDOC_SRC_MIN_JS = "gosfdoc.src.min.js"
 
-	FILE_NAME_HTML_INDEX = "index.html"
-	FILE_NAME_HTML_SRC   = "src.html"
+	FILE_NAME_HTML_INDEX       = "index.html"
+	FILE_NAME_HTML_SRC         = "src.html"
+	FILE_NAME_HTML_CONFIG_JSON = "config.json"
 )
 
 var (
@@ -119,7 +121,7 @@ const (
  *  @param `path`
  *  @param `result`
  */
-type FileResultFunc func(path string, result OperateResult)
+type FileResultFunc func(path string, result OperateResult, err error)
 
 /**
  *  document parser
@@ -433,7 +435,7 @@ func OutputWithConfig(config *MainConfig, fileFunc FileResultFunc) (error, bool)
 	}
 	contentErr := contentStruct.WriteFilepath(contentPath)
 	if nil != contentErr {
-		fileFunc(contentPath, ResultFileOutFail)
+		fileFunc(contentPath, ResultFileOutFail, contentErr)
 	}
 
 	//  output about.md and intro.md
@@ -446,12 +448,12 @@ func OutputWithConfig(config *MainConfig, fileFunc FileResultFunc) (error, bool)
 	aboutPath := filepath.Join(mdDefaultPath, FILE_NAME_ABOUT_MD)
 	aboutErr := about.WriteFilepath(aboutPath)
 	if nil != aboutErr {
-		fileFunc(aboutPath, ResultFileOutFail)
+		fileFunc(aboutPath, ResultFileOutFail, aboutErr)
 	}
 	introPath := filepath.Join(mdDefaultPath, FILE_NAME_INTRO_MD)
 	introErr := intro.WriteFilepath(introPath)
 	if nil != introErr {
-		fileFunc(introPath, ResultFileOutFail)
+		fileFunc(introPath, ResultFileOutFail, introErr)
 	}
 
 	// output source code file and markdown document file
@@ -459,6 +461,9 @@ func OutputWithConfig(config *MainConfig, fileFunc FileResultFunc) (error, bool)
 
 	// output html assets file
 	outAssets(config, fileFunc)
+
+	// output inddex.html src.html
+	outHTML(config, fileFunc)
 
 	// output config.json
 	outHTMLConfig(config, fileFunc, packInfos, fileLinks)
@@ -510,7 +515,7 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, keys []string
 			relativeDirPath = dirPath[len(scanPath):]
 		} else {
 			if nil != fileFunc {
-				fileFunc(dirPath, ResultDebugErr)
+				fileFunc(dirPath, ResultDebugErr, errors.New("map CodeFiles save path error."))
 			}
 			fmt.Println("map CodeFiles save path error.")
 			fmt.Println("ScanPath:", scanPath)
@@ -572,7 +577,7 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, keys []string
 						outPath := filepath.Join(outCodeDir, joinName)
 						outErr = code.FileCont.WriteFilepath(outPath)
 						if nil == outErr && nil != fileFunc {
-							fileFunc(outPath, ResultFileSuccess)
+							fileFunc(outPath, ResultFileSuccess, nil)
 						}
 					}
 
@@ -582,13 +587,13 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, keys []string
 
 							fileLink := FileLink{}
 							fileLink.Link = joinName
-							fileLink.Text = joinName
-							fileLink.MenuName = menuName
+							fileLink.Filename = joinName
+							fileLink.menuName = menuName
 
 							fileLinks = append(fileLinks, fileLink)
 						}
 					} else if nil != fileFunc {
-						fileFunc(code.FileCont.path, ResultFileOutFail)
+						fileFunc(code.FileCont.path, ResultFileOutFail, outErr)
 					}
 				}
 			}
@@ -639,18 +644,19 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, keys []string
 				result = ResultFileOutFail
 			} else {
 				info := PackageInfo{}
-				info.Name = path.Join(relativeDirPath, mdFileName)
+
+				info.Name = path.Join(relativeDirPath, mdFileName[:len(mdFileName)-len(FILE_SUFFIX_MARKDOWN)])
 
 				joinStr := strings.Join(packStrList, ";")
 				newStr := strings.Replace(joinStr, "\n", ", ", -1)
 				info.Desc = newStr
-				info.MenuName = menuName
+				info.menuName = menuName
 
 				packInfos = append(packInfos, info)
 			}
 
 			if nil != fileFunc {
-				fileFunc(outPath, result)
+				fileFunc(outPath, result, err)
 			}
 		}
 
@@ -673,14 +679,18 @@ func outAssets(config *MainConfig, fileFunc FileResultFunc) {
 	err := SFFileManager.WirteFilepath(assetsPath, []byte(assets.ASSETS_MIN_JS))
 
 	if nil != err {
-		fileFunc(assetsPath, ResultFileOutFail)
+		fileFunc(assetsPath, ResultFileOutFail, err)
+	} else {
+		fileFunc(assetsPath, ResultFileSuccess, nil)
 	}
 
 	gosfdocPath := filepath.Join(dirpath, FILE_NAME_GOSFDOC_MIN_JS)
 	err = SFFileManager.WirteFilepath(gosfdocPath, []byte(assets.GOSFDOC_MIN_JS))
 
 	if nil != err {
-		fileFunc(gosfdocPath, ResultFileOutFail)
+		fileFunc(gosfdocPath, ResultFileOutFail, err)
+	} else {
+		fileFunc(gosfdocPath, ResultFileSuccess, nil)
 	}
 
 	gosfdocsrcPath := filepath.Join(dirpath, FILE_NAME_GOSFDOC_SRC_MIN_JS)
@@ -692,14 +702,18 @@ func outAssets(config *MainConfig, fileFunc FileResultFunc) {
 	}
 
 	if nil != err {
-		fileFunc(gosfdocsrcPath, ResultFileOutFail)
+		fileFunc(gosfdocsrcPath, ResultFileOutFail, err)
+	} else {
+		fileFunc(gosfdocsrcPath, ResultFileSuccess, nil)
 	}
 
 	gosfdoccssPath := filepath.Join(dirpath, FILE_NAME_GOSFDOC_MIN_CSS)
 	err = SFFileManager.WirteFilepath(gosfdoccssPath, []byte(assets.GOSFDOC_MIN_CSS))
 
 	if nil != err {
-		fileFunc(gosfdoccssPath, ResultFileOutFail)
+		fileFunc(gosfdoccssPath, ResultFileOutFail, err)
+	} else {
+		fileFunc(gosfdoccssPath, ResultFileSuccess, nil)
 	}
 
 }
@@ -716,14 +730,18 @@ func outHTML(config *MainConfig, fileFunc FileResultFunc) {
 	err := SFFileManager.WirteFilepath(indexPath, []byte(assets.HTML_INDEX))
 
 	if nil != err {
-		fileFunc(indexPath, ResultFileOutFail)
+		fileFunc(indexPath, ResultFileOutFail, err)
+	} else {
+		fileFunc(indexPath, ResultFileSuccess, nil)
 	}
 
 	srcPath := filepath.Join(config.Outpath, FILE_NAME_HTML_SRC)
 	err = SFFileManager.WirteFilepath(srcPath, []byte(assets.HTML_SRC))
 
 	if nil != err {
-		fileFunc(srcPath, ResultFileOutFail)
+		fileFunc(srcPath, ResultFileOutFail, err)
+	} else {
+		fileFunc(srcPath, ResultFileSuccess, nil)
 	}
 
 }
@@ -737,22 +755,86 @@ func outHTML(config *MainConfig, fileFunc FileResultFunc) {
  *	@param `fileLinks`
  */
 func outHTMLConfig(config *MainConfig, fileFunc FileResultFunc, packInfos []PackageInfo, fileLinks []FileLink) {
-	// type DocConfig struct {
-	// ContentJson string                   // content json file
-	// IntroMd     string                   // intro markdown file
-	// AboutMd     string                   // about markdown file
-	// Languages   map[string]string        // key is directory name, value is show text
-	// Markdowns   map[string][]PackageInfo // markdown info list
-	// Files       map[string][]string
-	// }
+
+	//	struct pack DocConfig needed by menu name
+	menuMDs := make([]MenuMarkdown, 0, 1)
+	menuFiles := make([]MenuFile, 0, 1)
+
+	for _, info := range packInfos {
+		var mm MenuMarkdown
+		findIndex := -1
+
+		menuMDsLen := len(menuMDs)
+		for i := 0; i < menuMDsLen; i++ {
+			tempmm := menuMDs[i]
+			if tempmm.MenuName == info.menuName {
+				mm = tempmm
+				findIndex = i
+				break
+			}
+		}
+
+		if -1 == findIndex {
+			mm = MenuMarkdown{}
+			mm.MenuName = info.menuName
+
+			mm.List = make([]PackageInfo, 0, len(packInfos))
+			mm.List = append(mm.List, info)
+
+			menuMDs = append(menuMDs, mm)
+		} else {
+			mm.List = append(mm.List, info)
+			menuMDs[findIndex] = mm
+		}
+	}
+
+	for _, file := range fileLinks {
+		var mf MenuFile
+		findIndex := -1
+
+		menuFilesLen := len(menuFiles)
+		for i := 0; i < menuFilesLen; i++ {
+			tempmf := menuFiles[i]
+			if tempmf.MenuName == file.menuName {
+				mf = tempmf
+				findIndex = i
+				break
+			}
+		}
+
+		if -1 == findIndex {
+			mf = MenuFile{}
+			mf.MenuName = file.menuName
+
+			mf.List = make([]FileLink, 0, len(fileLinks))
+			mf.List = append(mf.List, file)
+
+			menuFiles = append(menuFiles, mf)
+		} else {
+			mf.List = append(mf.List, file)
+			menuFiles[findIndex] = mf
+		}
+	}
 
 	docConfig := DocConfig{}
 	docConfig.ContentJson = FILE_NAME_CONTENT_JSON
 	docConfig.IntroMd = FILE_NAME_INTRO_MD
 	docConfig.AboutMd = FILE_NAME_ABOUT_MD
 	docConfig.Languages = config.Languages
+	docConfig.Markdowns = menuMDs
+	docConfig.Files = menuFiles
 
-	//	TODO packInfos fileLinks 考虑下如何进行排序输出
+	configPath := filepath.Join(config.Outpath, FILE_NAME_HTML_CONFIG_JSON)
+
+	configJson, err := SFJson.NewJson(docConfig, "", "")
+	if nil != err {
+		fileFunc(configPath, ResultFileOutFail, err)
+	} else {
+		err := configJson.WriteFilepath(configPath, true)
+		if nil != err {
+			fileFunc(configPath, ResultFileOutFail, err)
+		}
+	}
 
 }
 
@@ -777,9 +859,9 @@ func scanFiles(config *MainConfig, fileFunc FileResultFunc) (
 	resultFiles = make(map[string]*CodeFiles)
 	keyPaths = make([]string, 0, 0)
 
-	callFileFunc := func(p string, r OperateResult) error {
+	callFileFunc := func(p string, r OperateResult, e error) error {
 		if nil != fileFunc {
-			fileFunc(p, r)
+			fileFunc(p, r, e)
 		}
 		return nil
 	}
@@ -787,7 +869,7 @@ func scanFiles(config *MainConfig, fileFunc FileResultFunc) (
 	resultErr = filepath.Walk(config.ScanPath, func(path string, info os.FileInfo, err error) error {
 
 		if nil != err || nil == info {
-			return callFileFunc(path, ResultFileNotRead)
+			return callFileFunc(path, ResultFileNotRead, err)
 		}
 
 		fileName := info.Name()
@@ -796,7 +878,7 @@ func scanFiles(config *MainConfig, fileFunc FileResultFunc) (
 		for i := 0; i < len(_sysFilters); i++ {
 			sysFileName := _sysFilters[i]
 			if 0 == strings.Index(fileName, sysFileName) {
-				return callFileFunc(path, ResultFileFilter)
+				return callFileFunc(path, ResultFileFilter, nil)
 			}
 		}
 
@@ -804,13 +886,15 @@ func scanFiles(config *MainConfig, fileFunc FileResultFunc) (
 		for i := 0; i < len(config.FilterPaths); i++ {
 			fpath := config.FilterPaths[i]
 			if 0 == strings.Index(path, fpath) {
-				return callFileFunc(path, ResultFileFilter)
+				return callFileFunc(path, ResultFileFilter, nil)
 			}
 		}
 
 		// filter document output dir
 		if 0 == strings.Index(path, config.Outpath) {
-			return callFileFunc(path, ResultFileFilter)
+			// return callFileFunc(path, ResultFileFilter, nil)
+			//	输出文档的目录不显示过滤信息
+			return nil
 		}
 
 		// 目录检测
@@ -824,7 +908,7 @@ func scanFiles(config *MainConfig, fileFunc FileResultFunc) (
 
 		//  无法找到后缀视为无效文件
 		if 0 >= strings.LastIndex(fileName, ".") {
-			return callFileFunc(path, ResultFileInvalid)
+			return callFileFunc(path, ResultFileInvalid, errors.New("Invalid file, No extension."))
 		}
 
 		// 3. check file and find parser
@@ -836,13 +920,13 @@ func scanFiles(config *MainConfig, fileFunc FileResultFunc) (
 			}
 		}
 		if nil == parser {
-			return callFileFunc(path, ResultFileInvalid)
+			return callFileFunc(path, ResultFileInvalid, errors.New("Invalid file, No document parser or check not pass."))
 		}
 
 		file, openErr := os.Open(path)
 		if openErr != nil {
 			if nil != fileFunc {
-				fileFunc(path, ResultFileNotRead)
+				fileFunc(path, ResultFileNotRead, openErr)
 			}
 			return nil
 		}
@@ -853,13 +937,13 @@ func scanFiles(config *MainConfig, fileFunc FileResultFunc) (
 		rn, readErr := file.Read(firstLineBuf)
 
 		if -1 >= rn || nil != readErr {
-			return callFileFunc(path, ResultFileReadErr)
+			return callFileFunc(path, ResultFileReadErr, readErr)
 		}
 
 		firstLine := firstLineBuf[:rn]
 		rnIndex := bytes.IndexByte(firstLine, '\n')
 		if -1 == rnIndex {
-			return callFileFunc(path, ResultFileInvalid)
+			return callFileFunc(path, ResultFileInvalid, errors.New("Invalid file, May be a binary file."))
 		}
 
 		// 4. check file private tag //#private-doc //#private-code //#private-doc-code
@@ -877,13 +961,13 @@ func scanFiles(config *MainConfig, fileFunc FileResultFunc) (
 			firstLine = bytes.Replace(firstLine, privateTag, nil, 1)
 		}
 		if isPCode && isPDoc {
-			return callFileFunc(path, ResultFileFilter)
+			return callFileFunc(path, ResultFileFilter, nil)
 		}
 
 		//  handle file content bytes
 		fileBytes, rFileErr := readFile(firstLine, file, info.Size())
 		if nil != rFileErr {
-			return callFileFunc(path, ResultFileReadErr)
+			return callFileFunc(path, ResultFileReadErr, rFileErr)
 		}
 
 		// 5. filter private block and create file buffer
