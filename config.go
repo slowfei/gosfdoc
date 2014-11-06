@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-16
-//  Update on 2014-10-29
+//  Update on 2014-11-05
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -35,7 +35,9 @@ var (
     "HtmlTitle"        : "Document",
     "DocTitle"         : "<b>Document:</b>",
     "MenuTitle"        : "<center><b>package</b></center>",
-    "Languages"        : {"default" : "Default"},
+    "Languages"        : [
+						 	{"default" : "Default"}
+   						 ],
     "FilterPaths"      : []
 }`
 )
@@ -45,18 +47,18 @@ var (
  *  output `gosfdoc.json` use
  */
 type MainConfig struct {
-	path          string            // private handle path, save console command path.
-	ScanPath      string            // scan document info file path, relative or absolute path, is "/" scan current console path.
-	CodeLang      []string          // code languages
-	Outpath       string            // output document path, relative or absolute path.
-	OutAppendPath string            // append output source code and markdown relative path(scan path join). defalut ""
-	CopyCode      bool              // copy source code to document directory. default false
-	CodeLinkRoot  bool              // source code link to root directory, 'CopyCode' is true was invalid, default true
-	HtmlTitle     string            // document html show title
-	DocTitle      string            // html top tabbar show title
-	MenuTitle     string            // html left menu show title
-	Languages     map[string]string // document support the language. key is directory name, value is show text.
-	FilterPaths   []string          // filter path, relative or absolute path
+	path          string              // private handle path, save console command path.
+	ScanPath      string              // scan document info file path, relative or absolute path, is "/" scan current console path.
+	CodeLang      []string            // code languages
+	Outpath       string              // output document path, relative or absolute path.
+	OutAppendPath string              // append output source code and markdown relative path(scan path join). defalut ""
+	CopyCode      bool                // copy source code to document directory. default false
+	CodeLinkRoot  bool                // source code link to root directory, 'CopyCode' is true was invalid, default true
+	HtmlTitle     string              // document html show title
+	DocTitle      string              // html top tabbar show title
+	MenuTitle     string              // html left menu show title
+	Languages     []map[string]string // document support the language. key is directory name, value is show text.
+	FilterPaths   []string            // filter path, relative or absolute path
 }
 
 /**
@@ -151,12 +153,14 @@ func (mc *MainConfig) Check() (error, bool) {
 	}
 
 	if 0 == len(mc.Languages) {
-		mc.Languages = map[string]string{"Default": "default"}
+		mc.Languages = []map[string]string{map[string]string{"Default": "default"}}
 		errBuf.WriteString("Languages: to set the default html text language.\n")
 	} else {
-		if _, ok := mc.Languages["default"]; !ok {
-			mc.Languages["default"] = "Default"
-			errBuf.WriteString("Languages: to set the default html text language.\n")
+		for _, mapv := range mc.Languages {
+			if _, ok := mapv["default"]; !ok {
+				mapv["default"] = "Default"
+				errBuf.WriteString("Languages: to set the default html text language.\n")
+			}
 		}
 	}
 
@@ -169,17 +173,35 @@ func (mc *MainConfig) Check() (error, bool) {
 }
 
 /**
+ *	html menu show helper struct
+ *	index.html Markdown struct
+ */
+type MenuMarkdown struct {
+	MenuName string
+	List     []PackageInfo
+}
+
+/**
+ *	html menu show helper struct
+ *	src.html File list struct
+ */
+type MenuFile struct {
+	MenuName string
+	List     []FileLink
+}
+
+/**
  *  document directory html javascript use config
  *
  *  output `config.json`
  */
 type DocConfig struct {
-	ContentJson string                   // content json file
-	IntroMd     string                   // intro markdown file
-	AboutMd     string                   // about markdown file
-	Languages   map[string]string        // key is directory name, value is show text
-	Markdowns   map[string][]PackageInfo // markdown info list
-	Files       map[string][]string      // source code file links
+	ContentJson string              // content json file
+	IntroMd     string              // intro markdown file
+	AboutMd     string              // about markdown file
+	Languages   []map[string]string // key is directory name, value is show text
+	Markdowns   []MenuMarkdown      // markdown info list
+	Files       []MenuFile          // source code file links
 }
 
 /**

@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-22
-//  Update on 2014-10-31
+//  Update on 2014-11-05
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -74,6 +74,8 @@ func NewFileBuf(fileContent []byte, path string, info os.FileInfo, filter *regex
 	} else {
 		buf.buf = fileContent
 	}
+	buf.fileInfo = info
+	buf.path = path
 	return buf
 }
 
@@ -279,15 +281,16 @@ func (c *Intro) WriteFilepath(path string) error {
  *  package info
  */
 type PackageInfo struct {
-	MenuName string // type belongs
+	menuName string // type belongs
 	Name     string // package name plain text
 	Desc     string // description plain text
 }
 
 type FileLink struct {
-	MenuName string // type belongs
+	menuName string // type belongs
+	Filename string // a tag show text
 	Link     string // a tag link
-	Text     string // a tag show text
+
 }
 
 /**
