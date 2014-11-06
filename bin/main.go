@@ -103,7 +103,7 @@ func main() {
 				return
 			}
 
-			outErr, outPass := gosfdoc.Output(configPath, func(path string, result gosfdoc.OperateResult) {
+			outErr, outPass := gosfdoc.Output(configPath, func(path string, result gosfdoc.OperateResult, err error) {
 				resultStr := "Invalid:"
 				switch result {
 				case gosfdoc.ResultFileSuccess:
@@ -118,6 +118,9 @@ func main() {
 					resultStr = "OutputFail:"
 				}
 				fmt.Println(resultStr, path)
+				if nil != err {
+					fmt.Printf("(Error Info: %v)\n", err)
+				}
 			})
 
 			if nil != outErr {
