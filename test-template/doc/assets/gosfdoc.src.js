@@ -12,18 +12,82 @@
 
 ;(function($){
     var GOSFDOC_JSON = "config.json";
+    var QUERY_KEY_VERSION = "v";
+    var QUERY_KEY_FILE = "f";
+    var QUERY_KEY_LINES = "L";
+    var VERSION_DEFAULT = "1.0.0";
+
+    var dataGosfdocJson = null;
     var $_preCode = null;
-    var _codeArrayKey = "CodeArray";
+    var _version = null;
     var _windowWhich = -1;
-    var _rexLine = /^(#L\d+|#L\d+[-]L\d+)$/;
-    var _sourceDir = "src/";
+    var _linkRoot = false;
+    var _appendPath = "";
+    var _rexLine = /^(\d+|\d+[-]\d+)$/;
     
     $(function(){
 
-        init();
-
         hljs.configure({tabReplace: '    ',useBR:false});
         $_preCode = $("#main_content pre code");
+
+        //
+        init();
+
+        //
+        initUI();
+
+        //
+        initEvent();
+
+    });
+
+    /**
+     *  init config
+     */
+    function init(){
+        
+        $("#menu_title").html("<center>Loading...</center>");
+
+        $.ajax({
+           url: GOSFDOC_JSON,
+           async:false,
+           cache:false,
+           type: 'GET',
+           dataType: 'json'
+       })
+       .done(function(dataJson) {
+            dataGosfdocJson = dataJson;
+             $("#menu_title").html("<center>Files</center>");
+
+            //  handle other params
+            if (dataJson.LinkRoot) {
+                _linkRoot = dataJson.LinkRoot;
+            }
+            if (dataJson.AppendPath){
+                _appendPath = dataJson.AppendPath;
+            }
+
+            parseSelectVersion(dataJson.Versions);
+            parseMenuList(dataJson.Files);
+
+            var filepath = getURIQuery(QUERY_KEY_FILE);
+            var lines = getURIQuery(QUERY_KEY_LINES);
+
+            //  _version 已经在parseSelectVersion中进行设置
+            setURIQuery(filepath,lines,_version);
+
+            //  load code
+            loadSourceCode(filepath);
+       })
+       .fail(function(jqXHR, textStatus, errorThrown) {
+             $("#menu_title").html('<center>Load "config.json" Error.</center>');
+       });
+    }
+
+    /**
+     *  init ui
+     */
+    function initUI(){
 
         // menu show and hide button
         $('#btn_show_menu').click(function(){
@@ -91,17 +155,12 @@
         } else if ( - 1 != navigator.userAgent.indexOf('IE')) {
             $("#number").addClass('ie');
         }
+    }
 
-        var filepath = getURIQuery("f");
-        if(!filepath){
-            $_preCode.html("source code browse, please select left menu item.");
-        }else{
-            //  init load file
-            loadSourceCode(filepath);
-            //  set left sidebar item
-            $("#main_sidebar .item a.item[href='"+filepath+"']").addClass('active');
-        }
-
+    /**
+     *  init event
+     */
+    function initEvent(){
         //  keydown
         $(window).keydown(function(event) {
             if ( 1 <= $(".line_number.active",$_preCode).length ) {
@@ -113,57 +172,7 @@
             _windowWhich = -1;
         });
 
-    });
 
-    /**
-     *  init config
-     */
-    function init(){
-        $("#menu_title").html("<center>Loading...</center>");
-        $.ajax({
-           url: GOSFDOC_JSON,
-           async:false,
-           cache:false,
-           type: 'GET',
-           dataType: 'json'
-       })
-       .done(function(dataJson) {
-            $("#menu_title").html("<center>Files</center>");
-
-            var $sidebarItem = $('<div class=item></div>');
-            //  each Files
-            $.each(dataJson.Files, function(index, val) {
-
-                var projectName = val.MenuName;
-                var $menu = $('<div class="menu"></div>');
-                var $itemTitle = $('<b>'+projectName+'</b>');
-
-                $.each(val.List, function(listIndex, fileInfo) {
-                    var fileName = fileInfo.Filename;
-                    var linkHref = fileName;
-                    
-                    var $item = $('<a class="item" href='+linkHref+'>'+fileName+'</a>');
-
-                    $item.click(function() {
-                        if ($(this).hasClass('active')) {return false;}
-                        window.location.hash = '';
-                        window.location.search = 'f='+$(this).attr('href');
-                        return false;
-                    });
-
-                    $menu.append($item);
-                });
-
-                $sidebarItem.append($itemTitle);
-                $sidebarItem.append($menu);
-
-            });// end  $.each(dataJson.Markdowns, function(index, val)
-
-            $("#main_sidebar").append($sidebarItem);
-       })
-       .fail(function(jqXHR, textStatus, errorThrown) {
-             $("#menu_title").html('<center>Load "config.json" Error.</center>');
-       });
     }
     
     /**
@@ -172,13 +181,51 @@
      *  @param filepath file url path
      */
     function loadSourceCode(filepath){
+        if (!filepath) {return}
+
+        //  set left sidebar item active
+        var $tempItems =  $("#main_sidebar .item a.item");
+        $.each($tempItems, function(index, val) {
+            var $item = $(val);
+            var href = $item.attr('href');
+            if (href == filepath) {
+                $item.addClass('active');
+            }else{
+                $item.removeClass('active');
+            }
+        });
+        // $("#main_sidebar .item a.item[href='"+filepath+"']").addClass('active');
+
         $_preCode.empty();
-        // $_preCode.removeData(_codeArrayKey);
         $_preCode.html("Loading...");
+        
+        //  handle url path
+        
+        var urlPath = "";
+        if (_linkRoot) {
+            //  e.g. : ../temp.go
+
+            if ( 0 != _appendPath.length && 0 == filepath.indexOf(_appendPath+"/")) {
+                filepath = filepath.substring(_appendPath.length+1,filepath.length);
+            }
+            urlPath = "../" + filepath;
+
+        }else{
+            //  e.g. : v1_0_0/src/temp.go
+
+            var verPath = converToVersionPath(_version);
+
+            if ( 0 != _appendPath.length && 0 != filepath.indexOf(_appendPath)) {
+                filepath = _appendPath + "/" + filepath;
+            }
+
+            urlPath =  verPath +"/src/"+filepath;
+        }
+        
         $.ajax({
-           url: _sourceDir+filepath,
+           url: urlPath,
            async:true,
-           cache:false,
+           cache:true,
            dataType: 'text'
         }).done(function(text){
             $_preCode.attr('src', filepath);
@@ -236,10 +283,9 @@
             $_preCode.html(codeArray.join(''));
             handleLineNumber();
 
-            //  location line
-            var currentHash = window.location.hash;
-            if (_rexLine.test(currentHash)) {
-                currentHash = currentHash.replace(/L|#/g,'');
+            //  set active lines
+            var currentHash = getURIQuery(QUERY_KEY_LINES);
+            if ( currentHash && _rexLine.test(currentHash)) {
                 currentHash = currentHash.split('-');
                 var L1 =  parseInt(currentHash[0]);
                 var L2 = currentHash[1];
@@ -255,14 +301,144 @@
                 }
                 selectLineNumber(activeLines,L1+'');
             }
+
         }).fail(function() {
             var appendstr = "";
             if ( -1 != window.location.protocol.indexOf('file') ) {
-                appendstr = "\nuse gosfdoc command run document.";
+                appendstr = "\n\nTry to use gosfdoc command run document.";
             };
-
-            $_preCode.html("sorry! source code load failed." + appendstr);
+            $_preCode.html("File: "+ filepath + "\nSorry! Unable to load the source code. version: "+ _version + appendstr);
         });
+    }
+
+    /**
+     *  parse version select info
+     *
+     *  @param verJson
+     */
+    function parseSelectVersion(verJson){
+
+        var ver = getURIQuery(QUERY_KEY_VERSION);
+
+        if ( ver ) {
+            _version = ver;
+        };
+
+        var tempOne = "";
+        var checkVer = false;
+        var $versionElements = $("#version_value");
+        $versionElements.empty();
+
+        $.each(verJson, function(index, val) {
+
+            var verstr = val.toString();
+
+            //  默认选择排序在第一位的版本
+            if ( 0 == tempOne.length) {
+                tempOne = verstr;
+            }
+            
+            //  效验设置的版本信息是否与获取的版本信息相符
+            if ( _version == verstr ) {
+                checkVer = true;
+            }
+
+            var html = '<div class="item" data-value="'+verstr+'">'+verstr+'</div>';
+            $versionElements.append(html);
+
+        });
+
+        if (!checkVer) {
+            if ( 0 == tempOne.length ) {
+                _version = VERSION_DEFAULT;
+            }else{
+                _version = tempOne;
+            }
+        }
+
+        $("#version_text").text(_version);
+
+       //  language handle
+        $('.ui.dropdown.version').unbind().dropdown({
+            on:"hover",
+            onChange:function(value, text){
+                if ( _version == value) {
+                    return;
+                }
+
+                $("#version_text").text(text);
+                _version = value;
+
+                var filepath = getURIQuery(QUERY_KEY_FILE);
+                var lines = getURIQuery(QUERY_KEY_LINES);
+                setURIQuery(filepath,lines,_version);
+
+                if (dataGosfdocJson) {
+                    parseMenuList(dataGosfdocJson.Files);
+                }
+
+                loadSourceCode(filepath);
+            }
+        });
+    }
+
+    /**
+     *  parse left menu list item
+     *
+     *  @param filesJson
+     */
+    function parseMenuList(filesJson){
+
+        var $sidebarItem = $('<div class=item></div>');
+        var addCount = 0;
+
+        //  each Files
+        $.each(filesJson, function(index, val) {
+            var proVer = val.Version;
+
+            if ( _version != proVer ) {
+                return true;
+            }
+
+            var projectName = val.MenuName;
+            var $menu = $('<div class="menu"></div>');
+            var $itemTitle = $('<b>'+projectName+'</b>');
+
+            $.each(val.List, function(listIndex, fileInfo) {
+                var fileName = fileInfo.Filename;
+                var linkHref = fileName;
+                
+                var $item = $('<a class="item" href='+linkHref+'>'+fileName+'</a>');
+
+                $item.click(function() {
+                    if ($(this).hasClass('active')) {return false;}
+
+                    var filepath = $(this).attr('href');
+                    setURIQuery(filepath,false,_version);
+
+                    loadSourceCode(filepath);
+
+                    return false;
+                });
+
+                $menu.append($item);
+            });
+
+            addCount++;
+            $sidebarItem.append($itemTitle);
+            $sidebarItem.append($menu);
+
+        });// end  $.each(dataJson.Markdowns, function(index, val)
+
+        if ( 0 == addCount) {
+            $sidebarItem.html("No info data. Version: "+_version);
+        };
+
+        var $tempMenuTitle = $("#menu_title");
+        $("#main_sidebar").empty();
+        $("#main_sidebar").append($tempMenuTitle);
+
+        $("#main_sidebar").append($sidebarItem);
     }
 
     /**
@@ -294,19 +470,18 @@
             }
             var currentLine = $(this).attr('L');
             var activeLines = new Array();
-            var hash = ''
+            var lines = '';
 
             if (!cancel) {
-                var currentHash = window.location.hash;
+                var currentHash = getURIQuery(QUERY_KEY_LINES);
 
                 if ( -1 == _windowWhich || !_rexLine.test(currentHash) ) {
-                    hash = 'L'+currentLine;
+                    lines = currentLine;
                     activeLines.push(currentLine);
                 }else{
 
                     cancelTextlUserSelect();
 
-                    currentHash = currentHash.replace(/L|#/g,'');
                     currentHash = currentHash.split('-');
                     var L1 =  parseInt(currentHash[0]);
                     currentLine = parseInt(currentLine);
@@ -324,11 +499,12 @@
                     for (var i = startLine; i <= endLine; i++) {
                              activeLines.push(i+'');
                     }
-                    hash = 'L'+ startLine + '-L' + endLine;
+                    lines =  startLine + '-' + endLine;
                 }   
             }
             selectLineNumber(activeLines);
-            window.location.hash = hash;
+
+            setURIQuery(getURIQuery(QUERY_KEY_FILE),lines,_version);
         }); // end $lineNumber.click(function(event)
     }
 
@@ -372,6 +548,39 @@
     }
 
     /**
+     *  set fixed uri query
+     *
+     *  @param filepath
+     *  @param lines
+     *  @param version
+     */
+    function setURIQuery(filepath,lines,version){
+        var hash = "";
+
+        if ( version ){
+            hash += QUERY_KEY_VERSION + '=' + escape(version);
+        }
+
+        if ( filepath ) {
+            if ( 0 != hash.length ){
+                hash += '&';   
+            }
+            hash += QUERY_KEY_FILE + '=' + escape(filepath);
+        }
+
+        if ( lines ) {
+            if ( 0 != hash.length ){
+                hash += '&';   
+            }
+            hash += QUERY_KEY_LINES + '=' + escape(lines);
+        }
+
+        window.location.hash = hash;
+        window.location.search ='';
+        window.location.query = '';
+    }
+
+    /**
      *  string byte length  
      *
      *  @param byte length
@@ -393,6 +602,21 @@
         }  
         return totalLength;   
     } 
+
+    /**
+     *  conversion version use path
+     * 
+     *  @param version 
+     *  @return version path
+     */
+    function converToVersionPath(version){
+        var result = "";
+        if ( version && 0 != version.length) {
+            result = "v"+version.replace(/\./g,"_") + "/";
+        }
+        return result;
+    }
+
     /**
      *  get uri query param
      *

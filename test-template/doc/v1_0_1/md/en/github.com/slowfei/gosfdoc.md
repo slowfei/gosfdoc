@@ -1,5 +1,5 @@
 
-## Welcome to gosfdoc
+## Welcome to gosfdoc(English版本 v1.0.1)
 ------
 
 &emsp;&emsp;gosfdoc 目的是规范代码文档生成，在写代码同时也可以进行文档的编写，不必等写完代码后再来编写文档，可以避免写文档的懒惰。
@@ -59,7 +59,7 @@ links:[http://www.slowfei.com][0]
 ------
 > [func Main()][#]<br/>
 > [type TestStruct struct][#]<br/>
-> implements: [Test][#]<br/>
+>> implements: [Test][#]<br/>
 >>[func (* TestStruct) hello(str string) string](#func_TestStruct.hello)<a name="preview_TestStruct.hello"><a/><br/>
 >>[func (* TestStruct) hello2() string][#]<br/>
 >>
@@ -136,7 +136,7 @@ type TestStruct struct{
 }
 ```
 
-###[func (*TestStruct) hello](src.html?f=github.com/slowfei/gosfdoc.go) <a name="func_TestStruct.hello"><a/> [↩](#preview_TestStruct.hello)|[#](#func_TestStruct.hello)
+###[func (*TestStruct) hello](../../../src/github.com/slowfei/gosfdoc.go) <a name="func_TestStruct.hello"><a/> [↩](#preview_TestStruct.hello)|[#](#func_TestStruct.hello)
 > 函数介绍描述<br/>
 > <br/>
 > @param `str` 字符串传递<br/>

@@ -19,7 +19,7 @@
     <!-- <script src="assets/marked/marked.js" charset="UTF-8"></script> -->
     <script src="assets/assets.min.js"></script>
     <script src="assets/gosfdoc.min.js"></script>
-
+    
 </head>
 <body class="side pushed" ontouchstart>
     <div id="main_sidebar" class="ui large floating vertical inverted labeled sidebar menu active">
@@ -51,7 +51,18 @@
     </div>
 
     <div class="ui menu transparent right_menu">
-        <!-- TODO other info -->
+
+        <!-- select version -->
+        <div class="section ui dropdown link item version">
+            <div class="textcolor">
+                <b>Version:</b> 
+                <span id="version_text"></span>
+            </div>
+            <div id="version_value" class="menu ui transition">
+            </div>
+        </div>
+        
+        <!-- select language -->
         <div class="section ui dropdown link item language">
             <div class="textcolor">
                 <b>Language:</b> 
@@ -60,6 +71,7 @@
             <div id="language_value" class="menu ui transition">
             </div>
         </div>
+
         <div class="item title">
             <a href="javascript:;" id="item_about"><b>About</b></a>
             <div class="ui modal about" id="about_modal">

@@ -281,13 +281,13 @@ func (c *Intro) WriteFilepath(path string) error {
  *  package info
  */
 type PackageInfo struct {
-	menuName string // type belongs
+	menuName string `json:"-"` // type belongs
 	Name     string // package name plain text
 	Desc     string // description plain text
 }
 
 type FileLink struct {
-	menuName string // type belongs
+	menuName string `json:"-"` // type belongs
 	Filename string // a tag show text
 	Link     string // a tag link
 

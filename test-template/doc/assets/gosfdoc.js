@@ -17,10 +17,14 @@
     var QUERY_KEY_PACKAGE = "p";
     var QUERY_KEY_TITLE = "t";
     var QUERY_KEY_ANCHOR = "a";
+    var QUERY_KEY_VERSION = "v";
     var DATA_KEY_STICKYITEMS = "stickyItems";
     var COOKIE_LANG_KEY = "language";
+    var COOKIE_VERSION_KEY = "version"
     var LANG_DEFAULT = "default";
+    var VERSION_DEFAULT = "1.0.0";
     var _language = LANG_DEFAULT;
+    var _version = null;
     var dataGosfdocJson = null;
     var $mainContent = null;
     var navigationHeight = 46;
@@ -158,55 +162,18 @@
        })
        .done(function(dataJson) {
             dataGosfdocJson = dataJson;
+            var queryPackage = getURIQuery(QUERY_KEY_PACKAGE);
 
+            parseSelectVersion(dataJson.Versions);
             parseContentJson(dataJson.ContentJson);
             parseAbout(dataJson.AboutMd);
             parseLanguages(dataJson.Languages);
-            
-            var packageVal = getURIQuery(QUERY_KEY_PACKAGE);
-            var checkPackage = false;
-            
-            var $sidebarItem = $('<div class=item></div>');
-            //  each markdowns
-            $.each(dataJson.Markdowns, function(index, val) {
+            queryPackage = parseMenuList(dataJson.Markdowns,queryPackage);
 
-                var projectName = val.MenuName;
-                var $menu = $('<div class="menu"></div>');
-                var $itemTitle = $('<b>'+projectName+'</b>');
-
-                $.each(val.List, function(listIndex, packageInfo) {
-                    var packageName = packageInfo.Name;
-
-                    var mdpath = packageName + MD_FILE_SUFFIX;
-                    if (mdpath == packageVal) {
-                        checkPackage = true;
-                    }
-                    var $item = $('<a class="item" href=?p='+mdpath+'>'+packageName+'</a>');
-
-                    $item.click(function() {
-                        if(!$(this).hasClass('active')){
-                            $(window).scrollTop(0);
-                            setURIQuery(mdpath,false,false);
-                            parsePackageMarkdown(mdpath);
-                        }
-                        return false;
-                    });
-
-                    $menu.append($item);
-                });
-
-                $sidebarItem.append($itemTitle);
-                $sidebarItem.append($menu);
-
-            });// end  $.each(dataJson.Markdowns, function(index, val)
-
-            $("#main_sidebar").append($sidebarItem);
-
-            
-            if (checkPackage) {
+            if (queryPackage) {
                 //  handle query package
                 $(".segment.intro").css("paddingTop","20px");
-                parsePackageMarkdown(packageVal);
+                parsePackageMarkdown(queryPackage);
             }else{
                 // home show
                 reHome();
@@ -239,10 +206,16 @@
         };
        
         var $contentPackage = $('<div class="ui list"></div>');
+        var addCount = 0;
 
         //  each markdowns
        $.each(dataGosfdocJson.Markdowns, function(index, val) {
-            
+            var proVer = val.Version;
+
+            if (_version != proVer) {
+                return true;
+            }
+
             var projectName = val.MenuName;
             var $listItem = $('<div class="item"></div>');
             var $listContent = $('<div class="content"><div class="header">'+projectName+'</div></div>');
@@ -254,11 +227,11 @@
                 var mdpath = packageName + MD_FILE_SUFFIX;
           
                 var $item = $('<div class="item"><div class="content"><a class="header" href=?p='+mdpath+'>'+packageName+'</a><div class="description">'+packageDesc+'</div></div></div>')
-            
+                
                 $("a",$item).click(function() {
                     $(window).scrollTop(0);
                     if(!$(this).hasClass('active')){
-                        setURIQuery(mdpath,false,false);
+                        setURIQuery(mdpath,false,false,_version);
                     }
                     parsePackageMarkdown(mdpath);
                     return false;
@@ -267,17 +240,23 @@
                 $list.append($item);
             });
 
+            addCount++;
             $listItem.append($listContent);
             $listItem.append($list);
             $contentPackage.append($listItem);
 
         });// end  $.each(dataJson.Markdowns, function(index, val)
 
+        if ( 0 == addCount) {
+            $contentPackage.html("No info data. Version: "+_version);
+        };
 
         $mainContent.attr('mdpath', null);
         $mainContent.empty().html($contentPackage);
         $("#sticky").empty().hide();
         $mainContent.css("marginLeft","20px");
+
+        setURIQuery(false,false,false,_version);
     }
 
     /**
@@ -320,7 +299,7 @@
             var anchor = getURIQuery(QUERY_KEY_ANCHOR);
 
             //
-            setURIQuery(packageName,$_item.text(),anchor);
+            setURIQuery(packageName,$_item.text(),anchor,_version);
 
             // overflow out scroll
             var $stickyWrapper = $("#sticky-wrapper");
@@ -363,7 +342,7 @@
 
         var queryTitle = getURIQuery(QUERY_KEY_TITLE);
         var queryAnchor = getURIQuery(QUERY_KEY_ANCHOR);
-        setURIQuery(mdpath,queryTitle,queryAnchor);
+        setURIQuery(mdpath,queryTitle,queryAnchor,_version);
 
         $mainContent.removeData(DATA_KEY_STICKYITEMS);
         $("#sticky").empty().hide();
@@ -400,7 +379,7 @@
                         $item.click(function() {
                             var queryPackage = getURIQuery(QUERY_KEY_PACKAGE);
                             var queryTitle = getURIQuery(QUERY_KEY_TITLE); 
-                            setURIQuery(queryPackage,queryTitle,false);
+                            setURIQuery(queryPackage,queryTitle,false,_version);
 
                             $(window).scrollTop(key);
                             return false;
@@ -438,7 +417,7 @@
                                     var queryPackage = getURIQuery(QUERY_KEY_PACKAGE);
                                     var queryTitle = getURIQuery(QUERY_KEY_TITLE);
 
-                                    setURIQuery(queryPackage,queryTitle,unescape(anchor));
+                                    setURIQuery(queryPackage,queryTitle,unescape(anchor),_version);
 
                                     if ( '#' != text ) {
                                         var $anchorTag = $("*[id='"+anchor+"']",$mainContent);
@@ -478,7 +457,7 @@
 
                         var queryPackage = getURIQuery(QUERY_KEY_PACKAGE);
                         var queryTitle = getURIQuery(QUERY_KEY_TITLE);
-                        setURIQuery(queryPackage,queryTitle,queryAnchor);
+                        setURIQuery(queryPackage,queryTitle,queryAnchor,_version);
                     };
 
                     //  scroll to func position
@@ -510,9 +489,162 @@
     }
 
     /**
+     *  parse left menu list data show info
+     *
+     *  @param markdownJson
+     *  @param findPackage Need to check whether the existing package, null not check
+     *  @return confirmed the package, other return null
+     */
+    function parseMenuList(markdownJson,findPackage){
+        var resultPackage = null;
+
+        var $sidebarItem = $('<div class=item></div>');
+        var addCount = 0;
+
+        //  each markdowns
+        $.each(markdownJson, function(index, val) {
+            var proVer = val.Version;
+
+            if ( _version != proVer ) {
+                return true;
+            }
+
+            var projectName = val.MenuName;
+            var $menu = $('<div class="menu"></div>');
+            var $itemTitle = $('<b>'+projectName+'</b>');
+
+            $.each(val.List, function(listIndex, packageInfo) {
+                var packageName = packageInfo.Name;
+
+                if ( findPackage ) {
+                    var mdpath = packageName + MD_FILE_SUFFIX;
+                    if (mdpath == findPackage) {
+                        resultPackage = findPackage;
+                    }
+                }
+                
+                var $item = $('<a class="item" href=?p='+mdpath+'>'+packageName+'</a>');
+
+                $item.click(function() {
+                    if(!$(this).hasClass('active')){
+                        $(window).scrollTop(0);
+                        setURIQuery(mdpath,false,false,_version);
+                        parsePackageMarkdown(mdpath);
+                    }
+                    return false;
+                });
+
+                $menu.append($item);
+            });
+
+            addCount++;
+            $sidebarItem.append($itemTitle);
+            $sidebarItem.append($menu);
+
+        });// end  $.each(dataJson.Markdowns, function(index, val)
+
+        if ( 0 == addCount) {
+            $sidebarItem.html("No info data. Version: "+_version);
+        };
+
+        var $tempMenuTitle = $("#menu_title");
+        $("#main_sidebar").empty();
+        $("#main_sidebar").append($tempMenuTitle);
+
+        $("#main_sidebar").append($sidebarItem);
+
+        return resultPackage;
+    }
+
+    /**
+     *  parse version select info
+     *
+     *  @param verJson
+     */
+    function parseSelectVersion(verJson){
+
+        var ver = getURIQuery(QUERY_KEY_VERSION);
+
+        if (!ver) {
+            ver = getCookie(COOKIE_VERSION_KEY);
+        }
+
+        if ( ver ) {
+            _version = ver;
+        };
+
+        var tempOne = "";
+        var checkVer = false;
+        var $versionElements = $("#version_value");
+        $versionElements.empty();
+
+        $.each(verJson, function(index, val) {
+
+            var verstr = val.toString();
+
+            //  默认选择排序在第一位的版本
+            if ( 0 == tempOne.length) {
+                tempOne = verstr;
+            }
+            
+            //  效验设置的版本信息是否与获取的版本信息相符
+            if ( _version == verstr ) {
+                checkVer = true;
+            }   
+
+            var html = '<div class="item" data-value="'+verstr+'">'+verstr+'</div>';
+            $versionElements.append(html);
+
+        });
+
+        if (!checkVer) {
+            if ( 0 == tempOne.length ) {
+                _version = VERSION_DEFAULT;
+            }else{
+                _version = tempOne;
+            }
+        }
+
+        $("#version_text").text(_version);
+
+       //  language handle
+        $('.ui.dropdown.version').unbind().dropdown({
+            on:"hover",
+            onChange:function(value, text){
+                if (_version == value) {
+                    return;
+                }
+                
+                $("#version_text").text(text);
+                setCookie(COOKIE_VERSION_KEY,value);
+                _version = value;
+
+                var packageName = getURIQuery(QUERY_KEY_PACKAGE);
+                var queryTitle = getURIQuery(QUERY_KEY_TITLE);
+                var anchor = getURIQuery(QUERY_KEY_ANCHOR);
+                setURIQuery(packageName,queryTitle,anchor,_version);
+
+                var jumpHome = true;
+                var mdpath = $mainContent.attr('mdpath');
+                if (mdpath && null != dataGosfdocJson) {
+                    var checkPackage = parseMenuList(dataGosfdocJson.Markdowns,mdpath);
+                    if (checkPackage) {
+                        parsePackageMarkdown(checkPackage);
+                        jumpHome = false;
+                    }
+                }
+
+                if (jumpHome) {
+                     reHome();
+                }
+            }
+        });
+    }
+
+    /**
      *  parse language elements
      *
-     *  @param langpath
+     *  @param langJson
      */
     function parseLanguages(langJson){
         var lang = getCookie(COOKIE_LANG_KEY);
@@ -582,7 +714,7 @@
                     $("#about_content").empty().html(marked(text));
                 },
                 failFunc:function(){
-                    alert("Can not read "+ aboutpath);
+                    $("#about_content").empty().html("Can not read "+ aboutpath + " version:"+_version);
                 }
             }
         );
@@ -602,7 +734,7 @@
                     $("#menu_title").empty().html(dataJson.MenuTitle);
                 },
                 failFunc:function(){
-                    alert("Can not read "+ contpath);
+                    alert("Can not read "+ contpath + " version:"+_version);
                 }
             }
         );
@@ -620,7 +752,7 @@
                     $("#segment_intro").empty().html(marked(text));
                 },
                 failFunc:function(){
-                    alert("Can not read "+ mdpath);
+                    $("#segment_intro").empty().html("Can not read "+ mdpath + " version:"+_version);
                 }
             }
         );
@@ -642,6 +774,7 @@
             path:'', 
             dataType:'text',
             async   :false,
+            cache   :true,
             doneFunc:null,
             failFunc:null
         },options );
@@ -650,7 +783,7 @@
         $.ajax({
            url: getMDUrl(option.path),
            async:option.async,
-           cache:false,
+           cache:option.cache,
            type: 'GET',
            dataType: option.dataType
        })
@@ -659,13 +792,27 @@
             $.ajax({
                url: getMDDefaultUrl(option.path),
                async:option.async,
-               cache:false,
+               cache:option.cache,
                type: 'GET',
                dataType: option.dataType
             })
             .done(option.doneFunc)
             .fail(option.failFunc);
        });
+    }
+
+    /**
+     *  conversion version use path
+     * 
+     *  @param version 
+     *  @return version path
+     */
+    function converToVersionPath(version){
+        var result = "";
+        if ( version && 0 != version.length) {
+            result = "v"+version.replace(/\./g,"_") + "/";
+        }
+        return result;
     }
 
     /**
@@ -676,18 +823,20 @@
      *  @return
      */
     function getMDUrl(path){
-        return MD_BASE_URL + '/' + _language +'/' + path;
+        var verPath = converToVersionPath(_version);
+        return verPath + MD_BASE_URL + '/' + _language +'/' + path;
     }
 
     /**
      *  get markdown directory url
      *  by default language
-     *
+     *  
      *  @param path 
      *  @return
      */
     function getMDDefaultUrl(path){
-        return MD_BASE_URL + '/' + LANG_DEFAULT + '/' + path;
+        var verPath = converToVersionPath(_version);
+        return verPath + MD_BASE_URL + '/' + LANG_DEFAULT + '/' + path;
     }
 
     /**
@@ -714,10 +863,19 @@
      *  @param packageval
      *  @param title
      *  @param anchor
+     *  @param version
      */
-    function setURIQuery(packageval,title,anchor){
+    function setURIQuery(packageval,title,anchor,version){
         var hash = "";
+
+        if ( version ){
+            hash += QUERY_KEY_VERSION + '=' + escape(version);
+        }
+
         if ( packageval ) {
+            if ( 0 != hash.length ){
+                hash += '&';   
+            }
             hash += QUERY_KEY_PACKAGE + '=' + escape(packageval);
         }
 
