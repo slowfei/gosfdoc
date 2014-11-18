@@ -11,6 +11,7 @@
 //-------------------------------------------------------
 
 ;(function($){
+    var NAVIGATION_HEIGHT = 46;
     var MD_BASE_URL = "md";
     var MD_FILE_SUFFIX = ".md";
     var GOSFDOC_JSON = "config.json";
@@ -23,11 +24,29 @@
     var COOKIE_VERSION_KEY = "version"
     var LANG_DEFAULT = "default";
     var VERSION_DEFAULT = "1.0.0";
-    var _language = LANG_DEFAULT;
-    var _version = null;
+
     var dataGosfdocJson = null;
     var $mainContent = null;
-    var navigationHeight = 46;
+    var _language = LANG_DEFAULT;
+    var _version = null;
+    var _userRehash = false;
+    var _rehashTimeout = null;
+    var _rexLineGithub = /^(#L\d+|#L\d+[-]L\d+)$/;
+  
+
+    /**
+     *  history struct
+     *
+     *  @param key
+     *  @param value
+     *  @param version
+     */
+    function HistoryStruct(key,value,version){
+        this.key = key;
+        this.hash = value;
+        this.scrollTop = 0;
+        this.version = version;
+    }
 
     /**
      *  jquery document load
@@ -59,15 +78,66 @@
 
         $mainContent = $("#main_content");
 
+        //  init doc
+        initDoc();
+
+        //  
+        initUI();
+
+        //
+        initEvent();
+
+    });
+
+
+    /**
+     *  init doc
+     */
+    function initDoc(){
+    
+       $.ajax({
+           url: GOSFDOC_JSON,
+           async:false,
+           cache:false,
+           type: 'GET',
+           dataType: 'json'
+       })
+       .done(function(dataJson) {
+            dataGosfdocJson = dataJson;
+            var queryPackage = getURIQuery(QUERY_KEY_PACKAGE);
+
+            parseSelectVersion(dataJson.Versions);
+            parseContentJson(dataJson.ContentJson);
+            parseAbout(dataJson.AboutMd);
+            parseLanguages(dataJson.Languages);
+            queryPackage = parseMenuList(dataJson.Markdowns,queryPackage);
+
+            if (queryPackage) {
+                //  handle query package
+                $(".segment.intro").css("paddingTop","20px");
+                parsePackageMarkdown(queryPackage);
+            }else{
+                // home show
+                reHome();
+            }
+       })
+       .fail(function(jqXHR, textStatus, errorThrown) {
+            $('#btn_show_menu').click();
+            $("#segment_intro").empty().html("Sorry! can not read \""+ GOSFDOC_JSON + "\" file.<br/><br/> try to use <code>gosfdoc</code> command run document: ");
+            //  TODO 读取 gosfdoc.json 的错误处理
+       });
+    }
+
+    /**
+     *  init ui
+     */
+    function initUI(){
         // menu show and hide button
         $('#btn_show_menu').click(function(){
             var t = $(this).text();
             $(this).text(t == ">" ? "<":">");
             $('#main_sidebar').sidebar('toggle');
         });
-
-        //  init doc
-        initDoc();
         
         //  menu item content text out of range handle
         $.each($("#main_sidebar .item a.item"), function(index, val) {
@@ -131,10 +201,57 @@
             reHome();
         }); 
 
+    }
+
+    /**
+     *  init event
+     */
+    function initEvent(){
+
+        var histroyIndex = -1;
+        var historyList = new Array();
+        var maxHistroy = 20;
+        var userReplace = false;
+
+        //  First loaded record
+        var key = getURIQuery(QUERY_KEY_PACKAGE);
+        if (key) {
+            var hash = window.location.hash;
+            var history = new HistoryStruct(key,hash,_version);
+            histroyIndex = historyList.push(history);
+        }
 
         //  monitor sticky
-        $(window).scroll(stickyScroll);
+        $(window).scroll(function(event) {
+            var windowTop = $(window).scrollTop();
 
+            var stickyItems =  $mainContent.data(DATA_KEY_STICKYITEMS);
+            if (!stickyItems) {
+                return;
+            }
+
+            var item = null;
+            $.each(stickyItems, function(key, val) {
+                if ( windowTop >= key ) {
+                     item = val;
+                };
+            });
+
+            if (item) {
+                setStickyItemActive(item);
+            }
+
+            //  scroll height record browsing history
+            if( 1 <= histroyIndex && historyList.length >=  histroyIndex ){
+                var history = historyList[histroyIndex-1];
+                if ( history ) {
+                    history.scrollTop = windowTop;
+                    historyList[histroyIndex-1] = history;
+                }
+            }
+        });
+
+        //
         $(window).resize(function(event) {
             var $stickyWrapper = $("#sticky-wrapper");
             $stickyWrapper.css('height', 'auto');
@@ -145,45 +262,177 @@
             };
         });
 
-    });
-
-
-    /**
-     *  init doc
-     */
-    function initDoc(){
-    
-       $.ajax({
-           url: GOSFDOC_JSON,
-           async:false,
-           cache:false,
-           type: 'GET',
-           dataType: 'json'
-       })
-       .done(function(dataJson) {
-            dataGosfdocJson = dataJson;
-            var queryPackage = getURIQuery(QUERY_KEY_PACKAGE);
-
-            parseSelectVersion(dataJson.Versions);
-            parseContentJson(dataJson.ContentJson);
-            parseAbout(dataJson.AboutMd);
-            parseLanguages(dataJson.Languages);
-            queryPackage = parseMenuList(dataJson.Markdowns,queryPackage);
-
-            if (queryPackage) {
-                //  handle query package
-                $(".segment.intro").css("paddingTop","20px");
-                parsePackageMarkdown(queryPackage);
-            }else{
-                // home show
-                reHome();
+        //
+        $(window).on('hashchange', function() {
+            var key = getURIQuery(QUERY_KEY_PACKAGE);
+            var currnetVer = _version;
+            var hash = window.location.hash;
+            if (!key || userReplace){
+                return;
             }
-       })
-       .fail(function(jqXHR, textStatus, errorThrown) {
-            $('#btn_show_menu').click();
-            $("#segment_intro").empty().html("Sorry! can not read \""+ GOSFDOC_JSON + "\" file.<br/><br/> try to use <code>gosfdoc</code> command run document: ");
-            //  TODO 读取 gosfdoc.json 的错误处理
-       });
+
+            if (!_userRehash && 1 <= histroyIndex && historyList.length >=  histroyIndex ) {
+                //  TODO 由于无法控制浏览器向后和向前的事件控制，所以历史浏览功能改用上下左右键来代替。
+                var history = historyList[histroyIndex-1];
+                var scrollTop = 0;
+                var historyVersion = false;
+                if (history) {
+                    scrollTop = history.scrollTop;
+                    historyVersion = history.version;
+                }
+
+                //  hashchange switch
+                userReplace = true;
+
+                //  version handle
+                if ( historyVersion ) {
+                    if ( historyVersion != currnetVer) {
+                        $("#version_text").text(historyVersion);
+                        $.each($("div.item",$("#version_value")), function(index, val) {
+                            var $item = $(val);
+                            if ($item.attr('data-value') == historyVersion) {
+                                $item.addClass('active');
+                            }else{
+                                $item.removeClass('active');
+                            }
+                        });
+                        _version = historyVersion;
+                        if (null != dataGosfdocJson) {
+                            parseMenuList(dataGosfdocJson.Markdowns,key);  
+                        }
+                    }
+                }
+
+                parsePackageMarkdown(key,scrollTop);
+
+                userReplace = false;
+                return;
+            }
+            
+            var isAdd = false;
+            if ( 0 == historyList.length) {
+                isAdd = true;
+            }else if( 1 <= histroyIndex && historyList.length >=  histroyIndex ){
+                var history = historyList[histroyIndex-1];
+                if ( history.key == key && currnetVer == history.version ) {
+                    history.hash = hash;
+                    history.scrollTop = $(window).scrollTop();
+                    history.version = currnetVer;
+                    historyList[histroyIndex-1] = history;
+                }else{
+                    isAdd = true;
+                    var count = historyList.length;
+                    for (var i = histroyIndex; i < count; i++) {
+                        historyList.pop();
+                    }
+                }
+            }
+
+            if (isAdd) {
+                if ( maxHistroy <= historyList.length ) {
+                    historyList.shift();
+                }
+                var history = new HistoryStruct(key,hash,currnetVer);
+                histroyIndex = historyList.push(history);
+            }
+
+            // console.log(historyList.length);
+        });
+
+        //  up down left right key
+        //  up key control left menu previous item 
+        //  down key control left menu next item 
+        //  left key control browsing history back
+        //  right key control browsing history forward
+        $(document).keyup(function(event) {
+            var which = event.which;
+
+            switch (which){
+                case 38:{
+                    // alert("up");
+                    var $items = $("#main_sidebar .menu a.item");
+                    var itemCount = $items.length;
+                    if ( 0 < itemCount ) {
+                        var selectIndex = 0;
+                        $.each($items, function(index, val) {
+                            var $item = $(val);
+                            if ($item.hasClass('active')) {
+                                selectIndex = index-1;
+                                return false;
+                            }
+                            return true;
+                        });
+                        if (0 > selectIndex) {
+                            $items.eq(itemCount-1).click();
+                        }else{
+                            $items.eq(selectIndex).click();
+                        }
+                    }
+                }
+                break;
+                case 40:
+                    // alert("down");
+                    var $items = $("#main_sidebar .menu a.item");
+                    var itemCount = $items.length;
+                    if ( 0 < itemCount ) {
+                        var selectIndex = 0;
+                        $.each($items, function(index, val) {
+                            var $item = $(val);
+                            if ($item.hasClass('active')) {
+                                selectIndex = index+1;
+                                return false;
+                            }
+                            return true;
+                        });
+                        if (itemCount <= selectIndex) {
+                            $items.eq(0).click();
+                        }else{
+                            $items.eq(selectIndex).click();
+                        }
+                    }
+                break;
+                case 37:{
+                    // alert("left");
+                    histroyIndex--;
+
+                    if( 1 <= histroyIndex &&  historyList.length >= histroyIndex ){
+                        var history = historyList[histroyIndex-1];
+                        var urlPackage = getURIQuery(QUERY_KEY_PACKAGE);
+                        var urlVersion = getURIQuery(QUERY_KEY_VERSION);
+                        if (urlPackage && urlVersion) {
+                            if (history.key != urlPackage || history.version != urlVersion) {
+                                _userRehash = false;
+                                window.location.hash = history.hash;
+                            }
+                        }
+                    }else if( 1 >= histroyIndex ){
+                        histroyIndex = 1;
+                    }
+                }
+                break;
+                case 39:{
+                    // alert("right");
+                    histroyIndex++;
+                    if( 1 <= histroyIndex && historyList.length >= histroyIndex ){
+                        var history = historyList[histroyIndex-1];
+                        var urlPackage = getURIQuery(QUERY_KEY_PACKAGE);
+                        var urlVersion = getURIQuery(QUERY_KEY_VERSION);
+                        if (urlPackage && urlVersion) {
+                            if (history.key != urlPackage || history.version != urlVersion) {
+                                _userRehash = false;
+                                window.location.hash = history.hash;
+                            }
+                        }
+                    }else if( historyList.length <= histroyIndex ){
+                        histroyIndex = historyList.length;
+                    }
+                }
+                break;
+            }
+            // console.log("histroyIndex:"+histroyIndex);
+            return false;
+        });
+    
     }
 
     /**
@@ -260,28 +509,6 @@
     }
 
     /**
-     *  monitor sticky item
-     */
-    function stickyScroll(){
-        var windowTop = $(window).scrollTop();
-
-        var stickyItems =  $mainContent.data(DATA_KEY_STICKYITEMS);
-        if (!stickyItems) {
-            return;
-        };
-        var item = null;
-        $.each(stickyItems, function(key, val) {
-            if ( windowTop >= key ) {
-                 item = val;
-            };
-        });
-
-        if (item) {
-            setStickyItemActive(item);
-        };
-    }
-
-    /**
      *  set sticky item active
      *
      *  @param item
@@ -323,8 +550,9 @@
      *  parse package markdown
      *  
      *  @param mdpath
+     *  @param scrollTop Specify window scroll top
      */
-    function parsePackageMarkdown(mdpath){
+    function parsePackageMarkdown(mdpath,scrollTop){
 
         $("#segment_intro").empty();
         $(".segment.intro").css("paddingTop","20px");
@@ -366,7 +594,7 @@
                     var h2Items = {}
                     $.each($("h2",  $mainContent), function(index, val) {
                         var $stickyItem = $(val);
-                        var offsetTop = $stickyItem.offset().top - navigationHeight;  //  top navigation height
+                        var offsetTop = $stickyItem.offset().top - NAVIGATION_HEIGHT;  //  top navigation height
                         h2Items[offsetTop] = val;
                     });
 
@@ -417,8 +645,6 @@
                                     var queryPackage = getURIQuery(QUERY_KEY_PACKAGE);
                                     var queryTitle = getURIQuery(QUERY_KEY_TITLE);
 
-                                    setURIQuery(queryPackage,queryTitle,unescape(anchor),_version);
-
                                     if ( '#' != text ) {
                                         var $anchorTag = $("*[id='"+anchor+"']",$mainContent);
                                         if ( 0 == $anchorTag.length ) {
@@ -426,15 +652,32 @@
                                         }
                                         if ( 0 != $anchorTag.length ) {
                                             $anchorTag = $anchorTag.eq(0);
-                                            var offsetTop = $anchorTag.offset().top - navigationHeight;
+                                            var offsetTop = $anchorTag.offset().top - NAVIGATION_HEIGHT;
                                             $(window).scrollTop(offsetTop);
                                         }
-                                    };
+                                    }else{
+                                        setURIQuery(queryPackage,queryTitle,unescape(anchor),_version);
+                                        copyToClipboard(window.location.href);
+                                    }
                                     return false;
                                 });
 
+                            }else if ( 0 == href.indexOf("src.html") ){
+                                // target="_blank"
+                                $atag.attr('target', "_blank");
                             }else if( 0 == href.indexOf('../') ){
+                                /*
+                                    appendPath = "githbu.com/slowfei"
+
+                                    github:
+                                    url = https://github.com/slowfei/gosfdoc/blob/master/test-template/doc/md/default/github.com/slowfei/gosfdoc.md
+                                    href = ../../../../../../gosfdoc.go
+                                    
+                                    TODO 编写兼容github的浏览方式。
+                                */
+
                                 href = href.replace(/\.\.\//g,"");
+
                                 $atag.attr('href', href);
                             }
                         }
@@ -452,7 +695,7 @@
                         }
                         if ( 0 != $anchorTag.length ) {
                             $anchorTag = $anchorTag.eq(0);
-                            titleScrollTop = $anchorTag.offset().top - navigationHeight;
+                            titleScrollTop = $anchorTag.offset().top - NAVIGATION_HEIGHT;
                         }
 
                         var queryPackage = getURIQuery(QUERY_KEY_PACKAGE);
@@ -461,9 +704,11 @@
                     };
 
                     //  scroll to func position
-                    if (titleScrollTop) {
+                    if (scrollTop) {
+                        $(window).scrollTop(scrollTop);
+                    }else if (titleScrollTop) {
                         $(window).scrollTop(titleScrollTop);
-                    };
+                    }
 
                     if ( 0 != $("#sticky a").length ) {
                         $("#sticky").show();
@@ -515,9 +760,9 @@
 
             $.each(val.List, function(listIndex, packageInfo) {
                 var packageName = packageInfo.Name;
+                var mdpath = packageName + MD_FILE_SUFFIX;
 
                 if ( findPackage ) {
-                    var mdpath = packageName + MD_FILE_SUFFIX;
                     if (mdpath == findPackage) {
                         resultPackage = findPackage;
                     }
@@ -581,6 +826,7 @@
         $.each(verJson, function(index, val) {
 
             var verstr = val.toString();
+            var classActive = "";
 
             //  默认选择排序在第一位的版本
             if ( 0 == tempOne.length) {
@@ -590,9 +836,10 @@
             //  效验设置的版本信息是否与获取的版本信息相符
             if ( _version == verstr ) {
                 checkVer = true;
+                classActive = " active";
             }   
 
-            var html = '<div class="item" data-value="'+verstr+'">'+verstr+'</div>';
+            var html = '<div class="item'+classActive+'" data-value="'+verstr+'">'+verstr+'</div>';
             $versionElements.append(html);
 
         });
@@ -632,6 +879,8 @@
                         parsePackageMarkdown(checkPackage);
                         jumpHome = false;
                     }
+                }else{
+                     parseMenuList(dataGosfdocJson.Markdowns,false);
                 }
 
                 if (jumpHome) {
@@ -893,9 +1142,16 @@
             hash += QUERY_KEY_ANCHOR + '=' + escape(anchor);
         }
 
+        _userRehash = true;
+
         window.location.hash = hash;
         window.location.search ='';
         window.location.query = '';
+
+        window.clearTimeout(_rehashTimeout);
+        _rehashTimeout = window.setTimeout(function(){
+            _userRehash = false;
+        },600);
     }
 
     /**
@@ -986,4 +1242,15 @@
             document.cookie = name + "="+cval+";expires="+exp.toGMTString();
         }
     }
+
+    /**
+     *  copy text to clipboard
+     *
+     *  @param txt
+     */
+    function copyToClipboard(txt) {
+        //  TOOD 由于复制到剪切板有些复杂，暂时这样。
+        window.prompt("Copy link to clipboard?", txt);
+    }
+
 })(jQuery);

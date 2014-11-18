@@ -20,11 +20,30 @@
     var dataGosfdocJson = null;
     var $_preCode = null;
     var _version = null;
+    var _userRehash = false;
+    var _rehashTimeout = null;
     var _windowWhich = -1;
     var _linkRoot = false;
     var _appendPath = "";
     var _rexLine = /^(\d+|\d+[-]\d+)$/;
+
+     /**
+     *  history struct
+     *
+     *  @param key
+     *  @param value
+     *  @param version
+     */
+    function HistoryStruct(key,value,version){
+        this.key = key;
+        this.hash = value;
+        this.scrollTop = 0;
+        this.version = version;
+    }
     
+    /**
+     *  jquery document load
+     */
     $(function(){
 
         hljs.configure({tabReplace: '    ',useBR:false});
@@ -161,6 +180,34 @@
      *  init event
      */
     function initEvent(){
+
+        var histroyIndex = -1;
+        var historyList = new Array();
+        var maxHistroy = 20;
+        var userReplace = false;
+
+        //  First loaded record
+        var key = getURIQuery(QUERY_KEY_FILE);
+        if (key) {
+            var hash = window.location.hash;
+            var history = new HistoryStruct(key,hash,_version);
+            histroyIndex = historyList.push(history);
+        }
+
+         //  monitor sticky
+        $(window).scroll(function(event) {
+            var windowTop = $(window).scrollTop();
+
+            //  scroll height record browsing history
+            if( 1 <= histroyIndex && historyList.length >=  histroyIndex ){
+                var history = historyList[histroyIndex-1];
+                if ( history ) {
+                    history.scrollTop = windowTop;
+                    historyList[histroyIndex-1] = history;
+                }
+            }
+        });
+
         //  keydown
         $(window).keydown(function(event) {
             if ( 1 <= $(".line_number.active",$_preCode).length ) {
@@ -172,15 +219,185 @@
             _windowWhich = -1;
         });
 
+        //  up down left right key
+        //  up key control left menu previous item 
+        //  down key control left menu next item 
+        //  left key control browsing history back
+        //  right key control browsing history forward
+        $(document).keyup(function(event) {
+            var which = event.which;
 
+            switch (which){
+                case 38:{
+                    // alert("up");
+                    var $items = $("#main_sidebar .menu a.item");
+                    var itemCount = $items.length;
+                    if ( 0 < itemCount ) {
+                        var selectIndex = 0;
+                        $.each($items, function(index, val) {
+                            var $item = $(val);
+                            if ($item.hasClass('active')) {
+                                selectIndex = index-1;
+                                return false;
+                            }
+                            return true;
+                        });
+                        if (0 > selectIndex) {
+                            $items.eq(itemCount-1).click();
+                        }else{
+                            $items.eq(selectIndex).click();
+                        }
+                    }
+                }
+                break;
+                case 40:
+                    // alert("down");
+                    var $items = $("#main_sidebar .menu a.item");
+                    var itemCount = $items.length;
+                    if ( 0 < itemCount ) {
+                        var selectIndex = 0;
+                        $.each($items, function(index, val) {
+                            var $item = $(val);
+                            if ($item.hasClass('active')) {
+                                selectIndex = index+1;
+                                return false;
+                            }
+                            return true;
+                        });
+                        if (itemCount <= selectIndex) {
+                            $items.eq(0).click();
+                        }else{
+                            $items.eq(selectIndex).click();
+                        }
+                    }
+                break;
+                case 37:{
+                    // alert("left");
+                    histroyIndex--;
+
+                    if( 1 <= histroyIndex &&  historyList.length >= histroyIndex ){
+                        var history = historyList[histroyIndex-1];
+                        var urlFile = getURIQuery(QUERY_KEY_FILE);
+                        var urlVersion = getURIQuery(QUERY_KEY_VERSION);
+                        if (urlFile && urlVersion) {
+                            if (history.key != urlFile || history.version != urlVersion) {
+                                _userRehash = false;
+                                window.location.hash = history.hash;
+                            }
+                        }
+                    }else if( 1 >= histroyIndex ){
+                        histroyIndex = 1;
+                    }
+                }
+                break;
+                case 39:{
+                    // alert("right");
+                    histroyIndex++;
+                    if( 1 <= histroyIndex && historyList.length >= histroyIndex ){
+                        var history = historyList[histroyIndex-1];
+                        var urlFile = getURIQuery(QUERY_KEY_FILE);
+                        var urlVersion = getURIQuery(QUERY_KEY_VERSION);
+                        if (urlFile && urlVersion) {
+                            if (history.key != urlFile || history.version != urlVersion) {
+                                _userRehash = false;
+                                window.location.hash = history.hash;
+                            }
+                        }
+                    }else if( historyList.length <= histroyIndex ){
+                        histroyIndex = historyList.length;
+                    }
+                }
+                break;
+            }
+            // console.log("histroyIndex:"+histroyIndex);
+            return false;
+        });
+
+        //
+        $(window).on('hashchange', function() {
+            var key = getURIQuery(QUERY_KEY_FILE);
+            var currnetVer = _version;
+            var hash = window.location.hash;
+            if (!key || userReplace){
+                return;
+            }
+
+            if (!_userRehash && 1 <= histroyIndex && historyList.length >=  histroyIndex ) {
+                //  TODO 由于无法控制浏览器向后和向前的事件控制，所以历史浏览功能改用上下左右键来代替。
+                var history = historyList[histroyIndex-1];
+                var scrollTop = 0;
+                var historyVersion = false;
+                if (history) {
+                    scrollTop = history.scrollTop;
+                    historyVersion = history.version;
+                }
+
+                //  hashchange switch
+                userReplace = true;
+
+                //  version handle
+                if ( historyVersion ) {
+                    if ( historyVersion != currnetVer) {
+                        $("#version_text").text(historyVersion);
+                        $.each($("div.item",$("#version_value")), function(index, val) {
+                            var $item = $(val);
+                            if ($item.attr('data-value') == historyVersion) {
+                                $item.addClass('active');
+                            }else{
+                                $item.removeClass('active');
+                            }
+                        });
+                        _version = historyVersion;
+                        if (null != dataGosfdocJson) {
+                            parseMenuList(dataGosfdocJson.Files);  
+                        }
+                    }
+                }
+
+                loadSourceCode(key,scrollTop);
+
+                userReplace = false;
+                return;
+            }
+            
+            var isAdd = false;
+            if ( 0 == historyList.length) {
+                isAdd = true;
+            }else if( 1 <= histroyIndex && historyList.length >=  histroyIndex ){
+                var history = historyList[histroyIndex-1];
+                if ( history.key == key && currnetVer == history.version ) {
+                    history.hash = hash;
+                    history.scrollTop = $(window).scrollTop();
+                    history.version = currnetVer;
+                    historyList[histroyIndex-1] = history;
+                }else{
+                    isAdd = true;
+                    var count = historyList.length;
+                    for (var i = histroyIndex; i < count; i++) {
+                        historyList.pop();
+                    }
+                }
+            }
+
+            if (isAdd) {
+                if ( maxHistroy <= historyList.length ) {
+                    historyList.shift();
+                }
+                var history = new HistoryStruct(key,hash,currnetVer);
+                histroyIndex = historyList.push(history);
+            }
+
+            // console.log(historyList.length);
+        });
     }
     
     /**
      *  load source code file
      *
      *  @param filepath file url path
+     *  @param scrollTop Specify window scroll top
      */
-    function loadSourceCode(filepath){
+    function loadSourceCode(filepath,scrollTop){
         if (!filepath) {return}
 
         //  set left sidebar item active
@@ -299,8 +516,16 @@
                 for (var i = startLine; i <= endLine; i++) {
                     activeLines.push(i+'');
                 }
-                selectLineNumber(activeLines,L1+'');
+                if (!scrollTop) {
+                     selectLineNumber(activeLines,L1+'');
+                }else{
+                    selectLineNumber(activeLines);
+                }
             }
+
+            if (scrollTop) {
+                $(window).scrollTop(scrollTop);
+            };
 
         }).fail(function() {
             var appendstr = "";
@@ -332,6 +557,7 @@
         $.each(verJson, function(index, val) {
 
             var verstr = val.toString();
+            var classActive = "";
 
             //  默认选择排序在第一位的版本
             if ( 0 == tempOne.length) {
@@ -341,9 +567,10 @@
             //  效验设置的版本信息是否与获取的版本信息相符
             if ( _version == verstr ) {
                 checkVer = true;
+                classActive = " active";
             }
 
-            var html = '<div class="item" data-value="'+verstr+'">'+verstr+'</div>';
+            var html = '<div class="item'+classActive+'" data-value="'+verstr+'">'+verstr+'</div>';
             $versionElements.append(html);
 
         });
@@ -575,9 +802,16 @@
             hash += QUERY_KEY_LINES + '=' + escape(lines);
         }
 
+        _userRehash = true;
+
         window.location.hash = hash;
         window.location.search ='';
         window.location.query = '';
+
+         window.clearTimeout(_rehashTimeout);
+        _rehashTimeout = window.setTimeout(function(){
+            _userRehash = false;
+        },600);
     }
 
     /**

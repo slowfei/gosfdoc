@@ -148,7 +148,7 @@ func (* TestStruct) hello(str string) (v1,v2 string)
 ```
 
 
-### [type Config struct][#]
+### [type Config struct](../../../../github.com/slowfei/gosfdoc.go)
 > leafveingo config<br/>
 > default see _defaultConfigJson
 
