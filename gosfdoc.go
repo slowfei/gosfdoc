@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-16
-//  Update on 2014-11-05
+//  Update on 2014-11-13
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -15,7 +15,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/slowfei/gosfcore/encoding/json"
 	"github.com/slowfei/gosfcore/utils/filemanager"
 	"github.com/slowfei/gosfdoc/assets"
 	"io"
@@ -269,7 +268,26 @@ func dirpathMkall(path string) {
  *  @return full path
  */
 func dirpathMarkdownDefault(config *MainConfig) string {
-	path := filepath.Join(config.Outpath, DIR_NAME_MAIN_MARKDOWN, DIR_NAME_MARKDOWN_DEFAULT)
+
+	verPath := ConverToVersionPath(config.currentVersion)
+
+	path := filepath.Join(config.Outpath, verPath, DIR_NAME_MAIN_MARKDOWN, DIR_NAME_MARKDOWN_DEFAULT)
+
+	dirpathMkall(path)
+
+	return path
+}
+
+/**
+ *	get source code output directory path
+ *
+ *	@param `config`
+ *	@return full path
+ */
+func dirpathSRC(config *MainConfig) string {
+	verPath := ConverToVersionPath(config.currentVersion)
+
+	path := filepath.Join(config.Outpath, verPath, DIR_NAME_SOURCE_CODE)
 
 	dirpathMkall(path)
 
@@ -285,6 +303,34 @@ func dirpathAssets(config *MainConfig) string {
 	dirpathMkall(path)
 
 	return path
+}
+
+/**
+ *	check whether there are version info
+ *
+ *	@param `configPath` config path
+ *	@param `version` check version string
+ */
+func CheckExistVersion(configPath, version string) bool {
+	result := false
+	config, _, pass := readConfigFile(configPath)
+	if pass {
+		config.setAbspath()
+		checkPath := filepath.Join(config.Outpath, ConverToVersionPath(version))
+
+		result, _, _ = SFFileManager.Exists(checkPath)
+	}
+	return result
+}
+
+/**
+ *	conver version to use the path info
+ */
+func ConverToVersionPath(version string) string {
+
+	result := strings.Replace(version, ".", "_", -1)
+
+	return "v" + result
 }
 
 /**
@@ -387,30 +433,35 @@ func CreateConfigFile(dirPath string, langs []string) (error, bool) {
  *  build output document
  *
  *  @param `configPath` config file path
+ *	@param `version` 	output document version
+ *	@param `fileFunc`
  *  @return `error` warn or error message
  *  @return `bool`  true is operation success
  */
-func Output(configPath string, fileFunc FileResultFunc) (error, bool) {
+func Output(configPath, version string, fileFunc FileResultFunc) (error, bool) {
 	config, err, pass := readConfigFile(configPath)
 	if !pass {
 		return err, pass
 	}
-	return OutputWithConfig(config, fileFunc)
+	return OutputWithConfig(config, version, fileFunc)
 }
 
 /**
  *  build output document with config content
  *
  *  @param `config`
+ *	@param `version`
  *  @return `error` warn or error message
  *  @return `bool`  true is operation success
  */
-func OutputWithConfig(config *MainConfig, fileFunc FileResultFunc) (error, bool) {
+func OutputWithConfig(config *MainConfig, version string, fileFunc FileResultFunc) (error, bool) {
 	err, pass := config.Check()
 	if !pass {
 		return err, pass
 	}
 	config.setAbspath()
+	config.currentVersion = version
+
 	scanPath := config.ScanPath
 
 	isExists, isDir, _ := SFFileManager.Exists(scanPath)
@@ -492,7 +543,7 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, keys []string
 	isLinkRoot := config.CodeLinkRoot
 	outCodeDir := ""
 	if config.CopyCode {
-		outCodeDir = filepath.Join(config.Outpath, DIR_NAME_SOURCE_CODE)
+		outCodeDir = dirpathSRC(config)
 	}
 
 	//	markdown file save directory
@@ -631,7 +682,7 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, keys []string
 		sort.Sort(SortSet{documents: documents})
 
 		// 5.output markdown
-		mdBytes := ParseMarkdown(documents, previews, blocks, filesName, relativeDirPath)
+		mdBytes := ParseMarkdown(documents, previews, blocks, filesName, config.currentVersion, relativeDirPath)
 		if 0 != len(mdBytes) {
 			//	markdown file name is directory base name + suffix
 			mdFileName := filepath.Base(dirPath) + FILE_SUFFIX_MARKDOWN
@@ -695,11 +746,7 @@ func outAssets(config *MainConfig, fileFunc FileResultFunc) {
 
 	gosfdocsrcPath := filepath.Join(dirpath, FILE_NAME_GOSFDOC_SRC_MIN_JS)
 
-	if config.CopyCode {
-		err = SFFileManager.WirteFilepath(gosfdocsrcPath, []byte(assets.GOSFDOC_SRC_MIN_JS))
-	} else {
-		err = SFFileManager.WirteFilepath(gosfdocsrcPath, []byte(assets.GOSFDOC_SRC_MIN_JS_ROOT))
-	}
+	err = SFFileManager.WirteFilepath(gosfdocsrcPath, []byte(assets.GOSFDOC_SRC_MIN_JS))
 
 	if nil != err {
 		fileFunc(gosfdocsrcPath, ResultFileOutFail, err)
@@ -777,6 +824,7 @@ func outHTMLConfig(config *MainConfig, fileFunc FileResultFunc, packInfos []Pack
 		if -1 == findIndex {
 			mm = MenuMarkdown{}
 			mm.MenuName = info.menuName
+			mm.Version = config.currentVersion
 
 			mm.List = make([]PackageInfo, 0, len(packInfos))
 			mm.List = append(mm.List, info)
@@ -805,6 +853,7 @@ func outHTMLConfig(config *MainConfig, fileFunc FileResultFunc, packInfos []Pack
 		if -1 == findIndex {
 			mf = MenuFile{}
 			mf.MenuName = file.menuName
+			mf.Version = config.currentVersion
 
 			mf.List = make([]FileLink, 0, len(fileLinks))
 			mf.List = append(mf.List, file)
@@ -816,21 +865,49 @@ func outHTMLConfig(config *MainConfig, fileFunc FileResultFunc, packInfos []Pack
 		}
 	}
 
-	docConfig := DocConfig{}
+	configPath := filepath.Join(config.Outpath, FILE_NAME_HTML_CONFIG_JSON)
+
+	docConfig := readDocConifg(configPath)
+
 	docConfig.ContentJson = FILE_NAME_CONTENT_JSON
 	docConfig.IntroMd = FILE_NAME_INTRO_MD
 	docConfig.AboutMd = FILE_NAME_ABOUT_MD
 	docConfig.Languages = config.Languages
+	docConfig.LinkRoot = config.CodeLinkRoot
+	docConfig.AppendPath = config.OutAppendPath
+
+	// rebuild struct remove correspond version info
+	currentVersion := config.currentVersion
+
+	tempVersions := make([]string, 0, 1)
+	tempVersions = append(tempVersions, currentVersion)
+	for _, v := range docConfig.Versions {
+		if v != currentVersion {
+			tempVersions = append(tempVersions, v)
+		}
+	}
+	docConfig.Versions = tempVersions
+
+	// markdownds and files
+	for _, v := range docConfig.Markdowns {
+		if v.Version != currentVersion {
+			menuMDs = append(menuMDs, v)
+		}
+	}
+	for _, v := range docConfig.Files {
+		if v.Version != currentVersion {
+			menuFiles = append(menuFiles, v)
+		}
+	}
 	docConfig.Markdowns = menuMDs
 	docConfig.Files = menuFiles
 
-	configPath := filepath.Join(config.Outpath, FILE_NAME_HTML_CONFIG_JSON)
-
-	configJson, err := SFJson.NewJson(docConfig, "", "")
+	// output config.json
+	configData, err := json.MarshalIndent(docConfig, "", "\t")
 	if nil != err {
 		fileFunc(configPath, ResultFileOutFail, err)
 	} else {
-		err := configJson.WriteFilepath(configPath, true)
+		err := SFFileManager.WirteFilepath(configPath, configData)
 		if nil != err {
 			fileFunc(configPath, ResultFileOutFail, err)
 		}

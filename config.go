@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-16
-//  Update on 2014-11-05
+//  Update on 2014-11-13
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -47,18 +47,19 @@ var (
  *  output `gosfdoc.json` use
  */
 type MainConfig struct {
-	path          string              // private handle path, save console command path.
-	ScanPath      string              // scan document info file path, relative or absolute path, is "/" scan current console path.
-	CodeLang      []string            // code languages
-	Outpath       string              // output document path, relative or absolute path.
-	OutAppendPath string              // append output source code and markdown relative path(scan path join). defalut ""
-	CopyCode      bool                // copy source code to document directory. default false
-	CodeLinkRoot  bool                // source code link to root directory, 'CopyCode' is true was invalid, default true
-	HtmlTitle     string              // document html show title
-	DocTitle      string              // html top tabbar show title
-	MenuTitle     string              // html left menu show title
-	Languages     []map[string]string // document support the language. key is directory name, value is show text.
-	FilterPaths   []string            // filter path, relative or absolute path
+	path           string              `json:"-"` // private handle path, save console command path.
+	currentVersion string              `json:"-"` // current output version, private record.
+	ScanPath       string              // scan document info file path, relative or absolute path, is "/" scan current console path.
+	CodeLang       []string            // code languages
+	Outpath        string              // output document path, relative or absolute path.
+	OutAppendPath  string              // append output source code and markdown relative path(scan path join). defalut ""
+	CopyCode       bool                // copy source code to document directory. default false
+	CodeLinkRoot   bool                // source code link to root directory, 'CopyCode' is true was invalid, default true
+	HtmlTitle      string              // document html show title
+	DocTitle       string              // html top tabbar show title
+	MenuTitle      string              // html left menu show title
+	Languages      []map[string]string // document support the language. key is directory name, value is show text.
+	FilterPaths    []string            // filter path, relative or absolute path
 }
 
 /**
@@ -178,6 +179,7 @@ func (mc *MainConfig) Check() (error, bool) {
  */
 type MenuMarkdown struct {
 	MenuName string
+	Version  string
 	List     []PackageInfo
 }
 
@@ -187,6 +189,7 @@ type MenuMarkdown struct {
  */
 type MenuFile struct {
 	MenuName string
+	Version  string
 	List     []FileLink
 }
 
@@ -200,8 +203,31 @@ type DocConfig struct {
 	IntroMd     string              // intro markdown file
 	AboutMd     string              // about markdown file
 	Languages   []map[string]string // key is directory name, value is show text
+	LinkRoot    bool                // is link root directory
+	AppendPath  string              // append output source code and markdown relative path(scan path join)
+	Versions    []string            // output document versions
 	Markdowns   []MenuMarkdown      // markdown info list
 	Files       []MenuFile          // source code file links
+}
+
+/**
+ *	read document config `config.json`
+ *
+ *	@param `path`
+ *	@return
+ */
+func readDocConifg(path string) DocConfig {
+	result := DocConfig{}
+
+	isExists, isDir, _ := SFFileManager.Exists(path)
+	if isExists && !isDir {
+		jsonData, _ := ioutil.ReadFile(path)
+		if nil != jsonData && 0 != len(jsonData) {
+			json.Unmarshal(jsonData, &result)
+		}
+	}
+
+	return result
 }
 
 /**

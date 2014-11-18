@@ -13,7 +13,7 @@
 //  limitations under the License.
 //
 //  Create on 2014-10-28
-//  Update on 2014-10-28
+//  Update on 2014-11-14
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -30,33 +30,15 @@ const HTML_INDEX = `<!DOCTYPE html>
 
     <title></title>
     
-    <!-- <link rel="stylesheet" type="text/css" href="assets/semantic/semantic.css"> -->
-    <!-- <link rel="stylesheet" type="text/css" href="assets/highlight/default.min.css"> -->
-    <!-- <link rel="stylesheet" type="text/css" href="assets/gosfdoc.css"> -->
     <link rel="stylesheet" type="text/css" href="assets/gosfdoc.min.css">
 
-    <!-- <script src="assets/jquery/jquery-2.1.1.min.js"></script> -->
-    <!-- <script src="assets/semantic/semantic.js"></script> -->
-    <!-- <script src="assets/highlight/highlight.pack.js"></script> -->
-    <!-- <script src="assets/marked/marked.js" charset="UTF-8"></script> -->
     <script src="assets/assets.min.js"></script>
     <script src="assets/gosfdoc.min.js"></script>
-
+    
 </head>
 <body class="side pushed" ontouchstart>
     <div id="main_sidebar" class="ui large floating vertical inverted labeled sidebar menu active">
-        <div class="item" id="menu_title">
-            <!--TODO package range -->menu title
-        </div>
-
-        <!-- range menu item -->
-        <!-- <div class="item">
-            <b>project name</b>
-            <div class="menu">
-                <a class="item" href="?p=github.com/slowfei/leafveingo.md">github.com/slowfei/leafveingo</a>
-                <a class="item" href="#">github.com/slowfei/leafveingo/router</a>
-            </div>
-        </div> -->
+        <div class="item" id="menu_title">menu title</div>
         
     </div>
     <div id="btn_show_menu" class="ui launch black right attached button">
@@ -66,14 +48,21 @@ const HTML_INDEX = `<!DOCTYPE html>
     <div class="ui fixed transparent inverted menu topfixed">
         <div class="container">
             <a id="home" class="left item" href="javascript:;">&nbsp;</a>
-            <div class="title item" id="doc_title">
-                <!--TODO top title -->doc title
-            </div>
+            <div class="title item" id="doc_title">doc title</div>
         </div>
     </div>
 
     <div class="ui menu transparent right_menu">
-        <!-- TODO other info -->
+
+        <div class="section ui dropdown link item version">
+            <div class="textcolor">
+                <b>Version:</b> 
+                <span id="version_text"></span>
+            </div>
+            <div id="version_value" class="menu ui transition">
+            </div>
+        </div>
+        
         <div class="section ui dropdown link item language">
             <div class="textcolor">
                 <b>Language:</b> 
@@ -82,11 +71,12 @@ const HTML_INDEX = `<!DOCTYPE html>
             <div id="language_value" class="menu ui transition">
             </div>
         </div>
+
         <div class="item title">
             <a href="javascript:;" id="item_about"><b>About</b></a>
             <div class="ui modal about" id="about_modal">
                 <div class="content md common_md" id="about_content">
-                     <!-- TODO about content -->
+
                 </div>
                 <div class="actions">
                     <div class="ui button">
@@ -102,7 +92,7 @@ const HTML_INDEX = `<!DOCTYPE html>
     <div class="segment intro">
         <div class="container">
             <div id="segment_intro">
-                <!-- TODO intro content -->
+
             </div>
         </div>  
     </div>
@@ -110,7 +100,7 @@ const HTML_INDEX = `<!DOCTYPE html>
     <div class="main container">
         <div class="sticky-wrapper" id="sticky-wrapper">
             <div id="sticky" class="ui vertical pointing secondary menu">
-                <!-- TOOD sticky item -->
+
             </div>
         </div>
 
@@ -124,8 +114,7 @@ const HTML_INDEX = `<!DOCTYPE html>
     <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
     <br/><br/><br/><br/><br/><br/><br/><br/><br/>
 </body>
-</html>
-`
+</html>`
 
 const HTML_SRC = `<!DOCTYPE html>
 <html>
@@ -136,16 +125,9 @@ const HTML_SRC = `<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>source code</title>
-    
-    <!-- <link rel="stylesheet" type="text/css" href="assets/semantic/semantic.css"> -->
-    <!-- <link rel="stylesheet" type="text/css" href="assets/highlight/default.min.css"> -->
-    <!-- <link rel="stylesheet" type="text/css" href="assets/gosfdoc.css"> -->
+
     <link rel="stylesheet" type="text/css" href="assets/gosfdoc.min.css">
 
-    <!-- <script src="assets/jquery/jquery-2.1.1.min.js"></script> -->
-    <!-- <script src="assets/semantic/semantic.js"></script> -->
-    <!-- <script src="assets/highlight/highlight.pack.js"></script> -->
-    <!-- <script src="assets/marked/marked.js" charset="UTF-8"></script> -->
     <script src="assets/assets.min.js"></script>
     <script src="assets/gosfdoc.src.min.js"></script>
 
@@ -155,16 +137,6 @@ const HTML_SRC = `<!DOCTYPE html>
         <div class="item" id="menu_title">
             <center>Files</center>
         </div>
-
-        <!-- range menu item -->
-        <!-- <div class="item">
-            <b>project name</b>
-            <div class="menu">
-                <a class="item" href="gosfdoc.go">gosfdoc.go</a>
-                <a class="item" href="index.html">router.go</a>
-                <a class="item" href="router/temp.go">router/temp.go</a>
-            </div>
-        </div> -->
         
     </div>
     <div id="btn_show_menu" class="ui launch black right attached button src">
@@ -172,13 +144,24 @@ const HTML_SRC = `<!DOCTYPE html>
     </div>
     
     <div class="main container src">
+
+        <div class="ui menu transparent right_menu">
+            <div class="section ui dropdown link item version">
+                <div class="textcolor">
+                    <b>Version:</b> 
+                    <span id="version_text"></span>
+                </div>
+                <div id="version_value" class="menu ui transition">
+                </div>
+            </div>
+        </div>
+
         <div id="src_info">
         </div>
         <div class="ui sticky src" id="main_content">
-            <pre><code></code></pre>
+            <pre><code>source code browse, please select left menu item.</code></pre>
         </div>
     </div>
 
 </body>
-</html>
-`
+</html>`

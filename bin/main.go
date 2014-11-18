@@ -1,11 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"github.com/slowfei/gosfcore/utils/filemanager"
 	"github.com/slowfei/gosfdoc"
 	_ "github.com/slowfei/gosfdoc/lang/golang"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -18,6 +20,7 @@ var (
 	//	command param
 	_lang       *string = nil
 	_configFile         = flag.String("config", DEFAULT_GOSFDOC_JSON, "custom config file path.")
+	_version            = flag.String("v", "", "output the document version string.")
 
 	//	private param
 	_currendCodelang = ""
@@ -49,16 +52,47 @@ func usage() {
 	fmt.Println("")
 }
 
+/**
+ *	parse commond params
+ *
+ *	@param `args`
+ */
+func parseCommond(args []string) {
+	for _, str := range args {
+		commond := "-config="
+		if 0 == strings.Index(str, commond) {
+			*_configFile = str[len(commond):len(str)]
+		}
+
+		commond = "-lang="
+		if 0 == strings.Index(str, commond) {
+			*_lang = str[len(commond):len(str)]
+		}
+
+		commond = "-v="
+		if 0 == strings.Index(str, commond) {
+			*_version = str[len(commond):len(str)]
+		}
+
+		commond = "-version="
+		if 0 == strings.Index(str, commond) {
+			*_version = str[len(commond):len(str)]
+		}
+	}
+}
+
 func main() {
 	flag.Usage = usage
 	flag.Parse()
+	args := flag.Args()
+	parseCommond(args)
 
-	if nil == flag.Args() || 0 == len(flag.Args()) {
+	if nil == args || 0 == len(args) {
 		flag.Usage()
 		return
 	}
 
-	arg := flag.Args()[0]
+	arg := args[0]
 
 	if 0 != len(arg) {
 		switch arg {
@@ -86,8 +120,14 @@ func main() {
 				fmt.Println("error or warn message, check the config file.")
 			}
 		case "output":
-			configPath := *_configFile
 
+			version := *_version
+			if 0 == len(version) {
+				fmt.Println("Please input the document version string info.\n")
+				return
+			}
+
+			configPath := *_configFile
 			if 0 == len(configPath) {
 				configPath = DEFAULT_GOSFDOC_JSON
 			}
@@ -103,7 +143,22 @@ func main() {
 				return
 			}
 
-			outErr, outPass := gosfdoc.Output(configPath, func(path string, result gosfdoc.OperateResult, err error) {
+			if gosfdoc.CheckExistVersion(configPath, version) {
+				fmt.Println("Current output version of the document already exists!")
+				fmt.Println("Whether to overwrite existing files? (yes/no, y/n)")
+
+				reader := bufio.NewReader(os.Stdin)
+				data, _, _ := reader.ReadLine()
+				command := string(data)
+
+				if "yes" != command && "y" != command {
+					fmt.Println("End output.")
+					return
+				}
+				fmt.Println("")
+			}
+
+			outErr, outPass := gosfdoc.Output(configPath, version, func(path string, result gosfdoc.OperateResult, err error) {
 				resultStr := "Invalid:"
 				switch result {
 				case gosfdoc.ResultFileSuccess:

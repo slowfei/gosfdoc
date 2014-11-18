@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-09-10
-//  Update on 2014-11-05
+//  Update on 2014-11-13
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -98,11 +98,12 @@ func (n *nilDocParser) ParsePackageInfo(filebuf *FileBuf) string {
  *	@param `previews`  after sorting
  *	@param `blocks`	   after sorting
  *	@param `filesName` file names
+ *	@param `version`   output document version
  *	@param `relPath`   before code file name join path
  *	@return bytes
  */
 func ParseMarkdown(documents []Document, previews []Preview, blocks []CodeBlock,
-	filesName []string, relPath string) []byte {
+	filesName []string, version, relPath string) []byte {
 
 	relPath = strings.TrimPrefix(relPath, "/")
 	relPath = strings.TrimSuffix(relPath, "/")
@@ -165,10 +166,11 @@ func ParseMarkdown(documents []Document, previews []Preview, blocks []CodeBlock,
 		isWrite = true
 		// ###Package files
 		// [a.go](#) [b.go](#) [c.go](#)
+		//  <a href="#" target="_blank">a.go</a>
 		buf.WriteString("<br/>\n### Directory files\n")
 		for _, name := range filesName {
 			joinPath := relPath + joinSymbol + name
-			buf.WriteString(fmt.Sprintf("[%s](src.html?f=%s) ", name, joinPath))
+			buf.WriteString(fmt.Sprintf("[%s](src.html?v=%s&f=%s) ", name, version, joinPath))
 		}
 		buf.WriteByte('\n')
 	}
@@ -179,7 +181,7 @@ func ParseMarkdown(documents []Document, previews []Preview, blocks []CodeBlock,
 		isLinkCode := 0 != len(filesName)
 		// ## Func Details
 		// ------
-		// ###[func (*TestStruct) hello](src.html?f=gosfdoc.go#L17) <a name="func_TestStruct.hello"><a/> [↩](#preview_TestStruct.hello)|[#](#func_TestStruct.hello)
+		// ###[func (*TestStruct) hello](src.html?v=1.0.1&f=gosfdoc.go&L=12-16) <a name="func_TestStruct.hello"><a/> [↩](#preview_TestStruct.hello)|[#](#func_TestStruct.hello)
 		// > 函数介绍描述<br/>
 		// > <br/>
 		// > @param `str` 字符串传递<br/>
@@ -199,18 +201,18 @@ func ParseMarkdown(documents []Document, previews []Preview, blocks []CodeBlock,
 			}
 
 			if 0 != len(block.Title) {
-				joinPath := "javascript:;"
+				linkPath := "javascript:;"
 				if isLinkCode && 0 != len(block.SourceFileName) {
 					lineStr := ""
 
 					lineLen := len(block.FileLines)
 					if 1 == lineLen {
-						lineStr = fmt.Sprintf("#L%d", block.FileLines[0])
+						lineStr = fmt.Sprintf("&L=%d", block.FileLines[0])
 					} else if 2 == lineLen {
-						lineStr = fmt.Sprintf("#L%d-L%d", block.FileLines[0], block.FileLines[1])
+						lineStr = fmt.Sprintf("&%d-%d", block.FileLines[0], block.FileLines[1])
 					}
 
-					joinPath = "src.html?f=" + relPath + joinSymbol + block.SourceFileName + lineStr
+					linkPath = fmt.Sprintf("src.html?v=%s&f=%s%s%s%s", version, relPath, joinSymbol, block.SourceFileName, lineStr)
 				}
 
 				anchor := ""
@@ -218,7 +220,7 @@ func ParseMarkdown(documents []Document, previews []Preview, blocks []CodeBlock,
 					anchor = fmt.Sprintf("<a name=\"f_%s\"><a/> [↩](#p_%s) | [#](#f_%s)", block.Anchor, block.Anchor, block.Anchor)
 				}
 
-				buf.WriteString(fmt.Sprintf("### [%s](%s) %s\n", block.Title, joinPath, anchor))
+				buf.WriteString(fmt.Sprintf("### [%s](%s) %s\n", block.Title, linkPath, anchor))
 			}
 
 			if 0 != len(block.Desc) {
