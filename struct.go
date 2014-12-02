@@ -3,14 +3,15 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-22
-//  Update on 2014-11-13
-//  Email  slowfei#foxmail.com
+//  Update on 2014-11-26
+//  Email  slowfei(#)foxmail.com
 //  Home   http://www.slowfei.com
 
 //
 package gosfdoc
 
 import (
+	"bytes"
 	"container/list"
 	"github.com/slowfei/gosfcore/encoding/json"
 	"github.com/slowfei/gosfcore/utils/filemanager"
@@ -57,6 +58,7 @@ type FileBuf struct {
 	path     string
 	fileInfo os.FileInfo
 	buf      []byte
+	rowsBuf  [][]byte
 }
 
 /**
@@ -74,6 +76,11 @@ func NewFileBuf(fileContent []byte, path string, info os.FileInfo, filter *regex
 	} else {
 		buf.buf = fileContent
 	}
+
+	if 0 != len(buf.buf) {
+		buf.rowsBuf = bytes.Split(buf.buf, []byte("\n"))
+	}
+
 	buf.fileInfo = info
 	buf.path = path
 	return buf
@@ -104,8 +111,81 @@ func (f *FileBuf) Find(rex *regexp.Regexp) []byte {
  *  @param `rex`
  *  @return
  */
-func (f *FileBuf) FinaAll(rex *regexp.Regexp) [][]byte {
+func (f *FileBuf) FindAll(rex *regexp.Regexp) [][]byte {
 	return rex.FindAll(f.buf, -1)
+}
+
+/**
+ *	Regexp.FindAllSubmatch
+ *
+ *  @param `rex`
+ *  @return
+ */
+func (f *FileBuf) FindAllSubmatch(rex *regexp.Regexp) [][][]byte {
+	return rex.FindAllSubmatch(f.buf, -1)
+}
+
+/**
+ *	get content line number
+ *
+ *	@param `rowCont` row content
+ *	@return line number
+ */
+func (f *FileBuf) QueryLineNumber(rowCont []byte) int {
+	result := -1
+	aLen := len(rowCont)
+
+	count := len(f.rowsBuf)
+	for i := 0; i < count; i++ {
+		rowBuf := f.rowsBuf[i]
+		if aLen == len(rowBuf) {
+			if bytes.Equal(rowCont, rowBuf) {
+				result = i
+				break
+			}
+		}
+	}
+
+	return result
+}
+
+/**
+ *	each row content
+ *
+ *	@param `fc`	index : line number;
+ *				rowCont : row content;
+ *				return true is pass, false is stop;
+ *
+ */
+func (f *FileBuf) EachRow(fc func(index int, rowCont []byte) bool) {
+	if nil == fc {
+		return
+	}
+
+	count := len(f.rowsBuf)
+	for i := 0; i < count; i++ {
+		rowCont := f.rowsBuf[i]
+		if !fc(i, rowCont) {
+			break
+		}
+	}
+}
+
+/**
+ *	get row content by line number 0 start.
+ *
+ *	@param `lineNumber` line number
+ *	@param	content of the specified line number
+ */
+func (f *FileBuf) RowByIndex(lineNumber int) []byte {
+	var result []byte = nil
+	count := len(f.rowsBuf)
+
+	if 0 <= lineNumber && count > lineNumber {
+		result = f.rowsBuf[lineNumber]
+	}
+
+	return result
 }
 
 /**
