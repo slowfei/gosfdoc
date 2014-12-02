@@ -215,8 +215,6 @@
             }else{
                 _windowWhich = -1;
             }
-        }).keyup(function(event) {
-            _windowWhich = -1;
         });
 
         //  up down left right key
@@ -224,7 +222,8 @@
         //  down key control left menu next item 
         //  left key control browsing history back
         //  right key control browsing history forward
-        $(document).keyup(function(event) {
+        $(window).keyup(function(event) {
+            _windowWhich = -1;
             var which = event.which;
 
             switch (which){

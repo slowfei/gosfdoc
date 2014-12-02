@@ -31,7 +31,8 @@
     var _version = null;
     var _userRehash = false;
     var _rehashTimeout = null;
-    var _rexLineGithub = /^(#L\d+|#L\d+[-]L\d+)$/;
+    var _appendPath = "";
+    var _rexLineGithub = /^(L(\d+)|L(\d+)[-]L(\d+))$/;
   
 
     /**
@@ -104,6 +105,9 @@
        })
        .done(function(dataJson) {
             dataGosfdocJson = dataJson;
+             if (dataJson.AppendPath){
+                _appendPath = dataJson.AppendPath;
+            }
             var queryPackage = getURIQuery(QUERY_KEY_PACKAGE);
 
             parseSelectVersion(dataJson.Versions);
@@ -666,19 +670,75 @@
                                 // target="_blank"
                                 $atag.attr('target', "_blank");
                             }else if( 0 == href.indexOf('../') ){
+                                var newHref = "javascript:;";
+
                                 /*
-                                    appendPath = "githbu.com/slowfei"
-
                                     github:
-                                    url = https://github.com/slowfei/gosfdoc/blob/master/test-template/doc/md/default/github.com/slowfei/gosfdoc.md
-                                    href = ../../../../../../gosfdoc.go
+                                    mdUrl   = https://github.com/../project/doc/v1_0_0/md/default/github.com/slowfei/gosfdoc.md
+                                    srcFile = https://github.com/../project/doc/v1_0_0/src/default/github.com/slowfei/gosfdoc.go
+
+                                    to src dir:
+                                    href = ../../../../src/gosfdoc.go#L10-L16
+                                    guthub result  = https://github.com/.../project/doc/v1_0_0/src/gosfdoc.go#L10-L16
+                                    gosfdoc result = http://.../project/doc/src.html?v=1.0.0&f=gosfdoc.go&L=10-16
                                     
-                                    TODO 编写兼容github的浏览方式。
+                                    to root dir:
+                                    href = ../../../../../../../gosfdoc.go#L10-L16
+                                    guthub result  = https://github.com/.../project/gosfdoc.go#L10-L16
+                                    gosfdoc result = http://.../project/doc/src.html?v=1.0.0&f=gosfdoc.go&L=10-16
                                 */
+                                var tempHref = href.replace(/\.\.\//g,"");
+                                if ( 0 == tempHref.indexOf("src/")) {
+                                    tempHref = tempHref.substring(4,href.length);
+                                }
 
-                                href = href.replace(/\.\.\//g,"");
+                                var tempSplit = tempHref.split("#");
+                               
+                                if ( 1 == tempSplit.length) {
+                                    var fileName = tempSplit[0];
+                                    if ( 0 != _appendPath.length && 0 != fileName.indexOf(_appendPath)){
+                                        if ('/' == _appendPath[_appendPath.length - 1]) {
+                                            fileName = _appendPath + fileName;
+                                        }else{
+                                            fileName = _appendPath + "/" +fileName;
+                                        }
+                                    }
+                                    
+                                    newHref = "src.html?v=" + _version + "&f=" + fileName;
+                                }else if ( 2 == tempSplit.length ){
+                                    var fileName = tempSplit[0];
+                                    if ( 0 != _appendPath.length && 0 != fileName.indexOf(_appendPath)){
+                                        if ('/' == _appendPath[_appendPath.length - 1]) {
+                                            fileName = _appendPath + fileName;
+                                        }else{
+                                            fileName = _appendPath + "/" +fileName;
+                                        }
+                                    }
 
-                                $atag.attr('href', href);
+                                    var lineParam = "";
+                                    var tempLines = tempSplit[1];
+
+                                    //  tempLines = L10-L16 or L10
+                                    //  get L10 to 10
+                                    var l2 = tempLines.replace(_rexLineGithub,"$2");
+                                    if ( l2 != tempLines) {
+                                        if ( 0 == l2.length ) {
+                                            //  get L10 to 10
+                                            //  get L16 to 16
+                                            var l3 = tempLines.replace(_rexLineGithub,"$3");
+                                            var l4 = tempLines.replace(_rexLineGithub,"$4");
+
+                                            lineParam = "&L=" + l3 + "-" + l4;
+                                        }else{
+                                            lineParam = "&L="+l2;
+                                        }
+                                    }
+                                    
+                                    newHref = "src.html?v=" + _version + "&f=" + fileName + lineParam;
+                                }
+
+                                $atag.attr('href', newHref);
+                                $atag.attr('target', "_blank");
                             }
                         }
 

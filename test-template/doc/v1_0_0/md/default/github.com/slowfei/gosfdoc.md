@@ -65,7 +65,7 @@ links:[http://www.slowfei.com][0]
 >>
 
 ###Package files
-[a.go][#] [b.go][#] [c.go][#]
+[a.go](../../../../src/gosfdoc.go#L10-L16) [b.go](../../../../../../../gosfdoc.go#L10) [c.go](../../../../../../../github.com/slowfei/gosfdoc.go#L10)
 
 ## Constants
 ------
