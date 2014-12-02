@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-11-05
-//  Update on 2014-11-05
+//  Update on 2014-11-26
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -13,19 +13,32 @@ package golang
 import (
 	"github.com/slowfei/gosfdoc"
 	"os"
+	// "regexp"
+	"strings"
 )
 
 const (
-	GO_NAME = "go"
+	GO_NAME   = "go"
+	GO_SUFFIX = ".go"
+)
+
+var (
+//	\/\*\*[\s]*\n(\s|.)*?\*/\nfunc\s[a-zA-z_].*\(.*\)\s*{\s*\n(\s|.)*?}
 )
 
 func init() {
 	gosfdoc.AddParser(NewParser())
 }
 
+/**
+ *	golang parser
+ */
 type GolangParser struct {
 }
 
+/**
+ *	new golang parser
+ */
 func NewParser() *GolangParser {
 	return new(GolangParser)
 }
@@ -39,8 +52,13 @@ func (g *GolangParser) Name() string {
 /**
  *	see DocParser interface
  */
-func (g *GolangParser) CheckFile(path string, info os.FileInfo) bool {
-	return true
+func (g *GolangParser) CheckFile(filePath string, info os.FileInfo) bool {
+	result := false
+
+	if 0 != len(filePath) && nil != info && !info.IsDir() {
+		result = strings.HasSuffix(filePath, GO_SUFFIX)
+	}
+	return result
 }
 
 /**
