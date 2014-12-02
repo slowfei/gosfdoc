@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-16
-//  Update on 2014-11-13
+//  Update on 2014-11-20
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -538,6 +538,10 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, keys []string
 	scanPath := config.ScanPath
 	appendPath := config.OutAppendPath
 
+	if 0 != len(appendPath) && '/' == appendPath[0] {
+		appendPath = appendPath[1:len(appendPath)]
+	}
+
 	//	source code ouput path operation
 	//	projectroot/doc/src/[appendpath/main.go]
 	isLinkRoot := config.CodeLinkRoot
@@ -604,9 +608,6 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, keys []string
 		*/
 		menuName := "" // 暂时设定空字符串
 
-		//	append custom path prefix
-		relativeDirPath = filepath.Join(appendPath, relativeDirPath)
-
 		previews := make([]Preview, 0, 0)
 		blocks := make([]CodeBlock, 0, 0)
 		documents := make([]Document, 0, 0)
@@ -622,7 +623,7 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, keys []string
 				default:
 					var outErr error = nil
 					fileName := code.FileCont.FileInfo().Name()
-					joinName := filepath.Join(relativeDirPath, fileName)
+					joinName := filepath.Join(appendPath, relativeDirPath, fileName)
 
 					if 0 != len(outCodeDir) {
 						outPath := filepath.Join(outCodeDir, joinName)
@@ -681,12 +682,41 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, keys []string
 		sort.Sort(SortSet{codeBlocks: blocks})
 		sort.Sort(SortSet{documents: documents})
 
+		//	handle source code link path
+		browseSrcJoinPath := ""
+		backRel := ""
+
+		pathSplit := strings.Split(appendPath, "/")
+		for _, p := range pathSplit {
+			if 0 != len(p) {
+				backRel += "../"
+			}
+		}
+
+		// mdUrl   = https://.../project/doc/v1_0_0/md/default/github.com/slowfei/gosfdoc.md
+		// srcFile = https://.../project/doc/v1_0_0/src/default/github.com/slowfei/gosfdoc.go
+		if config.CodeLinkRoot {
+			// href = ../../../../../../../gosfdoc.go#L10-L16
+			// guthub result  = https://github.com/.../project/gosfdoc.go#L10-L16
+
+			backPath := "../../../../" + backRel // is "doc/v1_0_0/md/default" + "append path"
+
+			browseSrcJoinPath = path.Join(backPath, relativeDirPath)
+		} else {
+			// href = ../../../../src/gosfdoc.go#L10-L16
+			// guthub result  = https://github.com/.../project/doc/v1_0_0/src/gosfdoc.go#L10-L16
+
+			backPath := "../../" + backRel // is "md/default" + "append path"
+
+			browseSrcJoinPath = path.Join(backPath, "src", appendPath, relativeDirPath)
+		}
+
 		// 5.output markdown
-		mdBytes := ParseMarkdown(documents, previews, blocks, filesName, config.currentVersion, relativeDirPath)
+		mdBytes := ParseMarkdown(documents, previews, blocks, filesName, config.currentVersion, browseSrcJoinPath)
 		if 0 != len(mdBytes) {
 			//	markdown file name is directory base name + suffix
 			mdFileName := filepath.Base(dirPath) + FILE_SUFFIX_MARKDOWN
-			outPath := filepath.Join(mdDir, relativeDirPath, mdFileName)
+			outPath := filepath.Join(mdDir, appendPath, relativeDirPath, mdFileName)
 
 			err := SFFileManager.WirteFilepath(outPath, mdBytes)
 			result := ResultFileSuccess
@@ -696,7 +726,7 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, keys []string
 			} else {
 				info := PackageInfo{}
 
-				info.Name = path.Join(relativeDirPath, mdFileName[:len(mdFileName)-len(FILE_SUFFIX_MARKDOWN)])
+				info.Name = path.Join(appendPath, relativeDirPath, mdFileName[:len(mdFileName)-len(FILE_SUFFIX_MARKDOWN)])
 
 				joinStr := strings.Join(packStrList, ";")
 				newStr := strings.Replace(joinStr, "\n", ", ", -1)

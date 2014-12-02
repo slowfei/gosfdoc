@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-09-10
-//  Update on 2014-11-13
+//  Update on 2014-11-26
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -99,7 +99,7 @@ func (n *nilDocParser) ParsePackageInfo(filebuf *FileBuf) string {
  *	@param `blocks`	   after sorting
  *	@param `filesName` file names
  *	@param `version`   output document version
- *	@param `relPath`   before code file name join path
+ *	@param `relPath`   browse code file name join path
  *	@return bytes
  */
 func ParseMarkdown(documents []Document, previews []Preview, blocks []CodeBlock,
@@ -170,7 +170,8 @@ func ParseMarkdown(documents []Document, previews []Preview, blocks []CodeBlock,
 		buf.WriteString("<br/>\n### Directory files\n")
 		for _, name := range filesName {
 			joinPath := relPath + joinSymbol + name
-			buf.WriteString(fmt.Sprintf("[%s](src.html?v=%s&f=%s) ", name, version, joinPath))
+			// buf.WriteString(fmt.Sprintf("[%s](src.html?v=%s&f=%s) ", name, version, joinPath))
+			buf.WriteString(fmt.Sprintf("[%s](%s)", name, joinPath))
 		}
 		buf.WriteByte('\n')
 	}
@@ -205,14 +206,16 @@ func ParseMarkdown(documents []Document, previews []Preview, blocks []CodeBlock,
 				if isLinkCode && 0 != len(block.SourceFileName) {
 					lineStr := ""
 
+					//	href = ../../../../../../../gosfdoc.go#L10-L16
 					lineLen := len(block.FileLines)
 					if 1 == lineLen {
-						lineStr = fmt.Sprintf("&L=%d", block.FileLines[0])
+						lineStr = fmt.Sprintf("#L%d", block.FileLines[0])
 					} else if 2 == lineLen {
-						lineStr = fmt.Sprintf("&%d-%d", block.FileLines[0], block.FileLines[1])
+						lineStr = fmt.Sprintf("#L%d-L%d", block.FileLines[0], block.FileLines[1])
 					}
 
-					linkPath = fmt.Sprintf("src.html?v=%s&f=%s%s%s%s", version, relPath, joinSymbol, block.SourceFileName, lineStr)
+					// linkPath = fmt.Sprintf("src.html?v=%s&f=%s%s%s%s", version, relPath, joinSymbol, block.SourceFileName, lineStr)
+					linkPath = relPath + joinSymbol + block.SourceFileName + lineStr
 				}
 
 				anchor := ""
@@ -257,7 +260,7 @@ func ParseMarkdown(documents []Document, previews []Preview, blocks []CodeBlock,
 func ParseDocument(fileBuf *FileBuf) []Document {
 	var resultDocs []Document = nil
 
-	docsBuf := fileBuf.FinaAll(REXDocument)
+	docsBuf := fileBuf.FindAll(REXDocument)
 	docsCount := len(docsBuf)
 
 	if 0 == docsCount {
