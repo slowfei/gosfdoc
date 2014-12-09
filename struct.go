@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-22
-//  Update on 2014-11-26
+//  Update on 2014-12-08
 //  Email  slowfei(#)foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -11,7 +11,6 @@
 package gosfdoc
 
 import (
-	"bytes"
 	"container/list"
 	"github.com/slowfei/gosfcore/encoding/json"
 	"github.com/slowfei/gosfcore/utils/filemanager"
@@ -55,10 +54,10 @@ More references: [https://github.com/slowfei/gosfdoc][0]<br/>
  *  file content buffer
  */
 type FileBuf struct {
-	path     string
-	fileInfo os.FileInfo
-	buf      []byte
-	rowsBuf  [][]byte
+	path       string
+	fileInfo   os.FileInfo
+	buf        []byte
+	lineLenSum []int // 记录每行长度的总和
 }
 
 /**
@@ -78,7 +77,16 @@ func NewFileBuf(fileContent []byte, path string, info os.FileInfo, filter *regex
 	}
 
 	if 0 != len(buf.buf) {
-		buf.rowsBuf = bytes.Split(buf.buf, []byte("\n"))
+		buf.lineLenSum = make([]int, 0, 0)
+		count := len(buf.buf)
+		for i := 0; i < count; i++ {
+			b := buf.buf[i]
+			if '\n' == b {
+				buf.lineLenSum = append(buf.lineLenSum, i)
+			}
+		}
+		//	add end line
+		buf.lineLenSum = append(buf.lineLenSum, count)
 	}
 
 	buf.fileInfo = info
@@ -126,65 +134,135 @@ func (f *FileBuf) FindAllSubmatch(rex *regexp.Regexp) [][][]byte {
 }
 
 /**
- *	get content line number
+ *	Regexp.FindAllSubmatchIndex
  *
- *	@param `rowCont` row content
- *	@return line number
+ *	@param `rex`
+ *	@return
  */
-func (f *FileBuf) QueryLineNumber(rowCont []byte) int {
-	result := -1
-	aLen := len(rowCont)
+func (f *FileBuf) FindAllSubmatchIndex(rex *regexp.Regexp) [][]int {
+	return rex.FindAllSubmatchIndex(f.buf, -1)
+}
 
-	count := len(f.rowsBuf)
-	for i := 0; i < count; i++ {
-		rowBuf := f.rowsBuf[i]
-		if aLen == len(rowBuf) {
-			if bytes.Equal(rowCont, rowBuf) {
-				result = i
-				break
-			}
+/**
+ *	line number by begin and end index
+ *
+ *	@param `beginIndex` buffer byte begin index
+ *	@param `endIndex`	end index
+ *	@return []int [start line,end line], line number 1 start.
+ */
+func (f *FileBuf) LineNumberByIndex(beginIndex, endIndex int) []int {
+	result := []int{-1, -1}
+
+	if endIndex > beginIndex {
+		beginIndex, endIndex = endIndex, beginIndex
+	}
+
+	isBegin := false
+	isEnd := false
+
+	/*
+		text:
+		abcde  [a=0,b=1,c=2,d=3,e=4,\n=5]
+		fghij  [f=6,g=8,h=9,i=10,j=11]
+
+	*/
+
+	lineLen := len(f.lineLenSum)
+	for i := 0; i < lineLen; i++ {
+		lineSum := f.lineLenSum[i]
+
+		if !isBegin && lineSum >= beginIndex {
+			result[0] = i + 1
+			isBegin = true
 		}
+
+		if !isEnd && lineSum >= endIndex {
+			result[1] = i + 1
+			isEnd = true
+		}
+
+		if isBegin && isEnd {
+			break
+		}
+	}
+
+	if !isBegin || !isEnd {
+		result[0] = -1
+		result[1] = -1
 	}
 
 	return result
 }
 
 /**
- *	each row content
- *
- *	@param `fc`	index : line number;
- *				rowCont : row content;
- *				return true is pass, false is stop;
- *
- */
-func (f *FileBuf) EachRow(fc func(index int, rowCont []byte) bool) {
-	if nil == fc {
-		return
-	}
-
-	count := len(f.rowsBuf)
-	for i := 0; i < count; i++ {
-		rowCont := f.rowsBuf[i]
-		if !fc(i, rowCont) {
-			break
-		}
-	}
-}
-
-/**
- *	get row content by line number 0 start.
+ *	get row content by line number 1 start.
  *
  *	@param `lineNumber` line number
  *	@param	content of the specified line number
  */
 func (f *FileBuf) RowByIndex(lineNumber int) []byte {
 	var result []byte = nil
-	count := len(f.rowsBuf)
+	lineLen := len(f.lineLenSum)
 
-	if 0 <= lineNumber && count > lineNumber {
-		result = f.rowsBuf[lineNumber]
+	if 0 >= lineNumber {
+		lineNumber = 1
 	}
 
+	if 0 < lineLen && lineLen >= lineNumber {
+		realIndex := lineNumber - 1
+		upIndex := realIndex - 1 // 上一行下标，
+
+		/*
+			text:
+			12345
+			67890
+
+			line length sum:
+			[0] = 5 = len("12345\n")
+			[1] = 11 = len("67890")
+
+			lineNumber = 2; 获取第二行数据 buf[5+1,11]; (5+1)除去上一节点的换行
+		*/
+
+		startIndex := 0
+		endIndex := f.lineLenSum[realIndex]
+
+		if 0 <= upIndex {
+			startIndex = f.lineLenSum[upIndex] + 1
+		}
+
+		result = f.SubBytes(startIndex, endIndex)
+	}
+
+	return result
+}
+
+/**
+ *	extracts the file buffer from a bytes
+ *
+ *	@param `beginIndex`
+ *	@param `endIndex`
+ *	@return bytes
+ */
+func (f *FileBuf) SubBytes(beginIndex, endIndex int) []byte {
+	if beginIndex > endIndex {
+		return nil
+	}
+
+	if 0 > beginIndex {
+		beginIndex = 0
+	}
+
+	if beginIndex == endIndex {
+		endIndex = endIndex + 1
+	}
+
+	bufLen := len(f.buf)
+	if bufLen < endIndex {
+		endIndex = bufLen
+	}
+
+	result := f.buf[beginIndex:endIndex]
 	return result
 }
 
