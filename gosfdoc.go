@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-16
-//  Update on 2014-11-20
+//  Update on 2014-12-02
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -177,6 +177,16 @@ type DocParser interface {
 	 *	@return string file parse the only string
 	 */
 	ParsePackageInfo(filebuf *FileBuf) string
+
+	/**
+	 *	parse start
+	 */
+	ParseStart()
+
+	/**
+	 *	parse end
+	 */
+	ParseEnd()
 }
 
 /**
@@ -468,6 +478,17 @@ func OutputWithConfig(config *MainConfig, version string, fileFunc FileResultFun
 	if !isExists || !isDir {
 		return errors.New(fmt.Sprintf("invalid scan path path: %v", scanPath)), false
 	}
+
+	//	start scan parse
+	for _, vp := range _mapParser {
+		vp.ParseStart()
+	}
+	defer func() {
+		//	end scan parse
+		for _, vp := range _mapParser {
+			vp.ParseEnd()
+		}
+	}()
 
 	files, keys, about, intro, scanErr := scanFiles(config, fileFunc)
 	if nil != scanErr {

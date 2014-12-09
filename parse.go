@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-09-10
-//  Update on 2014-11-26
+//  Update on 2014-12-02
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -89,6 +89,20 @@ func (n *nilDocParser) ParseCodeblock(filebuf *FileBuf) []CodeBlock {
  */
 func (n *nilDocParser) ParsePackageInfo(filebuf *FileBuf) string {
 	return ""
+}
+
+/**
+ *	see DocParser interface
+ */
+func (n *nilDocParser) ParseStart() {
+
+}
+
+/**
+ *	see DocParser interface
+ */
+func (n *nilDocParser) ParseEnd() {
+
 }
 
 /**
