@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-22
-//  Update on 2014-12-08
+//  Update on 2014-12-11
 //  Email  slowfei(#)foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -264,6 +264,15 @@ func (f *FileBuf) SubBytes(beginIndex, endIndex int) []byte {
 
 	result := f.buf[beginIndex:endIndex]
 	return result
+}
+
+/**
+ *	get line length
+ *
+ *	@return int
+ */
+func (f *FileBuf) LineLen() int {
+	return len(f.lineLenSum)
 }
 
 /**
