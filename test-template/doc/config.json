@@ -56,7 +56,8 @@
             "Version":"1.0.1",
             "List":[
                 {"Name":"github.com/slowfei/gosfdoc","Desc":"gosfdoc document generator version 1.0.1"},
-                {"Name":"github.com/slowfei/leafveingo-1.0.1","Desc":"golang web framework"}
+                {"Name":"github.com/slowfei/leafveingo-1.0.1","Desc":"golang web framework"},
+                {"Name":"github.com/test/test","Desc":"golang web framework"}
             ]
         }
 	],

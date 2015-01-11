@@ -17,16 +17,20 @@
 
 * 文档介绍注释（在整改项目只能是唯一的）
 
-```
-/**Intro
+<pre><code class="go custom">/**Intro
 
- 	统一的格式，注意 /**Intro （这里为截取的内容） */
+ 	统一的格式，注意 
  	在首页上显示，指引用户下载或查看文档。
-
+    
 	支持markdown格式编写。
  */
 
-```
+type <a href="?p=github.com/test/test.md&a=type-config-struct">TestStruct</a> struct{
+    host        string = << 1
+    routerKeyst <a href="../../../github.com/test/test.md#type-config-struct">TestStruct2</a>
+    routers     map[string]IRouter
+}
+</code></pre>
 
 * 关于页面注释(注意文档右上角的About)
 
@@ -144,7 +148,7 @@ type TestStruct struct{
 > @return v2 返回参数v2<br/>
 
 ```go
-func (* TestStruct) hello(str string) (v1,v2 string)
+func (* TestStruct) hello(str string) (v1,v2 `<a href="www.baidu.com">TestStruct</a>`)
 ```
 
 
