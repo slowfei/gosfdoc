@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-09-10
-//  Update on 2014-12-02
+//  Update on 2014-12-10
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -94,7 +94,7 @@ func (n *nilDocParser) ParsePackageInfo(filebuf *FileBuf) string {
 /**
  *	see DocParser interface
  */
-func (n *nilDocParser) ParseStart() {
+func (n *nilDocParser) ParseStart(config MainConfig) {
 
 }
 
@@ -251,7 +251,7 @@ func ParseMarkdown(documents []Document, previews []Preview, blocks []CodeBlock,
 
 			// code
 			if 0 != len(block.Code) {
-				buf.WriteString(fmt.Sprintf("\n```%s\n%s\n```\n\n", block.CodeLang, block.Code))
+				buf.WriteString(fmt.Sprintf("\n<pre><code class='%s custom'>%s</code></pre>\n\n", block.CodeLang, block.Code))
 			}
 
 			buf.WriteByte('\n')

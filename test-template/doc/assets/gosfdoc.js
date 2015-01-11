@@ -33,7 +33,7 @@
     var _rehashTimeout = null;
     var _appendPath = "";
     var _rexLineGithub = /^(L(\d+)|L(\d+)[-]L(\d+))$/;
-  
+    var _markAtag = /<a .+<\/a>/g;
 
     /**
      *  history struct
@@ -64,6 +64,7 @@
             langPrefix:''
         });
 
+        // highlight set
         marked.setOptions({
             highlight: function (code,lang) {
                 if (lang) {
@@ -72,7 +73,6 @@
                     }else{
                         return hljs.fixMarkup(hljs.highlightAuto(code).value);
                     }
-                   
                 }
             }
         });
@@ -525,12 +525,10 @@
             $("#sticky a").removeClass('active');
             $(item).addClass('active');
 
-            //  set uri
-            var packageName = getURIQuery(QUERY_KEY_PACKAGE);
-            var anchor = getURIQuery(QUERY_KEY_ANCHOR);
-
-            //
-            setURIQuery(packageName,$_item.text(),anchor,_version);
+            //  set uri, 考虑到用户体验，滚动窗口不进行URI的设置，只有点击的时候才进行设置。
+            // var packageName = getURIQuery(QUERY_KEY_PACKAGE);
+            // var anchor = getURIQuery(QUERY_KEY_ANCHOR);
+            // setURIQuery(packageName,$_item.text(),anchor,_version);
 
             // overflow out scroll
             var $stickyWrapper = $("#sticky-wrapper");
@@ -589,6 +587,48 @@
                     $mainContent.empty().html(marked(text));
                     $mainContent.attr('mdpath', mdpath);
 
+                    //  set pre code highlight
+                    $.each($("pre code.custom",$mainContent), function(index, val) {
+                        var $_code = $(val);
+                        var cssstr = $_code.attr('class');
+                        var lang = "";
+                        var repMap = {}; // 用户存储替换的<a>
+                        var tempRep = ";temprep;_"; // 占位替换标签
+                        var block = $_code.html();
+
+                        //  使用占位符替换a标签
+                        var atags = block.match(_markAtag);
+                        if (atags) {
+                            $.each(atags, function(index, atag) {
+                                var key = tempRep+index;
+                                repMap[key] = atag;
+                                block = block.replace(atag,key);
+                            });
+                        }
+                       
+                        //  选取第一位的css作为语言高亮的选择
+                        if (cssstr) {
+                            cssstr = cssstr.split(" ");
+                            if ( 1 <= cssstr.length ) {
+                                lang = cssstr[0];
+                            }
+                        }
+
+                        var newHtml = "";
+                        if ( 0 != lang.length && hljs.getLanguage(lang) ) {
+                            newHtml = hljs.fixMarkup(hljs.highlightAuto(block,[lang]).value);
+                        }else{
+                            newHtml = hljs.fixMarkup(hljs.highlightAuto(block).value);
+                        }
+                        newHtml = newHtml.replace(/&amp;/g, '&');
+
+                        $.each(repMap, function(key, atag) {
+                            newHtml = newHtml.replace(key,atag);
+                        });
+
+                        $_code.empty().html(newHtml);
+                    });
+
                     var queryTitle = getURIQuery(QUERY_KEY_TITLE);
                     var queryAnchor = getURIQuery(QUERY_KEY_ANCHOR);
 
@@ -610,9 +650,7 @@
 
                         $item.click(function() {
                             var queryPackage = getURIQuery(QUERY_KEY_PACKAGE);
-                            var queryTitle = getURIQuery(QUERY_KEY_TITLE); 
-                            setURIQuery(queryPackage,queryTitle,false,_version);
-
+                            setURIQuery(queryPackage,text,false,_version);
                             $(window).scrollTop(key);
                             return false;
                         });
@@ -660,8 +698,8 @@
                                             $(window).scrollTop(offsetTop);
                                         }
                                     }else{
-                                        setURIQuery(queryPackage,queryTitle,unescape(anchor),_version);
-                                        copyToClipboard(window.location.href);
+                                        setURIQuery(queryPackage,false,unescape(anchor),_version);
+                                        // copyToClipboard(window.location.href);
                                     }
                                     return false;
                                 });
@@ -669,9 +707,11 @@
                             }else if ( 0 == href.indexOf("src.html") ){
                                 // target="_blank"
                                 $atag.attr('target', "_blank");
+                            }else if ( 0 == href.indexOf("http://") || 0 == href.indexOf("https://") ){
+                                $atag.attr('target', "_blank");
                             }else if( 0 == href.indexOf('../') ){
                                 var newHref = "javascript:;";
-
+                                var isBlank = true;
                                 /*
                                     github:
                                     mdUrl   = https://github.com/../project/doc/v1_0_0/md/default/github.com/slowfei/gosfdoc.md
@@ -695,6 +735,7 @@
                                 var tempSplit = tempHref.split("#");
                                
                                 if ( 1 == tempSplit.length) {
+
                                     var fileName = tempSplit[0];
                                     if ( 0 != _appendPath.length && 0 != fileName.indexOf(_appendPath)){
                                         if ('/' == _appendPath[_appendPath.length - 1]) {
@@ -703,9 +744,24 @@
                                             fileName = _appendPath + "/" +fileName;
                                         }
                                     }
-                                    
-                                    newHref = "src.html?v=" + _version + "&f=" + fileName;
+                                        
+                                    if (MD_FILE_SUFFIX == fileName.substr(fileName.length-3,fileName.length)) {
+                                        
+                                        $atag.click(function(event) {
+                                            setURIQuery(fileName,false,false,_version);
+                                            parsePackageMarkdown(fileName);
+                                            return false;
+                                        });
+
+                                        newHref = "index.html?v=" + _version + "&p=" + fileName;
+                                        isBlank = false;
+                                    }else{
+                                        newHref = "src.html?v=" + _version + "&f=" + fileName;
+                                    }
+
                                 }else if ( 2 == tempSplit.length ){
+                                    //  ../../gosfdoc.go#L10-L16 存在参数的处理
+
                                     var fileName = tempSplit[0];
                                     if ( 0 != _appendPath.length && 0 != fileName.indexOf(_appendPath)){
                                         if ('/' == _appendPath[_appendPath.length - 1]) {
@@ -715,30 +771,48 @@
                                         }
                                     }
 
-                                    var lineParam = "";
-                                    var tempLines = tempSplit[1];
+                                    if (MD_FILE_SUFFIX == fileName.substr(fileName.length-3,fileName.length)) {
+                                        var anchor = tempSplit[1];
+                                        
+                                        $atag.click(function(event) {
+                                            setURIQuery(fileName,false,anchor,_version);
+                                            parsePackageMarkdown(fileName);
+                                            return false;
+                                        });
 
-                                    //  tempLines = L10-L16 or L10
-                                    //  get L10 to 10
-                                    var l2 = tempLines.replace(_rexLineGithub,"$2");
-                                    if ( l2 != tempLines) {
-                                        if ( 0 == l2.length ) {
-                                            //  get L10 to 10
-                                            //  get L16 to 16
-                                            var l3 = tempLines.replace(_rexLineGithub,"$3");
-                                            var l4 = tempLines.replace(_rexLineGithub,"$4");
+                                        newHref = "index.html?v=" + _version + "&p=" + fileName + "&a=" + anchor;
+                                        isBlank = false;
+                                    }else{
+                                        var lineParam = "";
+                                        var tempLines = tempSplit[1];
 
-                                            lineParam = "&L=" + l3 + "-" + l4;
-                                        }else{
-                                            lineParam = "&L="+l2;
+                                        //  tempLines = L10-L16 or L10
+                                        //  get L10 to 10
+                                        var l2 = tempLines.replace(_rexLineGithub,"$2");
+                                        if ( l2 != tempLines) {
+                                            if ( 0 == l2.length ) {
+                                                //  get L10 to 10
+                                                //  get L16 to 16
+                                                var l3 = tempLines.replace(_rexLineGithub,"$3");
+                                                var l4 = tempLines.replace(_rexLineGithub,"$4");
+
+                                                lineParam = "&L=" + l3 + "-" + l4;
+                                            }else{
+                                                lineParam = "&L="+l2;
+                                            }
                                         }
+                                        newHref = "src.html?v=" + _version + "&f=" + fileName + lineParam;
                                     }
-                                    
-                                    newHref = "src.html?v=" + _version + "&f=" + fileName + lineParam;
                                 }
 
                                 $atag.attr('href', newHref);
-                                $atag.attr('target', "_blank");
+                                if (isBlank) {
+                                    $atag.attr('target', "_blank");
+                                }
+                            }else{
+                                $atag.click(function(event) {
+                                    return false;
+                                });
                             }
                         }
 
@@ -757,10 +831,6 @@
                             $anchorTag = $anchorTag.eq(0);
                             titleScrollTop = $anchorTag.offset().top - NAVIGATION_HEIGHT;
                         }
-
-                        var queryPackage = getURIQuery(QUERY_KEY_PACKAGE);
-                        var queryTitle = getURIQuery(QUERY_KEY_TITLE);
-                        setURIQuery(queryPackage,queryTitle,queryAnchor,_version);
                     };
 
                     //  scroll to func position
@@ -1311,6 +1381,28 @@
     function copyToClipboard(txt) {
         //  TOOD 由于复制到剪切板有些复杂，暂时这样。
         window.prompt("Copy link to clipboard?", txt);
+    }
+
+    /**
+     *
+     */
+    function p_escape(html,encode) {
+        return html.replace(!encode ? /&(?!#?\w+;)/g : /&/g, '&amp;')
+                   .replace(/</g, '&lt;')
+                   .replace(/>/g, '&gt;')
+                   .replace(/"/g, '&quot;')
+                   .replace(/'/g, '&#39;');
+    }
+
+    /**
+     *  
+     */
+    function p_unescape(html) {
+        return html.replace(/&amp;/g, '&')
+                   .replace(/&lt;/g, '<')
+                   .replace(/&gt;/g, '>')
+                   .replace(/&quot;/g, '"')
+                   .replace(/&#39;/g, "'");
     }
 
 })(jQuery);
