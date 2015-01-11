@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-16
-//  Update on 2014-12-02
+//  Update on 2014-12-11
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -181,7 +181,7 @@ type DocParser interface {
 	/**
 	 *	parse start
 	 */
-	ParseStart()
+	ParseStart(config MainConfig)
 
 	/**
 	 *	parse end
@@ -481,7 +481,7 @@ func OutputWithConfig(config *MainConfig, version string, fileFunc FileResultFun
 
 	//	start scan parse
 	for _, vp := range _mapParser {
-		vp.ParseStart()
+		vp.ParseStart(*config)
 	}
 	defer func() {
 		//	end scan parse
@@ -703,43 +703,19 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, keys []string
 		sort.Sort(SortSet{codeBlocks: blocks})
 		sort.Sort(SortSet{documents: documents})
 
+		//	markdown file name is directory base name + suffix
+		mdFileName := filepath.Base(dirPath) + FILE_SUFFIX_MARKDOWN
+
 		//	handle source code link path
-		browseSrcJoinPath := ""
-		backRel := ""
-
-		pathSplit := strings.Split(appendPath, "/")
-		for _, p := range pathSplit {
-			if 0 != len(p) {
-				backRel += "../"
-			}
-		}
-
-		// mdUrl   = https://.../project/doc/v1_0_0/md/default/github.com/slowfei/gosfdoc.md
-		// srcFile = https://.../project/doc/v1_0_0/src/default/github.com/slowfei/gosfdoc.go
-		if config.CodeLinkRoot {
-			// href = ../../../../../../../gosfdoc.go#L10-L16
-			// guthub result  = https://github.com/.../project/gosfdoc.go#L10-L16
-
-			backPath := "../../../../" + backRel // is "doc/v1_0_0/md/default" + "append path"
-
-			browseSrcJoinPath = path.Join(backPath, relativeDirPath)
-		} else {
-			// href = ../../../../src/gosfdoc.go#L10-L16
-			// guthub result  = https://github.com/.../project/doc/v1_0_0/src/gosfdoc.go#L10-L16
-
-			backPath := "../../" + backRel // is "md/default" + "append path"
-
-			browseSrcJoinPath = path.Join(backPath, "src", appendPath, relativeDirPath)
-		}
+		browseSrcJoinPath := config.GithubLink(path.Join(relativeDirPath, mdFileName), false)
+		browseSrcJoinPath = path.Join(appendPath, relativeDirPath)
 
 		// 5.output markdown
 		mdBytes := ParseMarkdown(documents, previews, blocks, filesName, config.currentVersion, browseSrcJoinPath)
 		if 0 != len(mdBytes) {
-			//	markdown file name is directory base name + suffix
-			mdFileName := filepath.Base(dirPath) + FILE_SUFFIX_MARKDOWN
-			outPath := filepath.Join(mdDir, appendPath, relativeDirPath, mdFileName)
+			mdOutPath := filepath.Join(mdDir, appendPath, relativeDirPath, mdFileName)
 
-			err := SFFileManager.WirteFilepath(outPath, mdBytes)
+			err := SFFileManager.WirteFilepath(mdOutPath, mdBytes)
 			result := ResultFileSuccess
 
 			if nil != err {
@@ -758,7 +734,7 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, keys []string
 			}
 
 			if nil != fileFunc {
-				fileFunc(outPath, result, err)
+				fileFunc(mdOutPath, result, err)
 			}
 		}
 

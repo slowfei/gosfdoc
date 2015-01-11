@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-16
-//  Update on 2014-11-13
+//  Update on 2014-12-11
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -16,7 +16,9 @@ import (
 	"errors"
 	"github.com/slowfei/gosfcore/utils/filemanager"
 	"io/ioutil"
+	"path"
 	"path/filepath"
+	"strings"
 )
 
 const (
@@ -49,6 +51,7 @@ var (
 type MainConfig struct {
 	path           string              `json:"-"` // private handle path, save console command path.
 	currentVersion string              `json:"-"` // current output version, private record.
+	DocUrl         string              // custom link url to document http. e.g.: http://slowfei.github.io/gosfdoc/index.html
 	ScanPath       string              // scan document info file path, relative or absolute path, is "/" scan current console path.
 	CodeLang       []string            // code languages
 	Outpath        string              // output document path, relative or absolute path.
@@ -171,6 +174,63 @@ func (mc *MainConfig) Check() (error, bool) {
 	}
 
 	return err, pass
+}
+
+/**
+ *	to github.com link path
+ *	use on a tag href
+ *
+ *													     append path       relative path
+ *	e.g.: https://.../project/doc/v1_0_0/md/default/(github.com/slowfei)/(temp/gosfdoc.md)
+ *	  to: https://.../project/doc/v1_0_0/src/github.com/slowfei/gosfdoc.go (to source code path)
+ *	  to: https://.../project/doc/v1_0_0/md/default/github.com/test/test.md  (to markdown path)
+ *
+ *	@param `relMDPath` relative markdown out project path.
+ *					   relative path: $GOPATH/[github.com/slowfei]/projectname/( .../markdown.md )
+ *	@param `isToMarkdown` to markdown link? false is source code access path
+ *	@return use github.com to relative link. "../../../" or "../../src"
+ */
+func (m MainConfig) GithubLink(relMDPath string, isToMarkdown bool) string {
+	resultPath := ""
+	backRel := ""
+
+	appendPath := m.OutAppendPath
+	appendPath = strings.TrimSuffix(appendPath, "/")
+	appendPath = strings.TrimPrefix(appendPath, "/")
+
+	pathSplit := strings.Split(appendPath, "/")
+	for _, p := range pathSplit {
+		if 0 != len(p) {
+			backRel += "../"
+		}
+	}
+
+	relMDPath = path.Dir(relMDPath)
+	relMDPath = strings.TrimPrefix(relMDPath, "/")
+	relMDPath = strings.TrimSuffix(relMDPath, "/")
+	//	可能出现的问题，Dir("") == "."
+	//	所以需要判断"."的处理
+	if 0 != len(relMDPath) && "." != relMDPath {
+		pathSplit = strings.Split(relMDPath, "/")
+		for _, p := range pathSplit {
+			if 0 != len(p) {
+				backRel += "../"
+			}
+		}
+	}
+
+	if isToMarkdown {
+		//	https://.../project/doc/v1_0_0/md/default/
+		resultPath = backRel
+	} else if m.CodeLinkRoot {
+		//	https://.../project/
+		resultPath = "../../../../" + backRel
+	} else {
+		//	https://.../project/doc/v1_0_0/src/
+		resultPath = "../../" + backRel + "src"
+	}
+
+	return resultPath
 }
 
 /**
