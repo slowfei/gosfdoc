@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-22
-//  Update on 2014-12-11
+//  Update on 2015-01-13
 //  Email  slowfei(#)foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -14,6 +14,7 @@ import (
 	"container/list"
 	"github.com/slowfei/gosfcore/encoding/json"
 	"github.com/slowfei/gosfcore/utils/filemanager"
+	"github.com/slowfei/gosfcore/utils/sub"
 	"io/ioutil"
 	"os"
 	"regexp"
@@ -141,6 +142,38 @@ func (f *FileBuf) FindAllSubmatch(rex *regexp.Regexp) [][][]byte {
  */
 func (f *FileBuf) FindAllSubmatchIndex(rex *regexp.Regexp) [][]int {
 	return rex.FindAllSubmatchIndex(f.buf, -1)
+}
+
+/**
+ *  block subset return range index
+ *
+ *	@param `startIndex` buffer start index
+ *	@param `subNest`
+ *	@param `outBetweens` rule out between index
+ *	@return buffer start and end index
+ */
+func (f *FileBuf) SubNestIndex(startIndex int, subNest *SFSubUtil.SubNest, outBetweens [][]int) []int {
+	var result []int = nil
+
+	if startIndex < len(f.buf) {
+		indexs := subNest.BytesToIndex(f.buf[startIndex:], outBetweens)
+		if 2 == len(indexs) {
+			result = []int{indexs[0] + startIndex, indexs[1] + startIndex}
+		}
+	}
+
+	return result
+}
+
+/**
+ *	all blocks subset
+ *
+ *	@param `subNest`
+ *	@param `outBetweens` rule out between index
+ *	@return buffer start and end index list
+ */
+func (f *FileBuf) SubNestAllIndex(subNest *SFSubUtil.SubNest, outBetweens [][]int) [][]int {
+	return subNest.BytesToAllIndex(f.buf, outBetweens)
 }
 
 /**
