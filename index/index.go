@@ -83,7 +83,7 @@ func CreateIndexDB(langName string, dbT DBType) IndexDB {
  *  type info in various languages
  */
 type TypeInfo struct {
-	DocHttpUrl string // document http url e.g.: http://slowfei.github.io/gosfdoc
+	DocHttpUrl string // document http url e.g.: http://slowfei.github.io/gosfdoc/index.html
 	Package    string // package and name identifies a unique index
 	Name       string // package and name identifies a unique index
 	LineStart  int    // line number start
