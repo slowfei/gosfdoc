@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-16
-//  Update on 2014-12-11
+//  Update on 2015-01-15
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -76,7 +76,7 @@ var (
 	TagPrivateCode = []byte("code")
 	TagPrivateDoc  = []byte("doc")
 	// private block tag ( //#private * //#private-end)
-	REXPrivateBlock = regexp.MustCompile("[^\\n]?//#private(\\s|.)*?//#private-end[\\s]?")
+	REGPrivateBlock = regexp.MustCompile("[^\\n]?//#private(\\s|.)*?//#private-end[\\s]?")
 
 	// parse about and intro block
 	/**[About|Intro]
@@ -85,8 +85,8 @@ var (
 	//[About|Intro]
 	// content text or markdown text
 	//End
-	REXAbout = regexp.MustCompile("(/\\*\\*About[\\s]+(\\s|.)*?[\\s]+\\*/)|(//About[\\s]?([\\s]|.)*?//[Ee][Nn][Dd])")
-	REXIntro = regexp.MustCompile("(/\\*\\*Intro[\\s]+(\\s|.)*?[\\s]+\\*/)|(//Intro[\\s]?([\\s]|.)*?//[Ee][Nn][Dd])")
+	REGAbout = regexp.MustCompile("(/\\*\\*About[\\s]+(\\s|.)*?[\\s]+\\*/)|(//About[\\s]?([\\s]|.)*?//[Ee][Nn][Dd])")
+	REGIntro = regexp.MustCompile("(/\\*\\*Intro[\\s]+(\\s|.)*?[\\s]+\\*/)|(//Intro[\\s]?([\\s]|.)*?//[Ee][Nn][Dd])")
 
 	// parse public document content
 	/***[z-index-][title]
@@ -95,8 +95,8 @@ var (
 	///[z-index-][title]
 	//  document text or markdown text
 	//End
-	REXDocument      = regexp.MustCompile("(/\\*\\*\\*[^\\*\\s](.+)\\n(\\s|.)*?\\*/)|(///[^/\\s](.+)\\n(\\s|.)*?//[Ee][Nn][Dd])")
-	REXDocIndexTitle = regexp.MustCompile("(/\\*\\*\\*|///)(\\d*-)?(.*)?")
+	REGDocument      = regexp.MustCompile("(/\\*\\*\\*[^\\*\\s](.+)\\n(\\s|.)*?\\*/)|(///[^/\\s](.+)\\n(\\s|.)*?//[Ee][Nn][Dd])")
+	REGDocIndexTitle = regexp.MustCompile("(/\\*\\*\\*|///)(\\d*-)?(.*)?")
 )
 
 /**
@@ -1075,7 +1075,7 @@ func scanFiles(config *MainConfig, fileFunc FileResultFunc) (
 		}
 
 		// 5. filter private block and create file buffer
-		fileBuf := NewFileBuf(fileBytes, path, info, REXPrivateBlock)
+		fileBuf := NewFileBuf(fileBytes, path, info, REGPrivateBlock)
 
 		// 6. parse about and intro
 		if nil == about {

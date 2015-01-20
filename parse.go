@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-09-10
-//  Update on 2014-12-10
+//  Update on 2015-01-15
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -274,7 +274,7 @@ func ParseMarkdown(documents []Document, previews []Preview, blocks []CodeBlock,
 func ParseDocument(fileBuf *FileBuf) []Document {
 	var resultDocs []Document = nil
 
-	docsBuf := fileBuf.FindAll(REXDocument)
+	docsBuf := fileBuf.FindAll(REGDocument)
 	docsCount := len(docsBuf)
 
 	if 0 == docsCount {
@@ -292,7 +292,7 @@ func ParseDocument(fileBuf *FileBuf) []Document {
 
 		//  title and index parse
 		indexTitleLine := lines[0]
-		indexTitleMatch := REXDocIndexTitle.FindSubmatch(indexTitleLine)
+		indexTitleMatch := REGDocIndexTitle.FindSubmatch(indexTitleLine)
 		//  index 0 is source string
 		//  index 1 is "///" || "/***"
 		//  index 2 is "index-" index string
@@ -353,7 +353,7 @@ func ParseDocument(fileBuf *FileBuf) []Document {
  *  @return about content
  */
 func ParseAbout(fileBuf *FileBuf) *About {
-	data := parseAboutAndIntro(fileBuf, REXAbout)
+	data := parseAboutAndIntro(fileBuf, REGAbout)
 
 	var result *About = nil
 	if 0 != len(data) {
@@ -370,7 +370,7 @@ func ParseAbout(fileBuf *FileBuf) *About {
  *  @return introduction content
  */
 func ParseIntro(fileBuf *FileBuf) *Intro {
-	data := parseAboutAndIntro(fileBuf, REXIntro)
+	data := parseAboutAndIntro(fileBuf, REGIntro)
 
 	var result *Intro = nil
 	if 0 != len(data) {
