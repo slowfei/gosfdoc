@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-16
-//  Update on 2015-01-15
+//  Update on 2015-01-21
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -72,7 +72,7 @@ var (
  */
 var (
 	// private file tag ( //#private-doc-code )
-	REXPrivateFile = regexp.MustCompile("#private-(doc|code){1}(-doc|-code)?")
+	REGPrivateFile = regexp.MustCompile("#private-(doc|code){1}(-doc|-code)?")
 	TagPrivateCode = []byte("code")
 	TagPrivateDoc  = []byte("doc")
 	// private block tag ( //#private * //#private-end)
@@ -1051,7 +1051,7 @@ func scanFiles(config *MainConfig, fileFunc FileResultFunc) (
 		}
 
 		// 4. check file private tag //#private-doc //#private-code //#private-doc-code
-		privateTag := REXPrivateFile.Find(firstLine)
+		privateTag := REGPrivateFile.Find(firstLine)
 		isPCode := false
 		isPDoc := false
 		if nil != privateTag && 0 != len(privateTag) {
