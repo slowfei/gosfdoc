@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-22
-//  Update on 2015-01-13
+//  Update on 2015-01-30
 //  Email  slowfei(#)foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -58,7 +58,8 @@ type FileBuf struct {
 	path       string
 	fileInfo   os.FileInfo
 	buf        []byte
-	lineLenSum []int // 记录每行长度的总和
+	lineLenSum []int       // 记录每行长度的总和
+	UserData   interface{} // 自定义存储数据
 }
 
 /**
@@ -115,6 +116,16 @@ func (f *FileBuf) Find(rex *regexp.Regexp) []byte {
 }
 
 /**
+ *  regexp find submatch bytes
+ *
+ *  @param `rex`
+ *  @return
+ */
+func (f *FileBuf) FindSubmatch(rex *regexp.Regexp) [][]byte {
+	return rex.FindSubmatch(f.buf)
+}
+
+/**
  *  regexp find all bytes
  *
  *  @param `rex`
@@ -132,6 +143,16 @@ func (f *FileBuf) FindAll(rex *regexp.Regexp) [][]byte {
  */
 func (f *FileBuf) FindAllSubmatch(rex *regexp.Regexp) [][][]byte {
 	return rex.FindAllSubmatch(f.buf, -1)
+}
+
+/**
+ *	Regexp.FindSubmatchIndex
+ *
+ *	@param `rex`
+ *	@return
+ */
+func (f *FileBuf) FindSubmatchIndex(rex *regexp.Regexp) []int {
+	return rex.FindSubmatchIndex(f.buf)
 }
 
 /**
@@ -186,7 +207,7 @@ func (f *FileBuf) SubNestAllIndex(subNest *SFSubUtil.SubNest, outBetweens [][]in
 func (f *FileBuf) LineNumberByIndex(beginIndex, endIndex int) []int {
 	result := []int{-1, -1}
 
-	if endIndex > beginIndex {
+	if endIndex < beginIndex {
 		beginIndex, endIndex = endIndex, beginIndex
 	}
 
@@ -203,7 +224,7 @@ func (f *FileBuf) LineNumberByIndex(beginIndex, endIndex int) []int {
 	lineLen := len(f.lineLenSum)
 	for i := 0; i < lineLen; i++ {
 		lineSum := f.lineLenSum[i]
-
+		//[0 13 14 29 30 54 65 67 68]
 		if !isBegin && lineSum >= beginIndex {
 			result[0] = i + 1
 			isBegin = true
@@ -278,21 +299,13 @@ func (f *FileBuf) RowByIndex(lineNumber int) []byte {
  *	@return bytes
  */
 func (f *FileBuf) SubBytes(beginIndex, endIndex int) []byte {
-	if beginIndex > endIndex {
+	if 0 > beginIndex || 0 > endIndex || beginIndex >= endIndex {
 		return nil
-	}
-
-	if 0 > beginIndex {
-		beginIndex = 0
-	}
-
-	if beginIndex == endIndex {
-		endIndex = endIndex + 1
 	}
 
 	bufLen := len(f.buf)
 	if bufLen < endIndex {
-		endIndex = bufLen
+		return nil
 	}
 
 	result := f.buf[beginIndex:endIndex]
