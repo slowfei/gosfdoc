@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-09-10
-//  Update on 2015-01-15
+//  Update on 2015-01-27
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -30,9 +30,16 @@ var (
 	//  主要用于去除注释的前缀
 	_prefixFilterTags = [][]byte{
 		[]byte(" *\t"),
+		[]byte(" *    "),
 		[]byte(" *  "),
 		[]byte(" * "),
+		[]byte(" //\t"),
+		[]byte(" //    "),
+		[]byte(" //  "),
+		[]byte(" // "),
+		[]byte(" //"),
 		[]byte("//\t"),
+		[]byte("//    "),
 		[]byte("//  "),
 		[]byte("// "),
 		[]byte("//"),
@@ -313,7 +320,7 @@ func ParseDocument(fileBuf *FileBuf) []Document {
 			newLine := lines[i]
 
 			if i == 1 {
-				prefixTag = findPrefixFilterTag(newLine)
+				prefixTag = FindPrefixFilterTag(newLine)
 				prefixLen = len(prefixTag)
 			}
 
@@ -409,7 +416,7 @@ func parseAboutAndIntro(fileBuf *FileBuf, rex *regexp.Regexp) []byte {
 				  (*)
 				  (*)
 				*/
-				prefixTag = findPrefixFilterTag(newLine)
+				prefixTag = FindPrefixFilterTag(newLine)
 				prefixLen = len(prefixTag)
 			}
 
@@ -447,7 +454,7 @@ func parseAboutAndIntro(fileBuf *FileBuf, rex *regexp.Regexp) []byte {
  *  //
  *  see var _prefixFilterTags
  */
-func findPrefixFilterTag(src []byte) []byte {
+func FindPrefixFilterTag(src []byte) []byte {
 	var pftCount = len(_prefixFilterTags)
 
 	for i := 0; i < pftCount; i++ {
