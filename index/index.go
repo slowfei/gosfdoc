@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-11-28
-//  Update on 2014-12-03
+//  Update on 2015-01-21
 //  Email  slowfei(#)foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -57,14 +57,15 @@ type IndexDB interface {
 	SetType(t TypeInfo) error
 
 	/**
-	 *  by package and type name get type info
+	 *	package path or package name or type name query
 	 *
-	 *  @param `packageName` pacaage
-	 *  @param `typeName` type name
-	 *  @return `TypeInfo`
-	 *  @return `bool`
+	 *	@param `packageName`
+	 *	@param `packagePath`
+	 *	@param `typeName`
+	 *	@return `TypeInfo`
+	 *	@return `bool`
 	 */
-	Type(packageName, typeName string) (TypeInfo, bool)
+	Type(packageName, packagePath, typeName string) (TypeInfo, bool)
 }
 
 /**
@@ -83,9 +84,10 @@ func CreateIndexDB(langName string, dbT DBType) IndexDB {
  *  type info in various languages
  */
 type TypeInfo struct {
-	DocHttpUrl string // document http url e.g.: http://slowfei.github.io/gosfdoc/index.html
-	Package    string // package and name identifies a unique index
-	Name       string // package and name identifies a unique index
-	LineStart  int    // line number start
-	LineEnd    int    // line number end
+	DocHttpUrl  string // document http url e.g.: http://slowfei.github.io/gosfdoc/index.html
+	PackageName string // package name unique index
+	PackagePath string // helper package name the set path
+	TypeName    string // only within the scope of the package name unique index
+	LineStart   int    // line number start
+	LineEnd     int    // line number end
 }
