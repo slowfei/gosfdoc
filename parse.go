@@ -281,7 +281,7 @@ func ParseMarkdown(documents []Document, previews []Preview, blocks []CodeBlock,
 func ParseDocument(fileBuf *FileBuf) []Document {
 	var resultDocs []Document = nil
 
-	docsBuf := fileBuf.FindAll(REGDocument)
+	docsBuf := fileBuf.FindAll(REXDocument)
 	docsCount := len(docsBuf)
 
 	if 0 == docsCount {
@@ -299,7 +299,7 @@ func ParseDocument(fileBuf *FileBuf) []Document {
 
 		//  title and index parse
 		indexTitleLine := lines[0]
-		indexTitleMatch := REGDocIndexTitle.FindSubmatch(indexTitleLine)
+		indexTitleMatch := REXDocIndexTitle.FindSubmatch(indexTitleLine)
 		//  index 0 is source string
 		//  index 1 is "///" || "/***"
 		//  index 2 is "index-" index string
@@ -360,7 +360,7 @@ func ParseDocument(fileBuf *FileBuf) []Document {
  *  @return about content
  */
 func ParseAbout(fileBuf *FileBuf) *About {
-	data := parseAboutAndIntro(fileBuf, REGAbout)
+	data := parseAboutAndIntro(fileBuf, REXAbout)
 
 	var result *About = nil
 	if 0 != len(data) {
@@ -377,7 +377,7 @@ func ParseAbout(fileBuf *FileBuf) *About {
  *  @return introduction content
  */
 func ParseIntro(fileBuf *FileBuf) *Intro {
-	data := parseAboutAndIntro(fileBuf, REGIntro)
+	data := parseAboutAndIntro(fileBuf, REXIntro)
 
 	var result *Intro = nil
 	if 0 != len(data) {

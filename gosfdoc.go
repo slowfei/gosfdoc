@@ -72,11 +72,11 @@ var (
  */
 var (
 	// private file tag ( //#private-doc-code )
-	REGPrivateFile = regexp.MustCompile("#private-(doc|code){1}(-doc|-code)?")
+	REXPrivateFile = regexp.MustCompile("#private-(doc|code){1}(-doc|-code)?")
 	TagPrivateCode = []byte("code")
 	TagPrivateDoc  = []byte("doc")
 	// private block tag ( //#private * //#private-end)
-	REGPrivateBlock = regexp.MustCompile("[^\\n]?//#private(\\s|.)*?//#private-end[\\s]?")
+	REXPrivateBlock = regexp.MustCompile("[^\\n]?//#private(\\s|.)*?//#private-end[\\s]?")
 
 	// parse about and intro block
 	/**[About|Intro]
@@ -85,8 +85,8 @@ var (
 	//[About|Intro]
 	// content text or markdown text
 	//End
-	REGAbout = regexp.MustCompile("(/\\*\\*About[\\s]+(\\s|.)*?[\\s]+\\*/)|(//About[\\s]?([\\s]|.)*?//[Ee][Nn][Dd])")
-	REGIntro = regexp.MustCompile("(/\\*\\*Intro[\\s]+(\\s|.)*?[\\s]+\\*/)|(//Intro[\\s]?([\\s]|.)*?//[Ee][Nn][Dd])")
+	REXAbout = regexp.MustCompile("(/\\*\\*About[\\s]+(\\s|.)*?[\\s]+\\*/)|(//About[\\s]?([\\s]|.)*?//[Ee][Nn][Dd])")
+	REXIntro = regexp.MustCompile("(/\\*\\*Intro[\\s]+(\\s|.)*?[\\s]+\\*/)|(//Intro[\\s]?([\\s]|.)*?//[Ee][Nn][Dd])")
 
 	// parse public document content
 	/***[z-index-][title]
@@ -95,8 +95,8 @@ var (
 	///[z-index-][title]
 	//  document text or markdown text
 	//End
-	REGDocument      = regexp.MustCompile("(/\\*\\*\\*[^\\*\\s](.+)\\n(\\s|.)*?\\*/)|(///[^/\\s](.+)\\n(\\s|.)*?//[Ee][Nn][Dd])")
-	REGDocIndexTitle = regexp.MustCompile("(/\\*\\*\\*|///)(\\d*-)?(.*)?")
+	REXDocument      = regexp.MustCompile("(/\\*\\*\\*[^\\*\\s](.+)\\n(\\s|.)*?\\*/)|(///[^/\\s](.+)\\n(\\s|.)*?//[Ee][Nn][Dd])")
+	REXDocIndexTitle = regexp.MustCompile("(/\\*\\*\\*|///)(\\d*-)?(.*)?")
 )
 
 /**
@@ -1051,7 +1051,7 @@ func scanFiles(config *MainConfig, fileFunc FileResultFunc) (
 		}
 
 		// 4. check file private tag //#private-doc //#private-code //#private-doc-code
-		privateTag := REGPrivateFile.Find(firstLine)
+		privateTag := REXPrivateFile.Find(firstLine)
 		isPCode := false
 		isPDoc := false
 		if nil != privateTag && 0 != len(privateTag) {
@@ -1075,7 +1075,7 @@ func scanFiles(config *MainConfig, fileFunc FileResultFunc) (
 		}
 
 		// 5. filter private block and create file buffer
-		fileBuf := NewFileBuf(fileBytes, path, info, REGPrivateBlock)
+		fileBuf := NewFileBuf(fileBytes, path, info, REXPrivateBlock)
 
 		// 6. parse about and intro
 		if nil == about {
