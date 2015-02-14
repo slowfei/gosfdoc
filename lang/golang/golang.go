@@ -31,17 +31,22 @@ const (
 
 var (
 	// e.g.: type Temp struct {
-	REGType = regexp.MustCompile("type ([A-Z]\\w*) \\w+[ ]*(\\{)?")
+	REXType = regexp.MustCompile("type ([A-Z]\\w*) \\w+[ ]*(\\{)?")
 	// e.g.: package main
-	REGPackage = regexp.MustCompile("package (\\w+)\\s*")
+	REXPackage = regexp.MustCompile("package (\\w+)\\s*")
 	// e.g.: /** ... */[\n]package main; //...[\n]package main
-	REGPackageInfo = regexp.MustCompile("(/\\*\\*[\\S\\s]+?\\*/\n|(?:(?:[ ]*//.*?\n)+))[ ]*package \\w+")
-	// e.g.: /** ... */[\n]const TConst = 1; //...[\n]const (
-	REGConst = regexp.MustCompile("(/\\*\\*[\\S\\s]+?\\*/\n|(?:(?:[ ]*//.*?\n)+))?[ ]*(const[\\s]+(?:[A-Z].*|\\()+?)")
+	REXPackageInfo = regexp.MustCompile("(/\\*\\*[\\S\\s]+?\\*/\n|(?:(?:[ ]*//.*?\n)+))[ ]*package \\w+")
+	// e.g.: /** ... */[\n]const|var TConst = 1; //...[\n]const (
+	REXDefine = regexp.MustCompile("(/\\*\\*[\\S\\s]+?\\*/\n|(?:(?:[ ]*//.*?\n)+))?[ ]*((const|var)[\\s]+(?:[A-Z].*|\\()+?)")
+	// e.g: rows data
+	REXRows = regexp.MustCompile("\\w+.*")
 
-	SNBraces   = SFSubUtil.NewSubNest([]byte("{"), []byte("}"))
-	SNBetweens = []*SFSubUtil.SubNest{
+	SNRoundBrackets = SFSubUtil.NewSubNest([]byte("("), []byte(")"))
+	SNBraces        = SFSubUtil.NewSubNest([]byte("{"), []byte("}"))
+	SNBetweens      = []*SFSubUtil.SubNest{
 		SNBraces,
+		SFSubUtil.NewSubNest([]byte("/*"), []byte("*/")),
+		SFSubUtil.NewSubNest([]byte("//"), []byte("\n")),
 		SFSubUtil.NewSubNest([]byte("`"), []byte("`")),
 		SFSubUtil.NewSubNest([]byte(`"`), []byte(`"`)),
 		SFSubUtil.NewSubNest([]byte(`'`), []byte(`'`)),
@@ -52,10 +57,23 @@ func init() {
 	gosfdoc.AddParser(NewParser())
 }
 
-type goConst struct {
-}
+// golang define type
+type goDType int
 
-type goVar struct {
+// golang define const
+// constant and variable
+const (
+	goDTypeVar goDType = iota
+	goDTypeConst
+	goDTypeInvalid
+)
+
+// golang define constant and variable struct
+type goDefine struct {
+	dtype     goDType
+	noteIndex []int // note content index, 0 is buffer start index, 1 is buffer end index
+	contIndex []int // content start and end index
+	multiterm bool  // true is multiterm definitions
 }
 
 type goFunc struct {
@@ -137,7 +155,7 @@ func (g *GolangParser) EachIndexFile(filebuf *gosfdoc.FileBuf) {
 	tempPackageName := ""
 
 	// find package name
-	packageIndexs := filebuf.FindAllSubmatchIndex(REGPackage)
+	packageIndexs := filebuf.FindAllSubmatchIndex(REXPackage)
 	for i := 0; i < len(packageIndexs); i++ {
 		indexs := packageIndexs[i]
 		if 4 == len(indexs) && !isRuleOutIndex(indexs[0], outBetweens) {
@@ -169,7 +187,7 @@ func (g *GolangParser) EachIndexFile(filebuf *gosfdoc.FileBuf) {
 	}
 
 	//	类型查询
-	typeIndexs := filebuf.FindAllSubmatchIndex(REGType)
+	typeIndexs := filebuf.FindAllSubmatchIndex(REXType)
 	for i := 0; i < len(typeIndexs); i++ {
 		indexs := typeIndexs[i]
 		startIndex := indexs[0]
@@ -238,7 +256,7 @@ func (g *GolangParser) ParseCodeblock(filebuf *gosfdoc.FileBuf) []gosfdoc.CodeBl
 func (n *GolangParser) ParsePackageInfo(filebuf *gosfdoc.FileBuf) string {
 	result := bytes.NewBuffer(nil)
 
-	subBytes := filebuf.FindSubmatch(REGPackageInfo)
+	subBytes := filebuf.FindSubmatch(REXPackageInfo)
 	if 2 != len(subBytes) {
 		return ""
 	}
@@ -288,25 +306,122 @@ func (n *GolangParser) ParsePackageInfo(filebuf *gosfdoc.FileBuf) string {
 }
 
 /**
- *	find constant
+ *	find constant and variable
  *
  *	e.g:
- *	const xxx
- *	const ( ... )
- */
-func findConst(filebuf *gosfdoc.FileBuf) {
-
-}
-
-/**
- *	find variable
+ *	const xxx | var xxx
+ *	const ( ... ) | var ( ... )
  *
- *	e.g:
- *	var xxx
- *	var ( ... )
+ *	@param `filebuf`
+ *	@param `outBetweens`
  */
-func findVar() {
+func findDefine(filebuf *gosfdoc.FileBuf, outBetweens [][]int) []goDefine {
+	/*
+		<br> is \n
 
+		//<br>// temp1 <br>const (, //<br>// temp1 <br>, const (, const
+		const Temp3 = "3", , const Temp3 = "3", const
+		// VTest1 cont<br>var VTest1  = "1", // VTest1 cont<br>, var VTest1  = "1", var
+		var (, , var (, var
+	*/
+	var (
+		CTempConst = []byte("const")
+		CTempVar   = []byte("var")
+	)
+	var result []goDefine
+
+	subindexs := filebuf.FindAllSubmatchIndex(REXDefine)
+
+	for i := 0; i < len(subindexs); i++ {
+		indexs := subindexs[i]
+
+		if 8 == len(indexs) {
+
+			contIndex_1 := indexs[4]
+			contIndex_2 := indexs[5]
+
+			// 由于index[0]首位存在注释，所以需要从主体内容开始判断排除，即是index[2]
+			if -1 != contIndex_1 && -1 != contIndex_2 &&
+				!isRuleOutIndex(contIndex_1, outBetweens) {
+
+				// sub const or var byte
+				dtype := goDTypeInvalid
+				defineTagByte := filebuf.SubBytes(indexs[6], indexs[7])
+				if bytes.Equal(defineTagByte, CTempConst) {
+					dtype = goDTypeConst
+				} else if bytes.Equal(defineTagByte, CTempVar) {
+					dtype = goDTypeVar
+				}
+
+				if goDTypeInvalid != dtype {
+					multiterm := false
+					isAppend := false
+					// 需要注意的是下标 -1 和 +1 的处理， 关键在于regexp截取的下标数是从1开始
+					bufByte, _ := filebuf.Byte(contIndex_2 - 1)
+
+					if '(' == bufByte {
+						//	如果遇到多行的情况则需要查询下一个")"的目标，然后还需要判断是否全部的参数为大写开头
+						contNewIndexs := filebuf.SubNestIndex(contIndex_2-1, SNRoundBrackets, outBetweens)
+
+						if 2 == len(contNewIndexs) {
+							isAllUpper := false
+							subBeginIndex := contIndex_2
+
+							// 得到 var ( "双引号里这里的命名参数" )
+							bracketsBytes := filebuf.SubBytes(subBeginIndex, contNewIndexs[1]-1)
+
+							// 获取每行的命名函数进行首字母的判断
+							rowsIndexs := REXRows.FindAllIndex(bracketsBytes, -1)
+
+							for i := 0; i < len(rowsIndexs); i++ {
+								rowStartIndex := rowsIndexs[i][0]
+
+								//	由于isRuleOutIndex判断的是fileBuf里完整索引的信息，所以需要累加上开始截取的下标数
+								if -1 != rowStartIndex && !isRuleOutIndex(rowStartIndex+subBeginIndex, outBetweens) {
+									firstByte := bracketsBytes[rowStartIndex]
+
+									if 'A' <= firstByte && 'Z' >= firstByte {
+										isAllUpper = true
+									} else {
+										isAllUpper = false
+									}
+
+									if !isAllUpper {
+										//	只要出现一行不为大写开头的命名就表示不通过
+										break
+									}
+								}
+							}
+
+							if isAllUpper {
+								contIndex_2 = contNewIndexs[1]
+								multiterm = true
+								isAppend = true
+							}
+
+						} // end if 2 == len(contNewIndexs)
+
+					} else {
+						isAppend = true
+					}
+
+					if isAppend {
+						tempDefine := goDefine{}
+						tempDefine.dtype = dtype
+						tempDefine.contIndex = []int{contIndex_1, contIndex_2}
+						tempDefine.noteIndex = []int{indexs[2], indexs[3]}
+						tempDefine.multiterm = multiterm
+						result = append(result, tempDefine)
+					}
+				}
+
+			}
+
+		} // end 8 == len(indexs) {
+
+	} // end for for i := 0; i < len(subindexs); i++ {
+
+	return result
 }
 
 /**

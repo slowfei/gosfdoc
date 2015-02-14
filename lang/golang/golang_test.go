@@ -1,7 +1,7 @@
 package golang
 
 import (
-	// "strings"
+	"strings"
 	// "fmt"
 	"github.com/slowfei/gosfcore/utils/filemanager"
 	"github.com/slowfei/gosfdoc"
@@ -18,7 +18,7 @@ type GolangParser struct {
 
 type OperateResult int
     `
-	s := REGType.FindAllSubmatchIndex([]byte(testStr), -1)
+	s := REXType.FindAllSubmatchIndex([]byte(testStr), -1)
 
 	for i := 0; i < len(s); i++ {
 		indexs := s[i]
@@ -37,7 +37,7 @@ func TestRegexpPackage(t *testing.T) {
 package main
 
 `
-	s := REGPackage.FindAllSubmatchIndex([]byte(testStr), -1)
+	s := REXPackage.FindAllSubmatchIndex([]byte(testStr), -1)
 
 	result := testStr[s[0][2]:s[0][3]]
 	t.Log(result)
@@ -66,8 +66,8 @@ func TestRegexpPackageInfo(t *testing.T) {
  package main3
 
 `
-	subBytes := REGPackageInfo.FindSubmatch([]byte(testStr))
-	subLen := len(REGPackageInfo.FindAllString(testStr, -1))
+	subBytes := REXPackageInfo.FindSubmatch([]byte(testStr))
+	subLen := len(REXPackageInfo.FindAllString(testStr, -1))
 
 	if 2 != len(subBytes) || 3 != subLen {
 		t.Fail()
@@ -78,7 +78,7 @@ func TestRegexpPackageInfo(t *testing.T) {
 
 }
 
-func TestRegexpConst(t *testing.T) {
+func TestRegexpDefine(t *testing.T) {
 	testStr := `
 //
 // temp1 
@@ -95,15 +95,23 @@ const (
 
 const Temp3 = "3"
 
-`
-	result := REGConst.FindAllString(testStr, -1)
+// VTest1 cont
+var VTest1  = "1"
+var (
+	VTest2 = 3
+	VTest3 = 4
+)
 
-	if 3 != len(result) {
+`
+	result := REXDefine.FindAllStringSubmatch(testStr, -1)
+
+	if 5 != len(result) {
 		t.Fail()
+		return
 	}
 
 	for i := 0; i < len(result); i++ {
-		t.Log(result[i])
+		t.Log(strings.Replace(strings.Join(result[i], ", "), "\n", "<br>", -1))
 	}
 
 }
@@ -134,6 +142,78 @@ type TestStruct struct{
 	if !bool {
 		t.Fail()
 	}
+}
+
+func TestFindDefine(t *testing.T) {
+	testFile := `
+//
+// temp1 
+const (
+	Test1 = "1"
+)
+
+/**
+ * temp2
+ */
+const (
+	Test2 = "2"
+)
+
+const Temp3 = "3"
+
+// VTest1 cont
+var VTest1  = "1"
+var (
+	VTest2 = 3
+	VTest3 = 4
+	temp = 4 // 由于是小写开头命名，所以整个var()都会被过滤
+)
+
+// 以下都是被过滤的
+{
+	const Temp4 = "4"
+}
+
+/*
+	const Temp5 = "5"
+*/
+
+' const Temp6 = "6" '
+
+// const Temp7 = "7"
+
+`
+
+	buf := createFileBuf(testFile)
+	outBetweens := getOutBetweens(buf)
+	result := findDefine(buf, outBetweens)
+
+	if 4 != len(result) {
+		t.Fail()
+		return
+	}
+
+	for _, define := range result {
+
+		note := ""
+		if -1 != define.noteIndex[0] {
+			note = strings.Replace(testFile[define.noteIndex[0]:define.noteIndex[1]], "\n", "<br>", -1)
+		}
+		t.Log("注释：", note)
+		t.Log("内容：", strings.Replace(testFile[define.contIndex[0]:define.contIndex[1]], "\n", "<br>", -1))
+		t.Log("是否多行：", define.multiterm)
+
+		dtype := ""
+		switch define.dtype {
+		case goDTypeConst:
+			dtype = "const"
+		case goDTypeVar:
+			dtype = "var"
+		}
+		t.Log("类型：", dtype)
+		t.Log("----------")
+	}
+
 }
 
 func TestParsePackageInfo(t *testing.T) {
