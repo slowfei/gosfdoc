@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-22
-//  Update on 2015-01-30
+//  Update on 2015-02-15
 //  Email  slowfei(#)foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -310,6 +310,27 @@ func (f *FileBuf) SubBytes(beginIndex, endIndex int) []byte {
 
 	result := f.buf[beginIndex:endIndex]
 	return result
+}
+
+/**
+ *	by index get file buffer byte
+ *
+ *	@param `index` buffer index
+ *	@return `byte`
+ *	@return `bool` success return true
+ */
+func (f *FileBuf) Byte(index int) (byte, bool) {
+	var result byte
+	ok := false
+
+	if -1 != index {
+		bufLen := len(f.buf)
+		if index < bufLen {
+			result = f.buf[index]
+		}
+	}
+
+	return result, ok
 }
 
 /**
