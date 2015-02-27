@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-22
-//  Update on 2015-02-15
+//  Update on 2015-02-27
 //  Email  slowfei(#)foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -177,7 +177,7 @@ func (f *FileBuf) SubNestIndex(startIndex int, subNest *SFSubUtil.SubNest, outBe
 	var result []int = nil
 
 	if startIndex < len(f.buf) {
-		indexs := subNest.BytesToIndex(f.buf[startIndex:], outBetweens)
+		indexs := subNest.BytesToIndex(startIndex, f.buf, outBetweens)
 		if 2 == len(indexs) {
 			result = []int{indexs[0] + startIndex, indexs[1] + startIndex}
 		}
@@ -194,7 +194,7 @@ func (f *FileBuf) SubNestIndex(startIndex int, subNest *SFSubUtil.SubNest, outBe
  *	@return buffer start and end index list
  */
 func (f *FileBuf) SubNestAllIndex(subNest *SFSubUtil.SubNest, outBetweens [][]int) [][]int {
-	return subNest.BytesToAllIndex(f.buf, outBetweens)
+	return subNest.BytesToAllIndex(0, f.buf, outBetweens)
 }
 
 /**
