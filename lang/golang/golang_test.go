@@ -17,18 +17,38 @@ type GolangParser struct {
 }
 
 type OperateResult int
+
+/**
+ *	temp comt
+ */
+type Temp struct{
+	temp string
+}
+
     `
 	s := REXType.FindAllSubmatchIndex([]byte(testStr), -1)
 
-	for i := 0; i < len(s); i++ {
-		indexs := s[i]
-		t.Log(indexs)
-		t.Log(testStr[indexs[0]:indexs[1]])
-		t.Log(testStr[indexs[2]:indexs[3]])
+	if 3 != len(s) && 10 != len(s[0]) {
+		t.Fatal()
+		return
 	}
 
-	if 2 != len(s) || testStr[s[0][2]:s[0][3]] != "GolangParser" {
-		t.Fail()
+	// 0-index: type GolangParser
+	// 1-index: type OperateResult
+	// 2-index: type Temp
+
+	index := 2
+	newType := s[index]
+
+	// index 4-5 type (Temp) struct
+	if "Temp" != testStr[newType[4]:newType[5]] {
+		t.Fatal()
+	}
+
+	//	检查大括号
+	// 下标1 OperateResult不存在大括号，所以等于-1
+	if -1 != s[1][8] || -1 != s[1][9] {
+		t.Fatal()
 	}
 }
 
@@ -43,7 +63,7 @@ package main
 	t.Log(result)
 
 	if result != "main" {
-		t.Fail()
+		t.Fatal()
 	}
 
 }
@@ -70,7 +90,7 @@ func TestRegexpPackageInfo(t *testing.T) {
 	subLen := len(REXPackageInfo.FindAllString(testStr, -1))
 
 	if 2 != len(subBytes) || 3 != subLen {
-		t.Fail()
+		t.Fatal()
 		return
 	}
 
@@ -106,7 +126,7 @@ var (
 	result := REXDefine.FindAllStringSubmatch(testStr, -1)
 
 	if 5 != len(result) {
-		t.Fail()
+		t.Fatal()
 		return
 	}
 
@@ -125,6 +145,7 @@ func createFileBuf(fileCont string) *gosfdoc.FileBuf {
 }
 
 func TestEachIndexFile(t *testing.T) {
+	//	TODO EachIndexFile已经改变，需要重新测试
 	testFile := `
 package main
 
@@ -140,7 +161,7 @@ type TestStruct struct{
 	result, bool := parser.indexDB.Type("main", "github.com/slowfei/gosfdoc", "Test1")
 	t.Log(result)
 	if !bool {
-		t.Fail()
+		t.Fatal()
 	}
 }
 
@@ -150,6 +171,12 @@ func TestFindDefine(t *testing.T) {
 // temp1 
 const (
 	Test1 = "1"
+	SNRoundBrackets = SFSubUtil.NewSubNest([]byte("("), []byte(")"))
+	SNBetweens      = []*SFSubUtil.SubNest{
+		SNBraces,
+		sub.NewSubNest([]byte("/*"), []byte("*/")),
+		"temo",
+	}
 )
 
 /**
@@ -189,15 +216,16 @@ var (
 	result := findDefine(buf, outBetweens)
 
 	if 4 != len(result) {
-		t.Fail()
+		t.Log(len(result))
+		t.Fatal()
 		return
 	}
 
 	for _, define := range result {
 
 		note := ""
-		if -1 != define.noteIndex[0] {
-			note = strings.Replace(testFile[define.noteIndex[0]:define.noteIndex[1]], "\n", "<br>", -1)
+		if -1 != define.commentIndex[0] {
+			note = strings.Replace(testFile[define.commentIndex[0]:define.commentIndex[1]], "\n", "<br>", -1)
 		}
 		t.Log("注释：", note)
 		t.Log("内容：", strings.Replace(testFile[define.contIndex[0]:define.contIndex[1]], "\n", "<br>", -1))
@@ -238,6 +266,6 @@ package main2
 	result := parser.ParsePackageInfo(createFileBuf(testFile))
 	t.Log(result)
 	if 0 == len(result) {
-		t.Fail()
+		t.Fatal()
 	}
 }

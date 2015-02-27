@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-11-05
-//  Update on 2014-12-09
+//  Update on 2015-02-25
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -30,8 +30,8 @@ const (
 )
 
 var (
-	// e.g.: type Temp struct {
-	REXType = regexp.MustCompile("type ([A-Z]\\w*) \\w+[ ]*(\\{)?")
+	// e.g.: type Temp struct {; [0-1:prototype][2-3:comment][4-5:type define name][6-7:type name][8-9:"{"]
+	REXType = regexp.MustCompile("(/\\*\\*[\\S\\s]+?\\*/\n|(?:(?:[ ]*//.*?\n)+))?type[ ]+([A-Z]\\w*)[ ]+(\\w+)[ ]*(\\{)?")
 	// e.g.: package main
 	REXPackage = regexp.MustCompile("package (\\w+)\\s*")
 	// e.g.: /** ... */[\n]package main; //...[\n]package main
@@ -44,12 +44,13 @@ var (
 	SNRoundBrackets = SFSubUtil.NewSubNest([]byte("("), []byte(")"))
 	SNBraces        = SFSubUtil.NewSubNest([]byte("{"), []byte("}"))
 	SNBetweens      = []*SFSubUtil.SubNest{
+		SFSubUtil.NewSubNest([]byte(`"`), []byte(`"`)),
+		SFSubUtil.NewSubNest([]byte("`"), []byte("`")),
+		SFSubUtil.NewSubNest([]byte(`'`), []byte(`'`)),
 		SNBraces,
+		SNRoundBrackets,
 		SFSubUtil.NewSubNest([]byte("/*"), []byte("*/")),
 		SFSubUtil.NewSubNest([]byte("//"), []byte("\n")),
-		SFSubUtil.NewSubNest([]byte("`"), []byte("`")),
-		SFSubUtil.NewSubNest([]byte(`"`), []byte(`"`)),
-		SFSubUtil.NewSubNest([]byte(`'`), []byte(`'`)),
 	}
 )
 
@@ -70,20 +71,28 @@ const (
 
 // golang define constant and variable struct
 type goDefine struct {
-	dtype     goDType
-	noteIndex []int // note content index, 0 is buffer start index, 1 is buffer end index
-	contIndex []int // content start and end index
-	multiterm bool  // true is multiterm definitions
+	dtype        goDType
+	commentIndex []int // note content index, 0 is buffer start index, 1 is buffer end index
+	contIndex    []int // content start and end index
+	multiterm    bool  // true is multiterm definitions
 }
 
+// golang function struct
 type goFunc struct {
+	commentIndex  []int // note content index
+	funcTypeIndex []int // func (type index) funcname index
+	funcNameIndex []int // func [type] (func name)
+	paramIndex    []int // func [type] funcname (param index)
+	returnIndex   []int // func [type] funcname () (return index)
+	bodyIndex     []int // function body index
 }
 
+// golang type struct
 type goType struct {
-	funcs []goTypeFunc
-}
-
-type goTypeFunc struct {
+	commentIndex  []int //
+	typeNameIndex []int // type (type name) struct
+	typeIndex     []int // type name (struct)
+	bodyIndex     []int // type body index
 }
 
 /**
@@ -360,6 +369,7 @@ func findDefine(filebuf *gosfdoc.FileBuf, outBetweens [][]int) []goDefine {
 					bufByte, _ := filebuf.Byte(contIndex_2 - 1)
 
 					if '(' == bufByte {
+
 						//	如果遇到多行的情况则需要查询下一个")"的目标，然后还需要判断是否全部的参数为大写开头
 						contNewIndexs := filebuf.SubNestIndex(contIndex_2-1, SNRoundBrackets, outBetweens)
 
@@ -375,6 +385,8 @@ func findDefine(filebuf *gosfdoc.FileBuf, outBetweens [][]int) []goDefine {
 
 							for i := 0; i < len(rowsIndexs); i++ {
 								rowStartIndex := rowsIndexs[i][0]
+
+								// fmt.Println("++++", string(bracketsBytes[rowStartIndex]))
 
 								//	由于isRuleOutIndex判断的是fileBuf里完整索引的信息，所以需要累加上开始截取的下标数
 								if -1 != rowStartIndex && !isRuleOutIndex(rowStartIndex+subBeginIndex, outBetweens) {
@@ -409,7 +421,7 @@ func findDefine(filebuf *gosfdoc.FileBuf, outBetweens [][]int) []goDefine {
 						tempDefine := goDefine{}
 						tempDefine.dtype = dtype
 						tempDefine.contIndex = []int{contIndex_1, contIndex_2}
-						tempDefine.noteIndex = []int{indexs[2], indexs[3]}
+						tempDefine.commentIndex = []int{indexs[2], indexs[3]}
 						tempDefine.multiterm = multiterm
 						result = append(result, tempDefine)
 					}
@@ -428,10 +440,12 @@ func findDefine(filebuf *gosfdoc.FileBuf, outBetweens [][]int) []goDefine {
  *	find function
  *
  *	e.g:
- *	func funcName()
+ *	func [type] funcName()
  */
-func findFunc() {
+func findFunc(filebuf *gosfdoc.FileBuf, outBetweens [][]int) []goFunc {
+	var result []goFunc = nil
 
+	return result
 }
 
 /**
@@ -439,11 +453,13 @@ func findFunc() {
  *
  *	e.g:
  *	type xxx
- *		func NewType() xxx
- *		func (type) funcName() xxx
  */
-func findTypeAndFunc() {
+func findType(filebuf *gosfdoc.FileBuf, outBetweens [][]int) []goType {
+	var result []goType = nil
 
+	//	TODO
+
+	return result
 }
 
 /**
@@ -457,7 +473,7 @@ func getOutBetweens(filebuf *gosfdoc.FileBuf) [][]int {
 	outBetweens := make([][]int, 0, 0)
 
 	for i := 0; i < len(SNBetweens); i++ {
-		tempIndexs := filebuf.SubNestAllIndex(SNBetweens[i], nil)
+		tempIndexs := filebuf.SubNestAllIndex(SNBetweens[i], outBetweens)
 		if 0 != len(tempIndexs) {
 			outBetweens = append(outBetweens, tempIndexs...)
 		}
