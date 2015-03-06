@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-11-05
-//  Update on 2015-02-25
+//  Update on 2015-03-07
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -48,7 +48,6 @@ var (
 		SFSubUtil.NewSubNest([]byte("`"), []byte("`")),
 		SFSubUtil.NewSubNest([]byte(`'`), []byte(`'`)),
 		SNBraces,
-		SNRoundBrackets,
 		SFSubUtil.NewSubNest([]byte("/*"), []byte("*/")),
 		SFSubUtil.NewSubNest([]byte("//"), []byte("\n")),
 	}
@@ -369,8 +368,7 @@ func findDefine(filebuf *gosfdoc.FileBuf, outBetweens [][]int) []goDefine {
 					bufByte, _ := filebuf.Byte(contIndex_2 - 1)
 
 					if '(' == bufByte {
-
-						//	如果遇到多行的情况则需要查询下一个")"的目标，然后还需要判断是否全部的参数为大写开头
+						//	如果判断是"("则表示是多行，这时就需要查询下一个")"的目标，然后还需要判断是否全部的参数为大写开头
 						contNewIndexs := filebuf.SubNestIndex(contIndex_2-1, SNRoundBrackets, outBetweens)
 
 						if 2 == len(contNewIndexs) {
@@ -379,17 +377,21 @@ func findDefine(filebuf *gosfdoc.FileBuf, outBetweens [][]int) []goDefine {
 
 							// 得到 var ( "双引号里这里的命名参数" )
 							bracketsBytes := filebuf.SubBytes(subBeginIndex, contNewIndexs[1]-1)
+							// 由于var ( ) 是包括在圆括号里的，而outBetweens不包含"()"的排除，这里就需要重新再次查找()进行排除
+							roundBracketsBetweens := filebuf.SubNestAllIndexByBetween(subBeginIndex, contNewIndexs[1]-1, SNRoundBrackets, outBetweens)
 
 							// 获取每行的命名函数进行首字母的判断
 							rowsIndexs := REXRows.FindAllIndex(bracketsBytes, -1)
 
 							for i := 0; i < len(rowsIndexs); i++ {
 								rowStartIndex := rowsIndexs[i][0]
-
-								// fmt.Println("++++", string(bracketsBytes[rowStartIndex]))
+								sourceIndex := rowStartIndex + subBeginIndex
 
 								//	由于isRuleOutIndex判断的是fileBuf里完整索引的信息，所以需要累加上开始截取的下标数
-								if -1 != rowStartIndex && !isRuleOutIndex(rowStartIndex+subBeginIndex, outBetweens) {
+								if -1 != rowStartIndex &&
+									!isRuleOutIndex(sourceIndex, outBetweens) &&
+									!isRuleOutIndex(sourceIndex, roundBracketsBetweens) {
+
 									firstByte := bracketsBytes[rowStartIndex]
 
 									if 'A' <= firstByte && 'Z' >= firstByte {
@@ -457,7 +459,47 @@ func findFunc(filebuf *gosfdoc.FileBuf, outBetweens [][]int) []goFunc {
 func findType(filebuf *gosfdoc.FileBuf, outBetweens [][]int) []goType {
 	var result []goType = nil
 
-	//	TODO
+	indexs := filebuf.FindAllSubmatchIndex(REXType)
+	indexsLen := len(indexs)
+
+	// e.g.: type Temp struct {; [0-1:prototype][2-3:comment][4-5:type define name][6-7:type name][8-9:"{"]
+	if 0 != indexsLen && 10 == len(indexs[0]) {
+		for i := 0; i < indexsLen; i++ {
+			typeIndexs := indexs[i]
+
+			gt := goType{}
+			if -1 != typeIndexs[2] && -1 != typeIndexs[3] {
+				gt.commentIndex = []int{typeIndexs[2], typeIndexs[3]}
+			}
+
+			// 正则确定存在的值
+			gt.typeNameIndex = []int{typeIndexs[4], typeIndexs[5]}
+			gt.typeIndex = []int{typeIndexs[6], typeIndexs[7]}
+
+			//	判断大括号"{"
+			symbolIndex := typeIndexs[8]
+			bufByte, _ := filebuf.Byte(symbolIndex)
+			isBraces := false
+
+			if -1 != symbolIndex && '{' == bufByte {
+				// 寻找下一个"}"
+				bodyNewIndexs := filebuf.SubNestIndex(symbolIndex-1, SNBraces, outBetweens)
+
+				if 2 == len(bodyNewIndexs) {
+					isBraces = true
+					gt.bodyIndex = []int{typeIndexs[4] - 5, bodyNewIndexs[1]}
+				}
+			}
+
+			if !isBraces {
+				//	typeIndexs[4] - 5 = "type "
+				//	typeIndexs[7] = 类型名的结尾截取下标
+				gt.bodyIndex = []int{typeIndexs[4] - 5, typeIndexs[7]}
+			}
+
+			result = append(result, gt)
+		}
+	}
 
 	return result
 }

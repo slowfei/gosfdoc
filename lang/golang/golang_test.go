@@ -50,6 +50,22 @@ type Temp struct{
 	if -1 != s[1][8] || -1 != s[1][9] {
 		t.Fatal()
 	}
+
+	//	下标0 有大括号的
+	if -1 == s[0][8] || -1 == s[0][9] {
+		t.Fatal()
+	}
+
+	// 0-index 4-5 type (GolangParser) struct
+	if "GolangParser" != testStr[s[0][4]:s[0][5]] {
+		t.Fatal()
+	}
+
+	// 由于"type "是固定的，所以从获取的类型名 -5 个位数
+	if "type " != testStr[s[0][4]-5:s[0][4]] {
+		t.Fatal()
+	}
+
 }
 
 func TestRegexpPackage(t *testing.T) {
@@ -165,18 +181,63 @@ type TestStruct struct{
 	}
 }
 
+func TestFindType(t *testing.T) {
+	testFile := `
+package main
+
+/**
+ *	test1 comment
+ */
+type Test1 int
+
+type TestStruct struct{
+	v1 string
+}
+
+// test interface
+type TestInterface interface{
+	Temp() string
+	temp2() interface{}
+}
+
+`
+	buf := createFileBuf(testFile)
+	outBetweens := getOutBetweens(buf)
+	result := findType(buf, outBetweens)
+
+	if 3 != len(result) {
+		t.Fatal()
+		return
+	}
+
+	for i := 0; i < len(result); i++ {
+		gt := result[i]
+		if 2 == len(gt.commentIndex) {
+			t.Log("注释：", strings.Replace(testFile[gt.commentIndex[0]:gt.commentIndex[1]], "\n", "<br>", -1))
+		}
+		t.Log("类型名：", testFile[gt.typeNameIndex[0]:gt.typeNameIndex[1]])
+		t.Log("类型：", testFile[gt.typeIndex[0]:gt.typeIndex[1]])
+		t.Log("原型：", strings.Replace(testFile[gt.bodyIndex[0]:gt.bodyIndex[1]], "\n", "<br>", -1))
+		t.Log("----------")
+	}
+}
+
 func TestFindDefine(t *testing.T) {
 	testFile := `
 //
 // temp1 
 const (
 	Test1 = "1"
-	SNRoundBrackets = SFSubUtil.NewSubNest([]byte("("), []byte(")"))
+	SNRoundBrackets = SFSubUtil.NewSubNest(
+		[]byte("("),
+	)
 	SNBetweens      = []*SFSubUtil.SubNest{
 		SNBraces,
 		sub.NewSubNest([]byte("/*"), []byte("*/")),
-		"temo",
 	}
+	SNTemp = "
+		temp string
+	"
 )
 
 /**
