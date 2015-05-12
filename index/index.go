@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-11-28
-//  Update on 2015-01-21
+//  Update on 2015-05-08
 //  Email  slowfei(#)foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -58,6 +58,9 @@ type IndexDB interface {
 
 	/**
 	 *	package path or package name or type name query
+	 *
+	 *	包名和包路径可二选一，两个参数一起可以提高精确率。
+	 *	package path and package name can choose one, can also together.
 	 *
 	 *	@param `packageName`
 	 *	@param `packagePath`
