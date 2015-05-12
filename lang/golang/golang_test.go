@@ -9,6 +9,67 @@ import (
 	"testing"
 )
 
+func TestRegexpFunc(t *testing.T) {
+	testStr := `
+/**
+ * new parser
+ */
+func NewParser() *GolangParser {
+}
+
+/**
+ *	see DocParser interface
+ */
+func (g *GolangParser) ParseStart(config gosfdoc.MainConfig) {
+}
+
+/**
+ *	see DocParser interface
+ */
+func (g *GolangParser) CheckFile(filePath string, info os.FileInfo) bool {
+}
+
+func TestReturn()(bool,int){
+
+}
+
+func testFilter(){
+
+}
+
+`
+	s := REXFunc.FindAllSubmatchIndex([]byte(testStr), -1)
+
+	if 4 != len(s) && 16 != len(s[0]) {
+		t.Fatal()
+		return
+	}
+
+	// [0-1:prototype] [2-3:comment] [4-5:func type]
+	// [6-7:func name] [8-9:func params] [10-11:single return value]
+	// [12-13:multi return value] [14-15:"{"]
+	if "NewParser" != testStr[s[0][6]:s[0][7]] {
+		t.Fatal()
+	}
+
+	if "g *GolangParser" != testStr[s[1][4]:s[1][5]] {
+		t.Fatal(testStr[s[1][4]:s[1][5]])
+	}
+
+	if "filePath string, info os.FileInfo" != testStr[s[2][8]:s[2][9]] {
+		t.Fatal()
+	}
+
+	if "bool" != testStr[s[2][10]:s[2][11]] {
+		t.Fatal(testStr[s[2][10]:s[2][11]])
+	}
+
+	if "bool,int" != testStr[s[3][12]:s[3][13]] {
+		t.Fatal(testStr[s[3][12]:s[3][13]])
+	}
+
+}
+
 func TestRegexpType(t *testing.T) {
 	testStr := `
 type GolangParser struct {
@@ -118,7 +179,7 @@ func TestRegexpDefine(t *testing.T) {
 	testStr := `
 //
 // temp1 
-const (
+const (   
 	Test1 = "1"
 )
 
@@ -133,7 +194,7 @@ const Temp3 = "3"
 
 // VTest1 cont
 var VTest1  = "1"
-var (
+var (  
 	VTest2 = 3
 	VTest3 = 4
 )
@@ -161,7 +222,6 @@ func createFileBuf(fileCont string) *gosfdoc.FileBuf {
 }
 
 func TestEachIndexFile(t *testing.T) {
-	//	TODO EachIndexFile已经改变，需要重新测试
 	testFile := `
 package main
 
@@ -200,13 +260,26 @@ type TestInterface interface{
 	temp2() interface{}
 }
 
+/*
+	/*
+		tempcomt
+	*/
+	type TestComt int
+ */
+
+{
+	type TestOut struct{
+		v2 string
+	}
+}
+
 `
 	buf := createFileBuf(testFile)
 	outBetweens := getOutBetweens(buf)
 	result := findType(buf, outBetweens)
 
 	if 3 != len(result) {
-		t.Fatal()
+		t.Fatal(len(result))
 		return
 	}
 
@@ -289,7 +362,7 @@ var (
 			note = strings.Replace(testFile[define.commentIndex[0]:define.commentIndex[1]], "\n", "<br>", -1)
 		}
 		t.Log("注释：", note)
-		t.Log("内容：", strings.Replace(testFile[define.contIndex[0]:define.contIndex[1]], "\n", "<br>", -1))
+		t.Log("内容：", strings.Replace(testFile[define.bodyIndex[0]:define.bodyIndex[1]], "\n", "<br>", -1))
 		t.Log("是否多行：", define.multiterm)
 
 		dtype := ""
@@ -300,8 +373,222 @@ var (
 			dtype = "var"
 		}
 		t.Log("类型：", dtype)
+
+		names := ""
+		for i := 0; i < len(define.nameIndexs); i++ {
+			names += testFile[define.nameIndexs[i]:define.nameIndexs[i+1]] + ","
+			i++
+		}
+		t.Log("参数名：", names)
+
 		t.Log("----------")
 	}
+
+}
+
+func TestFindFunc(t *testing.T) {
+	testFile := `
+
+/**
+ * new parser
+ */
+func NewParser() *GolangParser {
+}
+
+/**
+ *	see DocParser interface
+ */
+func (g *GolangParser) ParseStart(config gosfdoc.MainConfig) {
+}
+
+/**
+ *	see DocParser interface
+ */
+func (g *GolangParser) CheckFile(filePath string, info os.FileInfo) bool {
+}
+
+//注意单引号，别过滤的
+'func TestReturn()(bool,int){
+
+}'
+
+func testFilter(){
+
+}
+
+`
+	buf := createFileBuf(testFile)
+	outBetweens := getOutBetweens(buf)
+	result := findFunc(buf, outBetweens)
+
+	if 3 != len(result) {
+		t.Fatal(len(result))
+		return
+	}
+
+	for i := 0; i < len(result); i++ {
+		gf := result[i]
+		if 2 == len(gf.commentIndex) {
+			t.Log("注释：", strings.Replace(testFile[gf.commentIndex[0]:gf.commentIndex[1]], "\n", "<br>", -1))
+		}
+
+		ft := ""
+		if 0 != len(gf.funcTypeIndex) {
+			ft = testFile[gf.funcTypeIndex[0]:gf.funcTypeIndex[1]]
+		}
+		t.Log("函数类型：", ft)
+
+		t.Log("函数名：", testFile[gf.funcNameIndex[0]:gf.funcNameIndex[1]])
+
+		params := ""
+		if 0 != len(gf.paramIndex) {
+			params = testFile[gf.paramIndex[0]:gf.paramIndex[1]]
+		}
+		t.Log("参数：", params)
+
+		returnVal := ""
+		if 0 != len(gf.returnIndex) {
+			returnVal = testFile[gf.returnIndex[0]:gf.returnIndex[1]]
+		}
+		t.Log("返回值：", returnVal)
+
+		t.Log("原型：", strings.Replace(testFile[gf.bodyIndex[0]:gf.bodyIndex[1]], "\n", "<br>", -1))
+
+		t.Log("----------")
+	}
+}
+
+func TestParsePreview(t *testing.T) {
+	testFile := `
+package main
+
+//
+// temp1 
+const (
+	Test1 = "1"
+	SNRoundBrackets = SFSubUtil.NewSubNest(
+		[]byte("("),
+	)
+	SNTemp = "
+		temp string
+	"
+)
+
+type TestStruct struct{
+	v1 string
+}
+
+func (t *TestStruct) ParseStart() {
+}
+
+func NewTestStruct() []TestStruct {
+
+}
+
+func NewParser() {
+
+}
+`
+
+	parser := NewParser()
+
+	buf := createFileBuf(testFile)
+	parser.EachIndexFile(buf)
+	previews := parser.ParsePreview(buf)
+
+	if 5 != len(previews) {
+		t.Fatal()
+		return
+	}
+
+	t.Log("Preview:")
+	for i := 0; i < len(previews); i++ {
+		pre := previews[i]
+		t.Log("pre.Anchor = ", pre.Anchor)
+		t.Log("pre.DescText = ", pre.DescText)
+		t.Log("pre.Level = ", pre.Level)
+		t.Log("pre.ShowText = ", pre.ShowText)
+		t.Log("pre.SortTag = ", pre.SortTag)
+		t.Log("----------")
+
+	}
+	t.Log("--------------------------------")
+
+}
+
+func TestParseCodeblock(t *testing.T) {
+	testFile := `
+package main
+
+/**
+ *	const comment
+ */
+const (
+	Test1 = "1"
+	SNRoundBrackets = SFSubUtil.NewSubNest(
+		[]byte("("),
+	)
+	SNTemp = "
+		temp string
+	"
+)
+
+/**
+ *	struct comment
+ */
+type TestStruct struct{
+	v1 string
+}
+
+func (t *TestStruct) ParseStart() {
+}
+
+func NewTestStruct() []TestStruct {
+
+}
+
+func NewParser() {
+
+}
+`
+	parser := NewParser()
+
+	buf := createFileBuf(testFile)
+	parser.EachIndexFile(buf)
+	blockCodes := parser.ParseCodeblock(buf)
+
+	t.Log("Codeblock:")
+	for i := 0; i < len(blockCodes); i++ {
+		block := blockCodes[i]
+
+		t.Log("block.Anchor = ", block.Anchor)
+		t.Log("block.Code = ", block.Code)
+		t.Log("block.CodeLang = ", block.CodeLang)
+		t.Log("block.Desc = ", block.Desc)
+		t.Log("block.FileLines = ", block.FileLines)
+		t.Log("block.MenuTitle = ", block.MenuTitle)
+		t.Log("block.SortTag = ", block.SortTag)
+		t.Log("block.SourceFileName = ", block.SourceFileName)
+
+		t.Log("----------")
+
+	}
+	t.Log("--------------------------------")
+
+}
+
+func TestHandleComment(t *testing.T) {
+	// 	src := []byte(`/**
+	//  *  temp705
+	//  * 	templet
+	// */`)
+
+	src2 := []byte(`// ntelan
+// temp
+//`)
+	result := handleComment(src2)
+
+	t.Log(string(result))
 
 }
 

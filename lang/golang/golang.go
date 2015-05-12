@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-11-05
-//  Update on 2015-03-07
+//  Update on 2015-05-07
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -30,6 +30,13 @@ const (
 )
 
 var (
+
+	// e.g.: func (t type)funcname(params) returnval{;
+	// https://www.debuggex.com/r/Su6Ns1LhVxpfD_Di
+	// [0-1:prototype] [2-3:comment or null] [4-5:func type or null]
+	// [6-7:func name] [8-9:func params] [10-11:single return value or null]
+	// [12-13:multi return value or null] [14-15:"{"]
+	REXFunc = regexp.MustCompile(`(/\*\*[\S\s]+?\*/\n|(?:(?:[ ]*//.*?\n)+))?func[ ]*(?:\(([\w \*\n\r\.\[\]]*)\))?[ \n]*([A-Z]\w*)[ \n]*(?:\(([\w ,\*\n\r\.\{\}\[\]]*)\))+?[ \n]*(?:([\w\.\*\{\}\[\]]*)|(?:\(([\w ,\*\n\r\.\{\}\[\]]*)\)))?[ \n]*({)`)
 	// e.g.: type Temp struct {; [0-1:prototype][2-3:comment][4-5:type define name][6-7:type name][8-9:"{"]
 	REXType = regexp.MustCompile("(/\\*\\*[\\S\\s]+?\\*/\n|(?:(?:[ ]*//.*?\n)+))?type[ ]+([A-Z]\\w*)[ ]+(\\w+)[ ]*(\\{)?")
 	// e.g.: package main
@@ -37,7 +44,9 @@ var (
 	// e.g.: /** ... */[\n]package main; //...[\n]package main
 	REXPackageInfo = regexp.MustCompile("(/\\*\\*[\\S\\s]+?\\*/\n|(?:(?:[ ]*//.*?\n)+))[ ]*package \\w+")
 	// e.g.: /** ... */[\n]const|var TConst = 1; //...[\n]const (
-	REXDefine = regexp.MustCompile("(/\\*\\*[\\S\\s]+?\\*/\n|(?:(?:[ ]*//.*?\n)+))?[ ]*((const|var)[\\s]+(?:[A-Z].*|\\()+?)")
+	// https://www.debuggex.com/r/2qeKD9vwnBjkgORT
+	// [0-1:prototype] [2-3:comment or null] [4-5:const|var] [6-7: define name]
+	REXDefine = regexp.MustCompile("(/\\*\\*[\\S\\s]+?\\*/\n|(?:(?:[ ]*//.*?\n)+))?[ ]*(const|var)\\s+(?:\\(|(?:([A-Z]\\w*)\\s*=.+))")
 	// e.g: rows data
 	REXRows = regexp.MustCompile("\\w+.*")
 
@@ -51,6 +60,21 @@ var (
 		SFSubUtil.NewSubNest([]byte("/*"), []byte("*/")),
 		SFSubUtil.NewSubNest([]byte("//"), []byte("\n")),
 	}
+)
+
+var (
+	// name text replacer
+	_nameTextReplacer = strings.NewReplacer(
+		"\t", "_",
+		" ", "_",
+		".", "-",
+		"*", "+",
+		"(", "=",
+		")", "=",
+		"[", "=",
+		"]", "=",
+		",", "",
+	)
 )
 
 func init() {
@@ -72,7 +96,8 @@ const (
 type goDefine struct {
 	dtype        goDType
 	commentIndex []int // note content index, 0 is buffer start index, 1 is buffer end index
-	contIndex    []int // content start and end index
+	nameIndexs   []int // define name (var DEFINDE_NAME) index
+	bodyIndex    []int // define body index
 	multiterm    bool  // true is multiterm definitions
 }
 
@@ -80,7 +105,7 @@ type goDefine struct {
 type goFunc struct {
 	commentIndex  []int // note content index
 	funcTypeIndex []int // func (type index) funcname index
-	funcNameIndex []int // func [type] (func name)
+	funcNameIndex []int // func [type] (func name index)()
 	paramIndex    []int // func [type] funcname (param index)
 	returnIndex   []int // func [type] funcname () (return index)
 	bodyIndex     []int // function body index
@@ -92,6 +117,16 @@ type goType struct {
 	typeNameIndex []int // type (type name) struct
 	typeIndex     []int // type name (struct)
 	bodyIndex     []int // type body index
+}
+
+// goType goFunc goDefine struct memory
+type goMemory struct {
+	packageName string
+	packagePath string
+	defines     []goDefine
+	funcs       []goFunc
+	types       []goType
+	outBetweens [][]int
 }
 
 /**
@@ -153,11 +188,7 @@ func (g *GolangParser) CheckFile(filePath string, info os.FileInfo) bool {
  */
 func (g *GolangParser) EachIndexFile(filebuf *gosfdoc.FileBuf) {
 	// find type (XXXX)
-	var outBetweens [][]int
-	if nil == filebuf.UserData {
-		outBetweens = getOutBetweens(filebuf)
-		filebuf.UserData = outBetweens
-	}
+	outBetweens := getOutBetweens(filebuf)
 
 	tempPackagePath := ""
 	tempPackageName := ""
@@ -194,68 +225,406 @@ func (g *GolangParser) EachIndexFile(filebuf *gosfdoc.FileBuf) {
 		return
 	}
 
-	//	类型查询
-	typeIndexs := filebuf.FindAllSubmatchIndex(REXType)
-	for i := 0; i < len(typeIndexs); i++ {
-		indexs := typeIndexs[i]
-		startIndex := indexs[0]
-		endIndex := indexs[1]
+	// 类型查询，并且保存到存储区域中
+	goTypes := findType(filebuf, outBetweens)
+	for i := 0; i < len(goTypes); i++ {
+		goType := goTypes[i]
+
 		tempType := index.TypeInfo{}
 		tempType.PackageName = tempPackageName
 		tempType.PackagePath = tempPackagePath
 
-		// type GolangParser struct { [1 27 6 18 26 27]
-		// type OperateResult int [88 110 93 106 -1 -1]
-		if 6 == len(indexs) && !isRuleOutIndex(startIndex, outBetweens) {
+		lines := filebuf.LineNumberByIndex(goType.bodyIndex[0], goType.bodyIndex[1])
+		tempType.LineStart = lines[0]
+		tempType.LineEnd = lines[1]
 
-			leftBraces := indexs[4]
-			rightBraces := indexs[5]
-			if -1 != leftBraces && -1 != rightBraces {
-				bracesIndexs := filebuf.SubNestIndex(leftBraces, SNBraces, outBetweens)
-				if 2 == len(bracesIndexs) && -1 != bracesIndexs[0] && -1 != bracesIndexs[1] {
-					endIndex = bracesIndexs[1]
-				}
+		tempType.TypeName = string(filebuf.SubBytes(goType.typeNameIndex[0], goType.typeNameIndex[1]))
+		if 0 != len(tempType.TypeName) {
+			err := g.indexDB.SetType(tempType)
+			if nil != err {
+				fmt.Println("IndexError:", err.Error())
 			}
-
-			lines := filebuf.LineNumberByIndex(startIndex, endIndex)
-			if -1 != lines[0] && -1 != lines[1] {
-				tempType.LineStart = lines[0]
-				tempType.LineEnd = lines[1]
-			}
-
-			tempType.TypeName = string(filebuf.SubBytes(indexs[2], indexs[3]))
-			if 0 != len(tempType.TypeName) {
-				err := g.indexDB.SetType(tempType)
-				if nil != err {
-					fmt.Println("IndexError:", err.Error())
-				}
-			}
-
 		}
-	} // End for i := 0; i < len(typeIndexs); i++ {
+	}
 
+	// 查询 定义的类型
+	goDefines := findDefine(filebuf, outBetweens)
+
+	// 查询定义开放的函数
+	goFuncs := findFunc(filebuf, outBetweens)
+
+	//	存储特定数据，以便实现使用
+	if nil == filebuf.UserData {
+		gomem := goMemory{}
+		gomem.defines = goDefines
+		gomem.funcs = goFuncs
+		gomem.types = goTypes
+		gomem.outBetweens = outBetweens
+		gomem.packageName = tempPackageName
+		gomem.packagePath = tempPackagePath
+		filebuf.UserData = gomem
+	}
+}
+
+/**
+ *	ParsePreview 与 ParseCodeblock 排序的统一处理
+ */
+func sortPreviewAndCodeblock(gd *goDefine, gt *goType, gf *goFunc) string {
+	// 1. const const 		 	 --sortTag: "0_0"
+	// 2. const const( )  		 --sortTag: "0_1"
+	// 3. var var   	  		 --sortTag: "1_0"
+	// 4. var var ( )	  		 --sortTag: "1_1"
+	// 5. func 					 --sortTag: "2_0"
+	// 6. type 					 --sortTag: "3_0_structtype"
+	// 7. 	return func type 	 --sortTag: "3_0_structtype_0_funcname"
+	// 8. 	type func 			 --sortTag: "3_0_structtype_1_funcname"
+	sortTag := ""
+
+	if nil != gd {
+		if goDTypeConst == gd.dtype {
+			sortTag = "0_"
+		} else {
+			sortTag = "1_"
+		}
+
+		if gd.multiterm {
+			sortTag += "1"
+		} else {
+			sortTag += "0"
+		}
+
+	} else if nil != gt {
+		sortTag = "3_0_"
+	} else if nil != gf {
+		if 0 == len(gf.funcTypeIndex) {
+			sortTag = "2_0_func_"
+		} else {
+			// 7. return func type  --sortTag: "3_0_structtype_0_funcname" 这个排序处理不了，需要在自行处理
+			sortTag = "3_0_func_"
+		}
+	}
+
+	return sortTag
+
+}
+
+/**
+ *	parse define private set
+ *
+ *	@return anchor and show text and sort tag string
+ */
+func parseDefineAnchorShowTextSortTag(define goDefine, filebuf *gosfdoc.FileBuf) (anchor, showText, sortTag string) {
+
+	if define.multiterm {
+		switch define.dtype {
+		case goDTypeConst:
+			showText = "const ( "
+		case goDTypeVar:
+			showText = "var ( "
+		}
+
+		firstName := filebuf.SubBytes(define.nameIndexs[0], define.nameIndexs[1])
+		nameIndexsLen := len(define.nameIndexs)
+		endName := filebuf.SubBytes(define.nameIndexs[nameIndexsLen-2], define.nameIndexs[nameIndexsLen-1])
+
+		// 超出截取
+		if 32 < len(firstName) {
+			showText += string(firstName[:32]) + "... ..."
+		} else {
+			showText += string(firstName) + "... ..."
+		}
+
+		if 32 < len(endName) {
+			showText += string(endName[len(endName)-32:]) + " )"
+		} else {
+			showText += string(endName) + " )"
+		}
+
+	} else {
+
+		switch define.dtype {
+		case goDTypeConst:
+			showText = "const "
+		case goDTypeVar:
+			showText = "var "
+		}
+
+		dName := filebuf.SubBytes(define.nameIndexs[0], define.nameIndexs[1])
+
+		// 大于64个字符的处理
+		if 64 < len(dName) {
+			showText += string(dName[:64]) + "..."
+		} else {
+			showText += string(dName)
+		}
+
+	}
+
+	anchor = _nameTextReplacer.Replace(showText)
+	sortTag = sortPreviewAndCodeblock(&define, nil, nil) + "_" + anchor
+
+	return
 }
 
 /**
  *	see DocParser interface
  */
 func (g *GolangParser) ParsePreview(filebuf *gosfdoc.FileBuf) []gosfdoc.Preview {
-	//	TODO
-	// 1. const const{ }
-	// 2. var var { }
-	// 3. func
-	// 4. type
-	// 5. 	return func type
-	// 6. 	type func
 
-	return nil
+	var result []gosfdoc.Preview = nil
+
+	switch gomen := filebuf.UserData.(type) {
+	case goMemory:
+		{
+			definesLen := len(gomen.defines)
+			typesLen := len(gomen.types)
+			funcsLen := len(gomen.funcs)
+			result = make([]gosfdoc.Preview, 0, definesLen+typesLen+funcsLen)
+
+			// add const and var
+			for i := 0; i < definesLen; i++ {
+				define := gomen.defines[i]
+				if 0 == len(define.bodyIndex) {
+					continue
+				}
+
+				pre := gosfdoc.Preview{}
+				pre.Level = 0
+
+				anchor, showText, sortTag := parseDefineAnchorShowTextSortTag(define, filebuf)
+
+				pre.Anchor = anchor
+				pre.ShowText = showText
+				pre.SortTag = sortTag
+
+				result = append(result, pre)
+			}
+
+			// add struct func
+			for i := 0; i < typesLen; i++ {
+				got := gomen.types[i]
+				if 0 == len(got.bodyIndex) {
+					continue
+				}
+				typeName := string(filebuf.SubBytes(got.typeNameIndex[0], got.typeNameIndex[1]))
+				showText := "type " + typeName + " " + string(filebuf.SubBytes(got.typeIndex[0], got.typeIndex[1]))
+				sortTag := sortPreviewAndCodeblock(nil, &got, nil)
+
+				pre := gosfdoc.Preview{}
+				pre.ShowText = showText
+				pre.Anchor = _nameTextReplacer.Replace(pre.ShowText)
+				pre.SortTag = sortTag + pre.Anchor
+				pre.Level = 0
+				result = append(result, pre)
+			}
+
+			// add func
+			for i := 0; i < funcsLen; i++ {
+				gof := gomen.funcs[i]
+
+				// get func string value
+				funcType := ""
+				funcName := ""
+				funcParam := ""
+				funcReturn := ""
+				if 0 != len(gof.funcTypeIndex) {
+					funcType = string(filebuf.SubBytes(gof.funcTypeIndex[0], gof.funcTypeIndex[1]))
+
+					//	除去类型的命名 func (t *TStruct) func 将"t "去除
+					starIndex := strings.Index(funcType, "*")
+					if -1 != starIndex {
+						funcType = funcType[starIndex:]
+					} else {
+						blankIndex := strings.Index(funcType, " ")
+						if -1 != blankIndex {
+							funcType = funcType[blankIndex+1:]
+						}
+					}
+
+				}
+				if 0 != len(gof.paramIndex) {
+					funcParam = string(filebuf.SubBytes(gof.paramIndex[0], gof.paramIndex[1]))
+				}
+				if 0 != len(gof.returnIndex) {
+					funcReturn = string(filebuf.SubBytes(gof.returnIndex[0], gof.returnIndex[1]))
+				}
+				funcName = string(filebuf.SubBytes(gof.funcNameIndex[0], gof.funcNameIndex[1]))
+
+				// preview struct value
+				showText := "func "
+				anchor := ""
+				sortTag := ""
+				level := 0
+
+				// set showText
+				if 0 != len(funcType) {
+					showText += "(" + funcType + ") "
+				}
+				showText += funcName
+				if 0 != len(funcParam) {
+					showText += "(" + funcParam + ") "
+				} else {
+					showText += "() "
+				}
+				if 0 != len(funcReturn) {
+					if -1 != strings.Index(funcReturn, ",") {
+						showText += "(" + funcReturn + ")"
+					} else {
+						showText += funcReturn
+					}
+				}
+
+				// set anchor
+				anchor = _nameTextReplacer.Replace(showText)
+
+				// set level and sortTag
+				// sortTag主要参考 sortPreviewAndCodeblock
+				// 5. func 					 --sortTag: "2_0_funcname"
+				// 6. type 					 --sortTag: "3_0_structtype"
+				// 7. 	return func type 	 --sortTag: "3_0_structtype_0_funcname"
+				// 8. 	type func 			 --sortTag: "3_0_structtype_1_funcname"
+
+				if 0 != len(gof.funcTypeIndex) {
+
+					if 0 == strings.Index(funcType, "*") {
+						funcType = funcType[1:]
+					}
+
+					level = 1
+					sortTag = sortPreviewAndCodeblock(nil, nil, &gof) + funcType + "_1_" + funcName
+				} else if 0 != len(funcReturn) && -1 == strings.Index(funcReturn, ",") && -1 == strings.Index(funcReturn, ".") {
+					// 判断返回值为一个参数
+
+					//	除去类型的命名 func fname() (t string) 将"t "去除或指针符号
+					if index := strings.Index(funcReturn, "*"); -1 != index {
+						funcReturn = funcReturn[index+1:]
+					} else if index := strings.Index(funcReturn, "]"); -1 != index {
+						funcReturn = funcReturn[index+1:]
+					} else if index := strings.Index(funcReturn, " "); -1 != index {
+						funcReturn = funcReturn[index+1:]
+					}
+
+					// 查询方法的返回值是否在当前包和路径中查询到，查询到的话就归类到该类型下显示。
+					if _, ok := g.indexDB.Type(gomen.packageName, gomen.packagePath, funcReturn); ok {
+						level = 1
+
+						gof.funcTypeIndex = make([]int, 1) // 由于排除逻辑处理有些困难，所以做个处理。看一下sortPreviewAndCodeblock处理排序的要求就明白了。
+						sortTag = sortPreviewAndCodeblock(nil, nil, &gof) + funcReturn + "_0_" + funcName
+						gof.funcTypeIndex = nil
+					} else {
+						sortTag = sortPreviewAndCodeblock(nil, nil, &gof) + funcName
+					}
+				} else {
+					sortTag = sortPreviewAndCodeblock(nil, nil, &gof) + funcName
+				}
+
+				pre := gosfdoc.Preview{}
+				pre.ShowText = showText
+				pre.Anchor = anchor
+				pre.SortTag = sortTag
+				pre.Level = level
+				result = append(result, pre)
+
+			}
+		}
+	}
+
+	return result
 }
 
 /**
  *	see DocParser interface
  */
 func (g *GolangParser) ParseCodeblock(filebuf *gosfdoc.FileBuf) []gosfdoc.CodeBlock {
-	return nil
+
+	var result []gosfdoc.CodeBlock = nil
+
+	// SortTag        string // sort tag
+	// MenuTitle      string // left navigation menu title; Constants、Variables、Func Details
+	// Title          string // function name or custom title
+	// Anchor         string // function anchor text.
+	// Desc           string // description markdown text or plain text
+	// Code           string // show code text
+	// CodeLang       string // source code lang type string
+	// SourceFileName string // source code file name
+	// FileLines      []int  // block where the file line [5,10] is L5-L10
+
+	switch gomen := filebuf.UserData.(type) {
+	case goMemory:
+		{
+			definesLen := len(gomen.defines)
+			typesLen := len(gomen.types)
+			funcsLen := len(gomen.funcs)
+			result = make([]gosfdoc.CodeBlock, 0, definesLen+typesLen+funcsLen)
+
+			for i := 0; i < definesLen; i++ {
+				define := gomen.defines[i]
+				if 0 == len(define.bodyIndex) {
+					continue
+				}
+
+				menuTitle := ""
+				title := " " // 注意空格，这个是需要的
+				desc := ""
+				anchor := ""
+				sortTag := ""
+				code := ""
+				codeLang := "go"
+				var fileLines []int = nil
+				sourceFileName := ""
+
+				if nil != filebuf.FileInfo() {
+					sourceFileName = filebuf.FileInfo().Name()
+				}
+
+				// set menuTitle
+				switch define.dtype {
+				case goDTypeVar:
+					menuTitle = "Variables"
+				case goDTypeConst:
+					menuTitle = "Constants"
+				default:
+					menuTitle = "Error Title"
+				}
+
+				// set desc
+				if 0 != len(define.commentIndex) {
+					comt := handleComment(filebuf.SubBytes(define.commentIndex[0], define.commentIndex[1]))
+					desc = string(comt)
+				}
+
+				// set anchor and sortTag
+				anchor, _, sortTag = parseDefineAnchorShowTextSortTag(define, filebuf)
+
+				// set code
+				code = string(filebuf.SubBytes(define.bodyIndex[0], define.bodyIndex[1]))
+				// set fileLines
+				fileLines = filebuf.LineNumberByIndex(define.bodyIndex[0], define.bodyIndex[1])
+
+				codeBlock := gosfdoc.CodeBlock{}
+				codeBlock.SortTag = sortTag
+				codeBlock.MenuTitle = menuTitle
+				codeBlock.Title = title
+				codeBlock.Anchor = anchor
+				codeBlock.Desc = desc
+				codeBlock.Code = code
+				codeBlock.CodeLang = codeLang
+				codeBlock.SourceFileName = sourceFileName
+				codeBlock.FileLines = fileLines
+
+				result = append(result, codeBlock)
+			}
+
+			// TODO
+			for i := 0; i < typesLen; i++ {
+
+			}
+
+		}
+
+	}
+
+	return result
 }
 
 /**
@@ -325,12 +694,12 @@ func (n *GolangParser) ParsePackageInfo(filebuf *gosfdoc.FileBuf) string {
  */
 func findDefine(filebuf *gosfdoc.FileBuf, outBetweens [][]int) []goDefine {
 	/*
-		<br> is \n
+		//<br>// temp1 <br>const (, //<br>// temp1 <br>, const,
+		const Temp3 = "3", , const, Temp3
+		// VTest1 cont<br>var VTest1  = "1", // VTest1 cont<br>, var, VTest1
+		var (, , var,
 
-		//<br>// temp1 <br>const (, //<br>// temp1 <br>, const (, const
-		const Temp3 = "3", , const Temp3 = "3", const
-		// VTest1 cont<br>var VTest1  = "1", // VTest1 cont<br>, var VTest1  = "1", var
-		var (, , var (, var
+		// [0-1:prototype] [2-3:comment or null] [4-5:const|var] [6-7: define name]
 	*/
 	var (
 		CTempConst = []byte("const")
@@ -342,19 +711,21 @@ func findDefine(filebuf *gosfdoc.FileBuf, outBetweens [][]int) []goDefine {
 
 	for i := 0; i < len(subindexs); i++ {
 		indexs := subindexs[i]
+		// 由于index[0]首位存在注释，所以需要从主体内容开始判断排除，即是index[2]
 
 		if 8 == len(indexs) {
 
-			contIndex_1 := indexs[4]
-			contIndex_2 := indexs[5]
+			pteIndex_2 := indexs[1]
+			corvIndex_1 := indexs[4]
+			corvIndex_2 := indexs[5]
 
-			// 由于index[0]首位存在注释，所以需要从主体内容开始判断排除，即是index[2]
-			if -1 != contIndex_1 && -1 != contIndex_2 &&
-				!isRuleOutIndex(contIndex_1, outBetweens) {
+			// 判断 [4-5:const|var] ,是否是注释内存或则存在
+			if -1 != corvIndex_1 && -1 != corvIndex_2 &&
+				!isRuleOutIndex(corvIndex_1, outBetweens) {
 
 				// sub const or var byte
 				dtype := goDTypeInvalid
-				defineTagByte := filebuf.SubBytes(indexs[6], indexs[7])
+				defineTagByte := filebuf.SubBytes(indexs[4], indexs[5])
 				if bytes.Equal(defineTagByte, CTempConst) {
 					dtype = goDTypeConst
 				} else if bytes.Equal(defineTagByte, CTempVar) {
@@ -364,16 +735,18 @@ func findDefine(filebuf *gosfdoc.FileBuf, outBetweens [][]int) []goDefine {
 				if goDTypeInvalid != dtype {
 					multiterm := false
 					isAppend := false
-					// 需要注意的是下标 -1 和 +1 的处理， 关键在于regexp截取的下标数是从1开始
-					bufByte, _ := filebuf.Byte(contIndex_2 - 1)
+					var dNameIndexs []int = nil // 定义类型名的下标存储
+
+					// 截取 [0-1:prototype]原型的末尾最后一个字符，判断"var ("是否是括号
+					bufByte, _ := filebuf.Byte(pteIndex_2 - 1)
 
 					if '(' == bufByte {
 						//	如果判断是"("则表示是多行，这时就需要查询下一个")"的目标，然后还需要判断是否全部的参数为大写开头
-						contNewIndexs := filebuf.SubNestIndex(contIndex_2-1, SNRoundBrackets, outBetweens)
+						contNewIndexs := filebuf.SubNestIndex(pteIndex_2-1, SNRoundBrackets, outBetweens)
 
 						if 2 == len(contNewIndexs) {
 							isAllUpper := false
-							subBeginIndex := contIndex_2
+							subBeginIndex := pteIndex_2
 
 							// 得到 var ( "双引号里这里的命名参数" )
 							bracketsBytes := filebuf.SubBytes(subBeginIndex, contNewIndexs[1]-1)
@@ -382,8 +755,13 @@ func findDefine(filebuf *gosfdoc.FileBuf, outBetweens [][]int) []goDefine {
 
 							// 获取每行的命名函数进行首字母的判断
 							rowsIndexs := REXRows.FindAllIndex(bracketsBytes, -1)
+							rowsLen := len(rowsIndexs)
+							if 0 != rowsLen {
+								//	定义存储容量，由于存储的是下标，需要开始和结尾，所以在查询得到的行数乘以2
+								dNameIndexs = make([]int, 0, rowsLen*2)
+							}
 
-							for i := 0; i < len(rowsIndexs); i++ {
+							for i := 0; i < rowsLen; i++ {
 								rowStartIndex := rowsIndexs[i][0]
 								sourceIndex := rowStartIndex + subBeginIndex
 
@@ -396,6 +774,20 @@ func findDefine(filebuf *gosfdoc.FileBuf, outBetweens [][]int) []goDefine {
 
 									if 'A' <= firstByte && 'Z' >= firstByte {
 										isAllUpper = true
+										// 获取定义名称,名称就控制在64个字符内
+										dNameIndexs = append(dNameIndexs, sourceIndex)
+										dNameIndexs = append(dNameIndexs, sourceIndex+1)
+
+										for j := rowStartIndex + 1; j < rowStartIndex+63; j++ {
+											b := bracketsBytes[j]
+											if '\n' == b || '\r' == b || ' ' == b || '=' == b {
+												// 判断名称的结尾
+												dNameIndexs[len(dNameIndexs)-1] = subBeginIndex + j
+												break
+											}
+
+										}
+
 									} else {
 										isAllUpper = false
 									}
@@ -408,7 +800,7 @@ func findDefine(filebuf *gosfdoc.FileBuf, outBetweens [][]int) []goDefine {
 							}
 
 							if isAllUpper {
-								contIndex_2 = contNewIndexs[1]
+								pteIndex_2 = contNewIndexs[1]
 								multiterm = true
 								isAppend = true
 							}
@@ -417,12 +809,15 @@ func findDefine(filebuf *gosfdoc.FileBuf, outBetweens [][]int) []goDefine {
 
 					} else {
 						isAppend = true
+						dNameIndexs = []int{indexs[6], indexs[7]}
 					}
 
 					if isAppend {
 						tempDefine := goDefine{}
 						tempDefine.dtype = dtype
-						tempDefine.contIndex = []int{contIndex_1, contIndex_2}
+						// [4-5:const|var] [4]开始 至 [0-1:prototype] [1]结尾字符
+						tempDefine.bodyIndex = []int{corvIndex_1, pteIndex_2}
+						tempDefine.nameIndexs = dNameIndexs
 						tempDefine.commentIndex = []int{indexs[2], indexs[3]}
 						tempDefine.multiterm = multiterm
 						result = append(result, tempDefine)
@@ -447,6 +842,66 @@ func findDefine(filebuf *gosfdoc.FileBuf, outBetweens [][]int) []goDefine {
 func findFunc(filebuf *gosfdoc.FileBuf, outBetweens [][]int) []goFunc {
 	var result []goFunc = nil
 
+	indexs := filebuf.FindAllSubmatchIndex(REXFunc)
+	indexsLen := len(indexs)
+
+	// [0-1:prototype] [2-3:comment or null] [4-5:func type or null]
+	// [6-7:func name] [8-9:func params] [10-11:single return value or null]
+	// [12-13:multi return value or null] [14-15:"{"]
+	if 0 != indexsLen && 16 == len(indexs[0]) {
+		for i := 0; i < indexsLen; i++ {
+			funcIndexs := indexs[i]
+
+			if isRuleOutIndex(funcIndexs[0], outBetweens) {
+				continue
+			}
+
+			bodyStartIndex := -1
+			bodyEndIndex := funcIndexs[15]
+
+			// 查询"}" 检测是否是有效的函数体
+			bodyNewIndexs := filebuf.SubNestIndex(bodyEndIndex-1, SNBraces, outBetweens)
+
+			if 2 != len(bodyNewIndexs) {
+				// 无效函数体则跳过
+				continue
+			} else {
+				bodyEndIndex = bodyNewIndexs[1]
+			}
+
+			//
+			gofunc := goFunc{}
+
+			if -1 != funcIndexs[2] && -1 != funcIndexs[3] {
+				gofunc.commentIndex = []int{funcIndexs[2], funcIndexs[3]}
+				//	如果注释存在，则body从注释后开始
+				bodyStartIndex = funcIndexs[3]
+			} else {
+				bodyStartIndex = funcIndexs[0]
+			}
+
+			gofunc.bodyIndex = []int{bodyStartIndex, bodyEndIndex}
+			gofunc.funcNameIndex = []int{funcIndexs[6], funcIndexs[7]}
+
+			// 如果参数为空则下标会相同
+			if -1 != funcIndexs[8] && funcIndexs[8] != funcIndexs[9] {
+				gofunc.paramIndex = []int{funcIndexs[8], funcIndexs[9]}
+			}
+
+			if -1 != funcIndexs[4] && -1 != funcIndexs[5] {
+				gofunc.funcTypeIndex = []int{funcIndexs[4], funcIndexs[5]}
+			}
+
+			if -1 != funcIndexs[10] && -1 != funcIndexs[11] {
+				gofunc.returnIndex = []int{funcIndexs[10], funcIndexs[11]}
+			} else if -1 != funcIndexs[12] && -1 != funcIndexs[13] {
+				gofunc.returnIndex = []int{funcIndexs[12], funcIndexs[13]}
+			}
+
+			result = append(result, gofunc)
+		}
+	}
+
 	return result
 }
 
@@ -467,9 +922,20 @@ func findType(filebuf *gosfdoc.FileBuf, outBetweens [][]int) []goType {
 		for i := 0; i < indexsLen; i++ {
 			typeIndexs := indexs[i]
 
+			if isRuleOutIndex(typeIndexs[0], outBetweens) {
+				continue
+			}
+
 			gt := goType{}
+			bodyStartIndex := -1
+			bodyEndIndex := typeIndexs[7]
+
 			if -1 != typeIndexs[2] && -1 != typeIndexs[3] {
 				gt.commentIndex = []int{typeIndexs[2], typeIndexs[3]}
+				//	如果注释存在，则body从注释后开始
+				bodyStartIndex = typeIndexs[3]
+			} else {
+				bodyStartIndex = typeIndexs[0]
 			}
 
 			// 正则确定存在的值
@@ -479,23 +945,17 @@ func findType(filebuf *gosfdoc.FileBuf, outBetweens [][]int) []goType {
 			//	判断大括号"{"
 			symbolIndex := typeIndexs[8]
 			bufByte, _ := filebuf.Byte(symbolIndex)
-			isBraces := false
 
 			if -1 != symbolIndex && '{' == bufByte {
 				// 寻找下一个"}"
 				bodyNewIndexs := filebuf.SubNestIndex(symbolIndex-1, SNBraces, outBetweens)
 
 				if 2 == len(bodyNewIndexs) {
-					isBraces = true
-					gt.bodyIndex = []int{typeIndexs[4] - 5, bodyNewIndexs[1]}
+					bodyEndIndex = bodyNewIndexs[1]
 				}
 			}
 
-			if !isBraces {
-				//	typeIndexs[4] - 5 = "type "
-				//	typeIndexs[7] = 类型名的结尾截取下标
-				gt.bodyIndex = []int{typeIndexs[4] - 5, typeIndexs[7]}
-			}
+			gt.bodyIndex = []int{bodyStartIndex, bodyEndIndex}
 
 			result = append(result, gt)
 		}
@@ -544,4 +1004,35 @@ func isRuleOutIndex(index int, outBetweens [][]int) bool {
 		}
 	}
 	return result
+}
+
+/**
+ *	handle comment symbol
+ */
+func handleComment(src []byte) []byte {
+	result := bytes.NewBuffer(nil)
+	tempSrc := bytes.Split(src, []byte("\n"))
+
+	if 1 >= len(tempSrc) {
+		return src
+	}
+
+	cmtStyle1 := 0 // 注释的样式判断, 0 表示是 // 样式, 1表示 /* */ 样式
+	if -1 != bytes.Index(tempSrc[0], []byte("/*")) {
+		cmtStyle1 = 1
+	}
+
+	//	获取注释行前缀的字符下标
+	symbolIndex := gosfdoc.FindPrefixFilterTag(tempSrc[cmtStyle1])
+	symbolIndexLen := len(symbolIndex)
+
+	for i := cmtStyle1; i < len(tempSrc)-cmtStyle1; i++ {
+		b := tempSrc[i]
+		if len(b) > symbolIndexLen {
+			result.Write(b[symbolIndexLen:])
+			result.WriteByte('\n')
+		}
+	}
+
+	return result.Bytes()
 }
