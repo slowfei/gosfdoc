@@ -18,39 +18,32 @@
 			"Version": "0.1",
 			"List": [
 				{
-					"Name": "github.com/slowfei/gosfdoc",
-					"Link": "github.com/slowfei/gosfdoc/gosfdoc.md",
-					"Desc": ", ;, ;, ;, "
-				},
-				{
-					"Name": "github.com/slowfei/gosfdoc/bin",
-					"Link": "github.com/slowfei/gosfdoc/bin/bin.md",
+					"Name": "github.com/slowfei/gosfdoc/gosfdoc",
 					"Desc": ""
 				},
 				{
-					"Name": "github.com/slowfei/gosfdoc/index",
-					"Link": "github.com/slowfei/gosfdoc/index/index.md",
-					"Desc": ",   type index data storage systems, , ;, "
+					"Name": "github.com/slowfei/gosfdoc/bin/bin",
+					"Desc": ""
 				},
 				{
-					"Name": "github.com/slowfei/gosfdoc/lang/golang",
-					"Link": "github.com/slowfei/gosfdoc/lang/golang/golang.md",
-					"Desc": "golang implement parser, "
+					"Name": "github.com/slowfei/gosfdoc/index/index",
+					"Desc": "type index data storage systems"
 				},
 				{
-					"Name": "github.com/slowfei/gosfdoc/lang/java",
-					"Link": "github.com/slowfei/gosfdoc/lang/java/java.md",
-					"Desc": "TODO 等待实现, "
+					"Name": "github.com/slowfei/gosfdoc/lang/golang/golang",
+					"Desc": "golang implement parser"
 				},
 				{
-					"Name": "github.com/slowfei/gosfdoc/lang/javascript",
-					"Link": "github.com/slowfei/gosfdoc/lang/javascript/javascript.md",
-					"Desc": "TODO 等待实现, "
+					"Name": "github.com/slowfei/gosfdoc/lang/java/java",
+					"Desc": "TODO 等待实现"
 				},
 				{
-					"Name": "github.com/slowfei/gosfdoc/lang/objc",
-					"Link": "github.com/slowfei/gosfdoc/lang/objc/objc.md",
-					"Desc": "TODO 等待实现, "
+					"Name": "github.com/slowfei/gosfdoc/lang/javascript/javascript",
+					"Desc": "TODO 等待实现"
+				},
+				{
+					"Name": "github.com/slowfei/gosfdoc/lang/objc/objc",
+					"Desc": "TODO 等待实现"
 				}
 			]
 		}

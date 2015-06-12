@@ -543,7 +543,6 @@ func (c *Intro) WriteFilepath(path string) error {
 type PackageInfo struct {
 	menuName string `json:"-"` // type belongs
 	Name     string // package name plain text
-	Link     string // package link path
 	Desc     string // description plain text
 }
 

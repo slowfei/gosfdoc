@@ -1,4 +1,4 @@
 
 <br/>
 ### Directory files
-[objc.go ](../../lang/objc/src/objc.go)
+[objc.go ](../../../../../src/github.com/slowfei/gosfdoc/lang/objc/objc.go)

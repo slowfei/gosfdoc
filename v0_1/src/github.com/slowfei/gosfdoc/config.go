@@ -32,8 +32,8 @@ var (
     "CodeLang"         : [%v],
     "Outpath"          : "doc",
     "OutAppendPath"    : %#v,
-    "CopyCode"         : false,
-    "CodeLinkRoot"     : true,
+    "CopyCode"         : true,
+    "CodeLinkRoot"     : false,
     "HtmlTitle"        : "Document",
     "DocTitle"         : "<b>Document:</b>",
     "MenuTitle"        : "<center><b>package</b></center>",
@@ -188,7 +188,7 @@ func (mc *MainConfig) Check() (error, bool) {
  *	@param `relMDPath` relative markdown out project path.
  *					   relative path: $GOPATH/[github.com/slowfei]/projectname/( .../markdown.md )
  *	@param `isToMarkdown` to markdown link? false is source code access path
- *	@return use github.com to relative link. "../../../" or "../../src"
+ *	@return use github.com to relative link. "../../../" or "../../src/[projectname]"
  */
 func (m MainConfig) GithubLink(relMDPath string, isToMarkdown bool) string {
 	resultPath := ""
@@ -206,8 +206,8 @@ func (m MainConfig) GithubLink(relMDPath string, isToMarkdown bool) string {
 	}
 
 	relMDPath = path.Dir(relMDPath)
-	// relMDPath = strings.TrimPrefix(relMDPath, "/")
-	// relMDPath = strings.TrimSuffix(relMDPath, "/")
+	relMDPath = strings.TrimPrefix(relMDPath, "/")
+	relMDPath = strings.TrimSuffix(relMDPath, "/")
 	// //	可能出现的问题，Dir("") == "."
 	// //	所以需要判断"."的处理
 	// if 0 != len(relMDPath) && "." != relMDPath {
@@ -223,13 +223,14 @@ func (m MainConfig) GithubLink(relMDPath string, isToMarkdown bool) string {
 		//	https://.../project/doc/v1_0_0/md/default/
 		resultPath = backRel
 	} else if m.CodeLinkRoot {
-		//	https://.../project/
-		resultPath = path.Join("../../../../", relMDPath)
+		//	https://.../project/blob/master/doc/v1_0_0/src/packagepath/file.go
+		//  to
+		resultPath = path.Join("../../../../", backRel, relMDPath)
 		// resultPath = "../../../../" + backRel
 	} else {
-		//	https://.../project/doc/v1_0_0/src/
-		// resultPath = "../../" + backRel + "src"
-		resultPath = path.Join("../../", relMDPath, "src")
+		//	https://.../project/blob/master/doc/v1_0_0/src/packagepath/file.go
+		// resultPath = "../../" + backRel + "src" + relMDPath
+		resultPath = path.Join("../../", backRel, "src", path.Join(appendPath, relMDPath))
 	}
 
 	return resultPath
