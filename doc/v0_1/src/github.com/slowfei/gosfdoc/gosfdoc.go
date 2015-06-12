@@ -709,9 +709,9 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, keys []string
 		mdFileName := filepath.Base(dirPath) + FILE_SUFFIX_MARKDOWN
 
 		//  handle source code link path
-		browseSrcJoinPath := config.GithubLink(path.Join(appendPath, relativeDirPath, mdFileName), false)
+		browseSrcJoinPath := config.GithubLink(path.Join(relativeDirPath, mdFileName), false)
 		// browseSrcJoinPath = path.Join(appendPath, browseSrcJoinPath)
-		fmt.Println("browseSrcJoinPath: ", browseSrcJoinPath)
+		// fmt.Println("browseSrcJoinPath: ", browseSrcJoinPath)
 
 		// 5.output markdown
 		mdBytes := ParseMarkdown(documents, previews, blocks, filesName, config.currentVersion, browseSrcJoinPath)

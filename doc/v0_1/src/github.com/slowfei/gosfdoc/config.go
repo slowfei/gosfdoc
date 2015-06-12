@@ -206,8 +206,8 @@ func (m MainConfig) GithubLink(relMDPath string, isToMarkdown bool) string {
 	}
 
 	relMDPath = path.Dir(relMDPath)
-	// relMDPath = strings.TrimPrefix(relMDPath, "/")
-	// relMDPath = strings.TrimSuffix(relMDPath, "/")
+	relMDPath = strings.TrimPrefix(relMDPath, "/")
+	relMDPath = strings.TrimSuffix(relMDPath, "/")
 	// //	可能出现的问题，Dir("") == "."
 	// //	所以需要判断"."的处理
 	// if 0 != len(relMDPath) && "." != relMDPath {
@@ -223,13 +223,14 @@ func (m MainConfig) GithubLink(relMDPath string, isToMarkdown bool) string {
 		//	https://.../project/doc/v1_0_0/md/default/
 		resultPath = backRel
 	} else if m.CodeLinkRoot {
-		//	https://.../project/
-		resultPath = path.Join("../../../../", relMDPath)
+		//	https://.../project/blob/master/doc/v1_0_0/src/packagepath/file.go
+		//  to
+		resultPath = path.Join("../../../../", backRel, relMDPath)
 		// resultPath = "../../../../" + backRel
 	} else {
-		//	https://.../project/doc/v1_0_0/src/project
-		// resultPath = "../../" + "src" + relMDPath
-		resultPath = path.Join("../../", "src", relMDPath)
+		//	https://.../project/blob/master/doc/v1_0_0/src/packagepath/file.go
+		// resultPath = "../../" + backRel + "src" + relMDPath
+		resultPath = path.Join("../../", backRel, "src", path.Join(appendPath, relMDPath))
 	}
 
 	return resultPath
