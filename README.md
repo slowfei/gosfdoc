@@ -1,2 +1,0 @@
-gosfdoc - document generator
-======
