@@ -19,7 +19,7 @@
 			"List": [
 				{
 					"Name": "github.com/slowfei/gosfdoc/gosfdoc",
-					"Desc": ", ;, ;, ;, "
+					"Desc": ""
 				},
 				{
 					"Name": "github.com/slowfei/gosfdoc/bin/bin",
@@ -27,23 +27,23 @@
 				},
 				{
 					"Name": "github.com/slowfei/gosfdoc/index/index",
-					"Desc": ",   type index data storage systems, , ;, "
+					"Desc": "type index data storage systems"
 				},
 				{
 					"Name": "github.com/slowfei/gosfdoc/lang/golang/golang",
-					"Desc": "golang implement parser, "
+					"Desc": "golang implement parser"
 				},
 				{
 					"Name": "github.com/slowfei/gosfdoc/lang/java/java",
-					"Desc": "TODO 等待实现, "
+					"Desc": "TODO 等待实现"
 				},
 				{
 					"Name": "github.com/slowfei/gosfdoc/lang/javascript/javascript",
-					"Desc": "TODO 等待实现, "
+					"Desc": "TODO 等待实现"
 				},
 				{
 					"Name": "github.com/slowfei/gosfdoc/lang/objc/objc",
-					"Desc": "TODO 等待实现, "
+					"Desc": "TODO 等待实现"
 				}
 			]
 		}

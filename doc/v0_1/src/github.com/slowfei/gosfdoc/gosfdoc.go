@@ -80,22 +80,22 @@ var (
 	REXPrivateBlock = regexp.MustCompile("[^\\n][\\s]?")
 
 	// parse about and intro block
-	/**[About|Intro]
+	/* * [About|Intro]
 	 *  content text or markdown text
 	 */
-	//[About|Intro]
+	// [About|Intro]
 	// content text or markdown text
-	//End
+	// End
 	REXAbout = regexp.MustCompile("(/\\*\\*About[\\s]+(\\s|.)*?[\\s]+\\*/)|(//About[\\s]?([\\s]|.)*?//[Ee][Nn][Dd])")
 	REXIntro = regexp.MustCompile("(/\\*\\*Intro[\\s]+(\\s|.)*?[\\s]+\\*/)|(//Intro[\\s]?([\\s]|.)*?//[Ee][Nn][Dd])")
 
 	// parse public document content
-	/** *[z-index-][title]
+	/* * *[z-index-][title]
 	 *  document text or markdown text
 	 */
 	// /[z-index-][title]
 	//  document text or markdown text
-	//End
+	// End
 	REXDocument      = regexp.MustCompile("(/\\*\\*\\*[^\\*\\s](.+)\\n(\\s|.)*?\\*/)|(///[^/\\s](.+)\\n(\\s|.)*?//[Ee][Nn][Dd])")
 	REXDocIndexTitle = regexp.MustCompile("(/\\*\\*\\*|///)(\\d*-)?(.*)?")
 )
@@ -692,7 +692,7 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, keys []string
 
 			// 5. parse package info
 			packInfo := code.parser.ParsePackageInfo(code.FileCont)
-			packInfo = strings.Trim(packInfo, " ")
+			packInfo = strings.Trim(packInfo, "\n ")
 			if 0 != len(packInfo) {
 				packStrList = append(packStrList, packInfo)
 			}

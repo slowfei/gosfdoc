@@ -1,7 +1,11 @@
 
-	// parse public document content
-	/** *[z-index-][title]
-	 *  document text or markdown text
-	 */
-	// /[z-index-][title]
-	//  document text or markdown text
+##Document Introduction
+
+Sorry! Document author did not write any information.
+
+----
+This is a good tool, Can help you make beautiful documents.
+
+More references: [https://github.com/slowfei/gosfdoc][0]<br/>
+
+[0]:https://github.com/slowfei/gosfdoc
