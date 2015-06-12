@@ -1,4 +1,4 @@
 
 <br/>
 ### Directory files
-[java.go ](../../lang/java/src/java.go)
+[java.go ](../../src/github.com/slowfei/gosfdoc/lang/java/java.go)

@@ -56,7 +56,8 @@ var (
 	//  document parser implement interface
 	_mapParser = make(map[string]DocParser)
 	//  system filters
-	_sysFilters = []string{DEFAULT_CONFIG_FILE_NAME, "."}
+	_sysFileFilters = []string{DEFAULT_CONFIG_FILE_NAME, "."}
+	_sysDirFileters = []string{"."}
 
 	//  error info
 	ErrConfigNotRead      = errors.New("Can not read config file.")
@@ -708,9 +709,9 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, keys []string
 		mdFileName := filepath.Base(dirPath) + FILE_SUFFIX_MARKDOWN
 
 		//  handle source code link path
-		browseSrcJoinPath := config.GithubLink(path.Join(relativeDirPath, mdFileName), false)
+		browseSrcJoinPath := config.GithubLink(path.Join(appendPath, relativeDirPath, mdFileName), false)
 		// browseSrcJoinPath = path.Join(appendPath, browseSrcJoinPath)
-		// fmt.Println("browseSrcJoinPath: ", browseSrcJoinPath, relativeDirPath)
+		// fmt.Println("browseSrcJoinPath: ", browseSrcJoinPath)
 
 		// 5.output markdown
 		mdBytes := ParseMarkdown(documents, previews, blocks, filesName, config.currentVersion, browseSrcJoinPath)
@@ -972,6 +973,18 @@ func scanFiles(config *MainConfig, fileFunc FileResultFunc) (
 		return nil
 	}
 
+	scanPath := config.ScanPath
+	if scanPath[len(scanPath)-1] != '/' {
+		scanPath += "/"
+	}
+
+	sysDirLen := len(_sysDirFileters)
+	sysDirAbs := make([]string, sysDirLen, sysDirLen)
+	for i := 0; i < sysDirLen; i++ {
+		sysDirName := _sysDirFileters[i]
+		sysDirAbs[i] = scanPath + sysDirName
+	}
+
 	resultErr = filepath.Walk(config.ScanPath, func(path string, info os.FileInfo, err error) error {
 
 		if nil != err || nil == info {
@@ -980,11 +993,18 @@ func scanFiles(config *MainConfig, fileFunc FileResultFunc) (
 
 		fileName := info.Name()
 
-		// 1. system file filter
-		for i := 0; i < len(_sysFilters); i++ {
-			sysFileName := _sysFilters[i]
+		// 1. system file and dir filter
+		for i := 0; i < len(_sysFileFilters); i++ {
+			sysFileName := _sysFileFilters[i]
 			if 0 == strings.Index(fileName, sysFileName) {
-				return callFileFunc(path, ResultFileFilter, nil)
+				// return callFileFunc(path, ResultFileFilter, nil)
+				return nil
+			}
+		}
+		for i := 0; i < sysDirLen; i++ {
+			fpath := sysDirAbs[i]
+			if 0 == strings.Index(path, fpath) {
+				return nil
 			}
 		}
 

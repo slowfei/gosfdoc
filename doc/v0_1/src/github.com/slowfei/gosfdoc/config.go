@@ -188,7 +188,7 @@ func (mc *MainConfig) Check() (error, bool) {
  *	@param `relMDPath` relative markdown out project path.
  *					   relative path: $GOPATH/[github.com/slowfei]/projectname/( .../markdown.md )
  *	@param `isToMarkdown` to markdown link? false is source code access path
- *	@return use github.com to relative link. "../../../" or "../../src"
+ *	@return use github.com to relative link. "../../../" or "../../src/[projectname]"
  */
 func (m MainConfig) GithubLink(relMDPath string, isToMarkdown bool) string {
 	resultPath := ""
@@ -227,9 +227,9 @@ func (m MainConfig) GithubLink(relMDPath string, isToMarkdown bool) string {
 		resultPath = path.Join("../../../../", relMDPath)
 		// resultPath = "../../../../" + backRel
 	} else {
-		//	https://.../project/doc/v1_0_0/src/
-		// resultPath = "../../" + backRel + "src"
-		resultPath = path.Join("../../", relMDPath, "src")
+		//	https://.../project/doc/v1_0_0/src/project
+		// resultPath = "../../" + "src" + relMDPath
+		resultPath = path.Join("../../", "src", relMDPath)
 	}
 
 	return resultPath
