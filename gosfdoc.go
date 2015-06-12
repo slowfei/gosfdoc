@@ -71,11 +71,11 @@ var (
  *  regex compile variable
  */
 var (
-	// private file tag ( //#private-doc-code )
+	// private file tag ( //# private-doc-code )
 	REXPrivateFile = regexp.MustCompile("#private-(doc|code){1}(-doc|-code)?")
 	TagPrivateCode = []byte("code")
 	TagPrivateDoc  = []byte("doc")
-	// private block tag ( //#private * //#private-end)
+	// private block tag ( //# private * //# private-end)
 	REXPrivateBlock = regexp.MustCompile("[^\\n]?//#private(\\s|.)*?//#private-end[\\s]?")
 
 	// parse about and intro block
@@ -89,10 +89,10 @@ var (
 	REXIntro = regexp.MustCompile("(/\\*\\*Intro[\\s]+(\\s|.)*?[\\s]+\\*/)|(//Intro[\\s]?([\\s]|.)*?//[Ee][Nn][Dd])")
 
 	// parse public document content
-	/***[z-index-][title]
+	/** *[z-index-][title]
 	 *  document text or markdown text
 	 */
-	///[z-index-][title]
+	// /[z-index-][title]
 	//  document text or markdown text
 	//End
 	REXDocument      = regexp.MustCompile("(/\\*\\*\\*[^\\*\\s](.+)\\n(\\s|.)*?\\*/)|(///[^/\\s](.+)\\n(\\s|.)*?//[Ee][Nn][Dd])")
@@ -170,21 +170,21 @@ type DocParser interface {
 	ParseCodeblock(filebuf *FileBuf) []CodeBlock
 
 	/**
-	 *	parse directory package info
-	 *	each file directory parse string join
+	 *  parse directory package info
+	 *  each file directory parse string join
 	 *
-	 *	@param `filebuf`
-	 *	@return string file parse the only string
+	 *  @param `filebuf`
+	 *  @return string file parse the only string
 	 */
 	ParsePackageInfo(filebuf *FileBuf) string
 
 	/**
-	 *	parse start
+	 *  parse start
 	 */
 	ParseStart(config MainConfig)
 
 	/**
-	 *	parse end
+	 *  parse end
 	 */
 	ParseEnd()
 }
@@ -253,9 +253,9 @@ func readConfigFile(filepath string) (config *MainConfig, err error, pass bool) 
 }
 
 /**
- *	create directory path
+ *  create directory path
  *
- *	@param `path`
+ *  @param `path`
  */
 func dirpathMkall(path string) {
 	exists, isDir, err := SFFileManager.Exists(path)
@@ -289,10 +289,10 @@ func dirpathMarkdownDefault(config *MainConfig) string {
 }
 
 /**
- *	get source code output directory path
+ *  get source code output directory path
  *
- *	@param `config`
- *	@return full path
+ *  @param `config`
+ *  @return full path
  */
 func dirpathSRC(config *MainConfig) string {
 	verPath := ConverToVersionPath(config.currentVersion)
@@ -305,7 +305,7 @@ func dirpathSRC(config *MainConfig) string {
 }
 
 /**
- *	get assets directory save path
+ *  get assets directory save path
  */
 func dirpathAssets(config *MainConfig) string {
 	path := filepath.Join(config.Outpath, DIR_NAME_ASSETS)
@@ -316,10 +316,10 @@ func dirpathAssets(config *MainConfig) string {
 }
 
 /**
- *	check whether there are version info
+ *  check whether there are version info
  *
- *	@param `configPath` config path
- *	@param `version` check version string
+ *  @param `configPath` config path
+ *  @param `version` check version string
  */
 func CheckExistVersion(configPath, version string) bool {
 	result := false
@@ -334,7 +334,7 @@ func CheckExistVersion(configPath, version string) bool {
 }
 
 /**
- *	conver version to use the path info
+ *  conver version to use the path info
  */
 func ConverToVersionPath(version string) string {
 
@@ -398,18 +398,18 @@ func CreateConfigFile(dirPath string, langs []string) (error, bool) {
 		cmdDir := SFFileManager.GetCmdDir()
 		appendPath := filepath.Base(cmdDir)
 
-		//	考虑到如果没有项目名称，base获取的是src追加的路径则为空
-		//	$GOPATH/src
-		//	$GOPATH/src/projectname
+		//  考虑到如果没有项目名称，base获取的是src追加的路径则为空
+		//  $GOPATH/src
+		//  $GOPATH/src/projectname
 		if "src" == appendPath {
 			appendPath = ""
 		}
 
 		// 将指定的语言保存进默认配置信息中。
 		// 默认初始值：
-		//	ScanPath = command directory
-		//	CodeLang = implement parser the code language
-		//	OutAppendPath = command directory base name
+		//  ScanPath = command directory
+		//  CodeLang = implement parser the code language
+		//  OutAppendPath = command directory base name
 		defaultConfigText := fmt.Sprintf(_gosfdocConfigJson, cmdDir, codeLangs, appendPath)
 
 		fileErr := ioutil.WriteFile(filePath, []byte(defaultConfigText), 0660)
@@ -443,8 +443,8 @@ func CreateConfigFile(dirPath string, langs []string) (error, bool) {
  *  build output document
  *
  *  @param `configPath` config file path
- *	@param `version` 	output document version
- *	@param `fileFunc`
+ *  @param `version`    output document version
+ *  @param `fileFunc`
  *  @return `error` warn or error message
  *  @return `bool`  true is operation success
  */
@@ -460,7 +460,7 @@ func Output(configPath, version string, fileFunc FileResultFunc) (error, bool) {
  *  build output document with config content
  *
  *  @param `config`
- *	@param `version`
+ *  @param `version` e.g: "v=1.0"
  *  @return `error` warn or error message
  *  @return `bool`  true is operation success
  */
@@ -479,12 +479,12 @@ func OutputWithConfig(config *MainConfig, version string, fileFunc FileResultFun
 		return errors.New(fmt.Sprintf("invalid scan path path: %v", scanPath)), false
 	}
 
-	//	start scan parse
+	//  start scan parse
 	for _, vp := range _mapParser {
 		vp.ParseStart(*config)
 	}
 	defer func() {
-		//	end scan parse
+		//  end scan parse
 		for _, vp := range _mapParser {
 			vp.ParseEnd()
 		}
@@ -544,15 +544,15 @@ func OutputWithConfig(config *MainConfig, version string, fileFunc FileResultFun
 }
 
 /**
- *	map[string]*CodeFiles
- *	source code and markdown output
+ *  map[string]*CodeFiles
+ *  source code and markdown output
  *
- *	@param `config`
- *	@param `files`
- *	@param `keys` sorted files key(paths)
- *	@param `fileFunc`
- *	@return map[string][]PackageInfo
- *	@return map[string][]string
+ *  @param `config`
+ *  @param `files`
+ *  @param `keys` sorted files key(paths)
+ *  @param `fileFunc`
+ *  @return map[string][]PackageInfo
+ *  @return map[string][]string
  */
 func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, keys []string, fileFunc FileResultFunc) (packInfos []PackageInfo, fileLinks []FileLink) {
 
@@ -563,18 +563,18 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, keys []string
 		appendPath = appendPath[1:len(appendPath)]
 	}
 
-	//	source code ouput path operation
-	//	projectroot/doc/src/[appendpath/main.go]
+	//  source code ouput path operation
+	//  projectroot/doc/src/[appendpath/main.go]
 	isLinkRoot := config.CodeLinkRoot
 	outCodeDir := ""
 	if config.CopyCode {
 		outCodeDir = dirpathSRC(config)
 	}
 
-	//	markdown file save directory
+	//  markdown file save directory
 	mdDir := dirpathMarkdownDefault(config)
 
-	//	return result make
+	//  return result make
 	packInfos = make([]PackageInfo, 0, len(files))
 	fileLinks = make([]FileLink, 0, 0)
 
@@ -599,33 +599,33 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, keys []string
 			continue
 		}
 
-		//	TODO 左侧导航中菜单列表的分类名称暂时不使用，使用""空字符串代替，主要考虑到不如何进行展示，并且在提取分配名考虑到别的语言可能不通用
+		//  TODO 左侧导航中菜单列表的分类名称暂时不使用，使用""空字符串代替，主要考虑到不如何进行展示，并且在提取分配名考虑到别的语言可能不通用
 		/*
-			以下为GO语言的展示方案，但是其他语言有待商议(目前分类名称以""空字符串代替，这里只是演示想展示的想法不是目前实际的操作)
-			当目录下没有源文件或文件时以当前目录喂分类名称显示
+		   以下为GO语言的展示方案，但是其他语言有待商议(目前分类名称以""空字符串代替，这里只是演示想展示的想法不是目前实际的操作)
+		   当目录下没有源文件或文件时以当前目录喂分类名称显示
 
-			index.html
-			gosfdoc
-				github.com/slowfei/gosfdoc
-				github.com/slowfei/gosfdoc/assets
-			lang
-				github.com/slowfei/gosfdoc/lang/golang
-				github.com/slowfei/gosfdoc/lang/java
-				github.com/slowfei/gosfdoc/lang/javascript
-				github.com/slowfei/gosfdoc/lang/objc
+		   index.html
+		   gosfdoc
+		       github.com/slowfei/gosfdoc
+		       github.com/slowfei/gosfdoc/assets
+		   lang
+		       github.com/slowfei/gosfdoc/lang/golang
+		       github.com/slowfei/gosfdoc/lang/java
+		       github.com/slowfei/gosfdoc/lang/javascript
+		       github.com/slowfei/gosfdoc/lang/objc
 
-			src.html
-			gosfdoc
-				github.com/slowfei/gosfdoc.go
-				github.com/slowfei/config.go
-				github.com/slowfei/parse.go
-				github.com/slowfei/gosfdoc/assets/assets.go
-				github.com/slowfei/gosfdoc/assets/html.go
-			lang
-				github.com/slowfei/gosfdoc/lang/golang/golang.go
-				github.com/slowfei/gosfdoc/lang/java/java.go
-				github.com/slowfei/gosfdoc/lang/javascript/javascript.go
-				github.com/slowfei/gosfdoc/lang/objc/objc.go
+		   src.html
+		   gosfdoc
+		       github.com/slowfei/gosfdoc.go
+		       github.com/slowfei/config.go
+		       github.com/slowfei/parse.go
+		       github.com/slowfei/gosfdoc/assets/assets.go
+		       github.com/slowfei/gosfdoc/assets/html.go
+		   lang
+		       github.com/slowfei/gosfdoc/lang/golang/golang.go
+		       github.com/slowfei/gosfdoc/lang/java/java.go
+		       github.com/slowfei/gosfdoc/lang/javascript/javascript.go
+		       github.com/slowfei/gosfdoc/lang/objc/objc.go
 		*/
 		menuName := "" // 暂时设定空字符串
 
@@ -691,6 +691,7 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, keys []string
 
 			// 5. parse package info
 			packInfo := code.parser.ParsePackageInfo(code.FileCont)
+			packInfo = strings.Trim(packInfo, " ")
 			if 0 != len(packInfo) {
 				packStrList = append(packStrList, packInfo)
 			}
@@ -703,12 +704,13 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, keys []string
 		sort.Sort(SortSet{codeBlocks: blocks})
 		sort.Sort(SortSet{documents: documents})
 
-		//	markdown file name is directory base name + suffix
+		//  markdown file name is directory base name + suffix
 		mdFileName := filepath.Base(dirPath) + FILE_SUFFIX_MARKDOWN
 
-		//	handle source code link path
+		//  handle source code link path
 		browseSrcJoinPath := config.GithubLink(path.Join(relativeDirPath, mdFileName), false)
-		browseSrcJoinPath = path.Join(appendPath, relativeDirPath)
+		// browseSrcJoinPath = path.Join(appendPath, browseSrcJoinPath)
+		// fmt.Println("browseSrcJoinPath: ", browseSrcJoinPath, relativeDirPath)
 
 		// 5.output markdown
 		mdBytes := ParseMarkdown(documents, previews, blocks, filesName, config.currentVersion, browseSrcJoinPath)
@@ -744,10 +746,10 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, keys []string
 }
 
 /**
- *	output assets file
+ *  output assets file
  *
- *	@param `config`
- *	@param `fileFunc`
+ *  @param `config`
+ *  @param `fileFunc`
  */
 func outAssets(config *MainConfig, fileFunc FileResultFunc) {
 
@@ -793,10 +795,10 @@ func outAssets(config *MainConfig, fileFunc FileResultFunc) {
 }
 
 /**
- *	output html file, index.html src.html
+ *  output html file, index.html src.html
  *
- *	@param `config`
- *	@param `fileFunc`
+ *  @param `config`
+ *  @param `fileFunc`
  */
 func outHTML(config *MainConfig, fileFunc FileResultFunc) {
 
@@ -821,16 +823,16 @@ func outHTML(config *MainConfig, fileFunc FileResultFunc) {
 }
 
 /**
- *	output html used config.json
+ *  output html used config.json
  *
- *	@param `config`
- *	@param `fileFunc`
- *	@param `packInfos`
- *	@param `fileLinks`
+ *  @param `config`
+ *  @param `fileFunc`
+ *  @param `packInfos`
+ *  @param `fileLinks`
  */
 func outHTMLConfig(config *MainConfig, fileFunc FileResultFunc, packInfos []PackageInfo, fileLinks []FileLink) {
 
-	//	struct pack DocConfig needed by menu name
+	//  struct pack DocConfig needed by menu name
 	menuMDs := make([]MenuMarkdown, 0, 1)
 	menuFiles := make([]MenuFile, 0, 1)
 
@@ -948,7 +950,7 @@ func outHTMLConfig(config *MainConfig, fileFunc FileResultFunc, packInfos []Pack
  *  @param `config`
  *  @param `fileFunc`
  *  @return `resultFiles` map[string]*CodeFiles
- *	@return `keyPaths`  resultFiles sorted key(paths)
+ *  @return `keyPaths`  resultFiles sorted key(paths)
  *  @return `aboutBuf`
  *  @return `introBuf`
  *  @return `resultErr`
@@ -997,7 +999,7 @@ func scanFiles(config *MainConfig, fileFunc FileResultFunc) (
 		// filter document output dir
 		if 0 == strings.Index(path, config.Outpath) {
 			// return callFileFunc(path, ResultFileFilter, nil)
-			//	输出文档的目录不显示过滤信息
+			//  输出文档的目录不显示过滤信息
 			return nil
 		}
 
@@ -1050,7 +1052,7 @@ func scanFiles(config *MainConfig, fileFunc FileResultFunc) (
 			return callFileFunc(path, ResultFileInvalid, errors.New("Invalid file, May be a binary file."))
 		}
 
-		// 4. check file private tag //#private-doc //#private-code //#private-doc-code
+		// 4. check file private tag //# private-doc //# private-code //# private-doc-code
 		privateTag := REXPrivateFile.Find(firstLine)
 		isPCode := false
 		isPDoc := false

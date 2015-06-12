@@ -6,7 +6,7 @@ del, dfn, em, font, img, ins, kbd, q, s, samp,
 small, strike, strong, sub, sup, tt, var,
 dl, dt, dd, ol, ul, li,
 fieldset, form, label, legend,
-table, caption, tbody, tfoot, thead, tr, th, td { padding:0; margin:0; font-size:16px; font-size:1rem; line-height:100%; font-family:WenQuanYi Micro Hei,Lucida,Verdana,Hiragino Sans GB,STHeiti,SimSun,sans-serif;}
+table, caption, tbody, tfoot, thead, tr, th, td { padding:0; margin:0; font-size:15px; font-size:0.95rem; line-height:100%; font-family:WenQuanYi Micro Hei,Lucida,Verdana,Hiragino Sans GB,STHeiti,SimSun,sans-serif;}
 
 body{
     background-image: url("data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD//gA7Q1JFQVRPUjogZ2QtanBlZyB2MS4wICh1c2luZyBJSkcgSlBFRyB2NjIpLCBxdWFsaXR5ID0gNzAK/9sAQwAKBwcIBwYKCAgICwoKCw4YEA4NDQ4dFRYRGCMfJSQiHyIhJis3LyYpNCkhIjBBMTQ5Oz4+PiUuRElDPEg3PT47/9sAQwEKCwsODQ4cEBAcOygiKDs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7/8IAEQgAcgByAwEiAAIRAQMRAf/EABYAAQEBAAAAAAAAAAAAAAAAAAABBv/EABQBAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhADEAAAAdaAACUACUlCKEsFAgoCUAlCAoEUQKCFAJQASgCWCglQqUllICgJQAgoCUAgBQCWUllEoiwoIBUFlBCgAAlCKJQlCAUICwKCA//EABQQAQAAAAAAAAAAAAAAAAAAAHD/2gAIAQEAAQUCYf/EABQRAQAAAAAAAAAAAAAAAAAAAGD/2gAIAQMBAT8BAf/EABQRAQAAAAAAAAAAAAAAAAAAAGD/2gAIAQIBAT8BAf/EABQQAQAAAAAAAAAAAAAAAAAAAHD/2gAIAQEABj8CYf/EABQQAQAAAAAAAAAAAAAAAAAAAHD/2gAIAQEAAT8hYf/aAAwDAQACAAMAAAAQAAAgAIgwUgMAIAg8AYcA4AgAQA8AkIo8AIAMAIA84AooQ0A8koEAAAgwgg8g88A8/8QAFBEBAAAAAAAAAAAAAAAAAAAAYP/aAAgBAwEBPxAB/8QAFBEBAAAAAAAAAAAAAAAAAAAAYP/aAAgBAgEBPxAB/8QAIxAAAQMEAgIDAQAAAAAAAAAAAQAQESAhMUFhcVGBMKHBkf/aAAgBAQABPxDVfLaWlDSVZxQUKNViGBWCtMaOl7WXs8yF0iWDR4pmjbbRssYWWBXp4U/2srC2sKB5qseEEYXD8PZ9PhD7USuH7YqTxXhpmq624e4sxWpbShvSu+C8+VkZVxZsvNHCl+1FHI+AWbNHBos2n+jRuW0shASioRQW32x24wUP1DKP43//2Q==");
@@ -422,6 +422,7 @@ a{
 }
 .md.common_md a {
     color: #308bd8;
+    margin-right: 5px;
     text-decoration:none;
 }
 .md.common_md a:hover {

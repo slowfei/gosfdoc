@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-22
-//  Update on 2015-03-06
+//  Update on 2015-05-19
 //  Email  slowfei(#)foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -211,6 +211,16 @@ func (f *FileBuf) SubNestAllIndexByBetween(startIndex, endIndex int, subNest *SF
 	}
 
 	return result
+}
+
+/**
+ *	get between rule out points
+ *
+ *	@param `nests` SubNest objects
+ *	@return data source points [0] is start point [1] is end point
+ */
+func (f *FileBuf) SubNestGetOutBetweens(nests ...*SFSubUtil.SubNest) [][]int {
+	return SFSubUtil.GetOutBetweens(f.buf, nests...)
 }
 
 /**

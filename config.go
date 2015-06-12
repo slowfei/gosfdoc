@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-16
-//  Update on 2014-12-11
+//  Update on 2015-06-12
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -206,28 +206,30 @@ func (m MainConfig) GithubLink(relMDPath string, isToMarkdown bool) string {
 	}
 
 	relMDPath = path.Dir(relMDPath)
-	relMDPath = strings.TrimPrefix(relMDPath, "/")
-	relMDPath = strings.TrimSuffix(relMDPath, "/")
-	//	可能出现的问题，Dir("") == "."
-	//	所以需要判断"."的处理
-	if 0 != len(relMDPath) && "." != relMDPath {
-		pathSplit = strings.Split(relMDPath, "/")
-		for _, p := range pathSplit {
-			if 0 != len(p) {
-				backRel += "../"
-			}
-		}
-	}
+	// relMDPath = strings.TrimPrefix(relMDPath, "/")
+	// relMDPath = strings.TrimSuffix(relMDPath, "/")
+	// //	可能出现的问题，Dir("") == "."
+	// //	所以需要判断"."的处理
+	// if 0 != len(relMDPath) && "." != relMDPath {
+	// 	pathSplit = strings.Split(relMDPath, "/")
+	// 	for _, p := range pathSplit {
+	// 		if 0 != len(p) {
+	// 			backRel += "../"
+	// 		}
+	// 	}
+	// }
 
 	if isToMarkdown {
 		//	https://.../project/doc/v1_0_0/md/default/
 		resultPath = backRel
 	} else if m.CodeLinkRoot {
 		//	https://.../project/
-		resultPath = "../../../../" + backRel
+		resultPath = path.Join("../../../../", relMDPath)
+		// resultPath = "../../../../" + backRel
 	} else {
 		//	https://.../project/doc/v1_0_0/src/
-		resultPath = "../../" + backRel + "src"
+		// resultPath = "../../" + backRel + "src"
+		resultPath = path.Join("../../", relMDPath, "src")
 	}
 
 	return resultPath

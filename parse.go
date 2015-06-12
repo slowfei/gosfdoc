@@ -192,7 +192,7 @@ func ParseMarkdown(documents []Document, previews []Preview, blocks []CodeBlock,
 		for _, name := range filesName {
 			joinPath := relPath + joinSymbol + name
 			// buf.WriteString(fmt.Sprintf("[%s](src.html?v=%s&f=%s) ", name, version, joinPath))
-			buf.WriteString(fmt.Sprintf("[%s](%s)", name, joinPath))
+			buf.WriteString(fmt.Sprintf("[%s ](%s)", name, joinPath))
 		}
 		buf.WriteByte('\n')
 	}

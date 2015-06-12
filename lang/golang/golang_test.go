@@ -6,6 +6,7 @@ import (
 	"github.com/slowfei/gosfcore/utils/filemanager"
 	"github.com/slowfei/gosfdoc"
 	"path/filepath"
+	"sort"
 	"testing"
 )
 
@@ -131,15 +132,25 @@ type Temp struct{
 
 func TestRegexpPackage(t *testing.T) {
 	testStr := `
-package main
+//  The MIT License (MIT) - http://opensource.org/licenses/MIT
+//
+//  Copyright (c) 2014 slowfei
+//
+//  Create on 2014-11-05
+//  Update on 2015-05-07
+//  Email  slowfei#foxmail.com
+//  Home   http://www.slowfei.com
+
+//	golang implement parser
+package golang
 
 `
 	s := REXPackage.FindAllSubmatchIndex([]byte(testStr), -1)
 
 	result := testStr[s[0][2]:s[0][3]]
-	t.Log(result)
+	t.Log(len(s[0]))
 
-	if result != "main" {
+	if result != "golang" {
 		t.Fatal()
 	}
 
@@ -299,18 +310,37 @@ func TestFindDefine(t *testing.T) {
 	testFile := `
 //
 // temp1 
-const (
-	Test1 = "1"
-	SNRoundBrackets = SFSubUtil.NewSubNest(
-		[]byte("("),
-	)
-	SNBetweens      = []*SFSubUtil.SubNest{
-		SNBraces,
-		sub.NewSubNest([]byte("/*"), []byte("*/")),
-	}
-	SNTemp = "
-		temp string
-	"
+var (
+ 
+    // e.g.: func (t type)funcname(params) return val{;
+    // https://www.debuggex.com/r/Su6Ns1LhVxpfD_Di
+    // [0-1:prototype] [2-3:comment or null] [4-5:func type or null]
+    // [6-7:func name] [8-9:func params] [10-11:single return value or null]
+    // [12-13:multi return value or null] [14-15:"{"]
+    REXFunc = regexp.MustCompile(` + "`" + `(/\*\*[\s]*(?:[ ]+.*?\n)+[ ]*\*/[ ]*\n|(?:(?:[ ]*//.*?\n)+))?func[ ]*(?:\(([\w \*\n\r\.\[\]]*)\))?[ \n]*([A-Z]\w*)[ \n]*(?:\(([\w ,\*\n\r\.\{\}\[\]]*)\))+?[ \n]*(?:([\w\.\*\{\}\[\]]*)|(?:\(([\w ,\*\n\r\.\{\}\[\]]*)\)))?[ \n]*({)` + "`" + `)
+    // e.g.: type Temp struct {; [0-1:prototype][2-3:comment][4-5:type define name][6-7:type name][8-9:"{"]
+    REXType = regexp.MustCompile(` + "`" + `(/\*\*[\s]*(?:[ ]+.*?\n)+[ ]*\*/[ ]*\n|(?:(?:[ ]*//.*?\n)+))?type[ ]+([A-Z]\w*)[ ]+(\w+)[ ]*(\{)?` + "`" + `)
+    // e.g.: package main
+    REXPackage = regexp.MustCompile(` + "`" + `package (\w+)\s*` + "`" + `)
+    // e.g.: /** ... */[\n]package main; //...[\n]package main
+    REXPackageInfo = regexp.MustCompile(` + "`" + `(/\*\*[\s]*(?:[ ]+.*?\n)+[ ]*\*/[ ]*\n|(?:(?:[ ]*//.*?\n)+))[ ]*package \w+` + "`" + `)
+    // e.g.: /** ... */[\n]const|var TConst = 1; //...[\n]const (
+    // https://www.debuggex.com/r/2qeKD9vwnBjkgORT
+    // [0-1:prototype] [2-3:comment or null] [4-5:const|var] [6-7: define name]
+    REXDefine = regexp.MustCompile(` + "`" + `(/\*\*[\s]*(?:[ ]+.*?\n)+[ ]*\*/[ ]*\n|(?:(?:[ ]*//.*?\n)+))?[ ]*(const|var)\s+(?:\(|(?:([A-Z]\w*)\s*=.+))` + "`" + `)
+    // e.g: rows data
+    REXRows = regexp.MustCompile("\\w+.*")
+ 
+    SNRoundBrackets = SFSubUtil.NewSubNest([]byte("("), []byte(")"))
+    SNBraces        = SFSubUtil.NewSubNest([]byte("{"), []byte("}"))
+    SNBetweens      = []*SFSubUtil.SubNest{
+        SFSubUtil.NewSubNest([]byte(` + "`" + `"` + "`" + `), []byte(` + "`" + `"` + "`" + `)),
+        SFSubUtil.NewSubNest([]byte("` + "`" + `"), []byte("` + "`" + `")),
+        SFSubUtil.NewSubNest([]byte(` + "`" + `'` + "`" + `), []byte(` + "`" + `'` + "`" + `)),
+        SNBraces,
+        SFSubUtil.NewSubNest([]byte("/*"), []byte("*/")),
+        SFSubUtil.NewSubNest([]byte("//"), []byte("\n")),
+    }
 )
 
 /**
@@ -331,8 +361,28 @@ var (
 )
 
 // 以下都是被过滤的
+/**
+ * 是的过滤的
+ */
 {
+	 /*
+        //<br>// temp1 <br>const (, //<br>// temp1 <br>, const,
+        const Temp3 = "3", , const, Temp3
+        // VTest1 cont<br>var VTest1  = "1", // VTest1 cont<br>, var, VTest1
+        var (, , var,
+ 
+        // [0-1:prototype] [2-3:comment or null] [4-5:const|var] [6-7: define name]
+    */
+    var (
+        CTempConst = []byte("const")
+        CTempVar   = []byte("var")
+    )
 	const Temp4 = "4"
+
+    for i := 0; i < len(subindexs); i++ {
+
+ 
+    } // end for for i := 0; i < len(subindexs); i++ {
 }
 
 /*
@@ -348,6 +398,11 @@ var (
 	buf := createFileBuf(testFile)
 	outBetweens := getOutBetweens(buf)
 	result := findDefine(buf, outBetweens)
+
+	for i := 0; i < len(outBetweens); i++ {
+		i1, i2 := outBetweens[i][0], outBetweens[i][1]
+		t.Log(string(testFile[i1:i2]))
+	}
 
 	if 4 != len(result) {
 		t.Log(len(result))
@@ -488,6 +543,14 @@ func NewTestStruct() []TestStruct {
 func NewParser() {
 
 }
+
+type TestStruct2 struct{
+	v2 string
+}
+
+func (t *TestStruct2) ParseStart() {
+}
+
 `
 
 	parser := NewParser()
@@ -496,17 +559,19 @@ func NewParser() {
 	parser.EachIndexFile(buf)
 	previews := parser.ParsePreview(buf)
 
-	if 5 != len(previews) {
+	if 7 != len(previews) {
 		t.Fatal()
 		return
 	}
 
+	sort.Sort(SortSet{previews: previews})
+
 	t.Log("Preview:")
 	for i := 0; i < len(previews); i++ {
 		pre := previews[i]
-		t.Log("pre.Anchor = ", pre.Anchor)
-		t.Log("pre.DescText = ", pre.DescText)
-		t.Log("pre.Level = ", pre.Level)
+		// t.Log("pre.Anchor = ", pre.Anchor)
+		// t.Log("pre.DescText = ", pre.DescText)
+		// t.Log("pre.Level = ", pre.Level)
 		t.Log("pre.ShowText = ", pre.ShowText)
 		t.Log("pre.SortTag = ", pre.SortTag)
 		t.Log("----------")
@@ -594,6 +659,18 @@ func TestHandleComment(t *testing.T) {
 
 func TestParsePackageInfo(t *testing.T) {
 	testFile := `
+//  The MIT License (MIT) - http://opensource.org/licenses/MIT
+//
+//  Copyright (c) 2014 slowfei
+//
+//  Create on 2014-11-05
+//  Update on 2015-05-07
+//  Email  slowfei#foxmail.com
+//  Home   http://www.slowfei.com
+
+// golang implement parser
+// temp
+package main3
 
 
 /**
@@ -601,7 +678,7 @@ func TestParsePackageInfo(t *testing.T) {
  *	test line2
  *	temp late3
  */
- package main1
+package main1
 
 // test package
 // temp line2
@@ -609,11 +686,71 @@ func TestParsePackageInfo(t *testing.T) {
 package main2
 
 `
+	cfb := createFileBuf(testFile)
 
 	parser := NewParser()
-	result := parser.ParsePackageInfo(createFileBuf(testFile))
+	result := parser.ParsePackageInfo(cfb)
+
 	t.Log(result)
 	if 0 == len(result) {
 		t.Fatal()
 	}
+}
+
+/**
+ *	Preview,CodeBlock,Document sort implement
+ */
+type SortSet struct {
+	previews   []gosfdoc.Preview
+	documents  []gosfdoc.Document
+	codeBlocks []gosfdoc.CodeBlock
+}
+
+/**
+ *	sort Len() implement
+ */
+func (s SortSet) Len() int {
+
+	if 0 != len(s.previews) {
+		return len(s.previews)
+	} else if 0 != len(s.documents) {
+		return len(s.documents)
+	} else if 0 != len(s.codeBlocks) {
+		return len(s.codeBlocks)
+	} else {
+		return 0
+	}
+
+}
+
+/**
+ *	sort Less(...) implement
+ */
+func (s SortSet) Less(i, j int) bool {
+
+	if 0 != len(s.previews) {
+		return s.previews[i].SortTag < s.previews[j].SortTag
+	} else if 0 != len(s.documents) {
+		return s.documents[i].SortTag < s.documents[j].SortTag
+	} else if 0 != len(s.codeBlocks) {
+		return s.codeBlocks[i].SortTag < s.codeBlocks[j].SortTag
+	} else {
+		return false
+	}
+
+}
+
+/**
+ *	sort Swap(...) implement
+ */
+func (s SortSet) Swap(i, j int) {
+
+	if 0 != len(s.previews) {
+		s.previews[i], s.previews[j] = s.previews[j], s.previews[i]
+	} else if 0 != len(s.documents) {
+		s.documents[i], s.documents[j] = s.documents[j], s.documents[i]
+	} else if 0 != len(s.codeBlocks) {
+		s.codeBlocks[i], s.codeBlocks[j] = s.codeBlocks[j], s.codeBlocks[i]
+	}
+
 }

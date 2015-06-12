@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-11-05
-//  Update on 2015-05-07
+//  Update on 2015-06-12
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -30,23 +30,22 @@ const (
 )
 
 var (
-
-	// e.g.: func (t type)funcname(params) returnval{;
+	// e.g.: func (t type)funcname(params) return val{;
 	// https://www.debuggex.com/r/Su6Ns1LhVxpfD_Di
 	// [0-1:prototype] [2-3:comment or null] [4-5:func type or null]
 	// [6-7:func name] [8-9:func params] [10-11:single return value or null]
 	// [12-13:multi return value or null] [14-15:"{"]
-	REXFunc = regexp.MustCompile(`(/\*\*[\S\s]+?\*/\n|(?:(?:[ ]*//.*?\n)+))?func[ ]*(?:\(([\w \*\n\r\.\[\]]*)\))?[ \n]*([A-Z]\w*)[ \n]*(?:\(([\w ,\*\n\r\.\{\}\[\]]*)\))+?[ \n]*(?:([\w\.\*\{\}\[\]]*)|(?:\(([\w ,\*\n\r\.\{\}\[\]]*)\)))?[ \n]*({)`)
+	REXFunc = regexp.MustCompile(`(/\*\*[\s]*(?:[ ]+.*?\n)+[ ]*\*/[ ]*\n|(?:(?:[ ]*//.*?\n)+))?func[ ]*(?:\(([\w \*\n\r\.\[\]]*)\))?[ \n]*([A-Z]\w*)[ \n]*(?:\(([\w ,\*\n\r\.\{\}\[\]]*)\))+?[ \n]*(?:([\w\.\*\{\}\[\]]*)|(?:\(([\w ,\*\n\r\.\{\}\[\]]*)\)))?[ \n]*({)`)
 	// e.g.: type Temp struct {; [0-1:prototype][2-3:comment][4-5:type define name][6-7:type name][8-9:"{"]
-	REXType = regexp.MustCompile("(/\\*\\*[\\S\\s]+?\\*/\n|(?:(?:[ ]*//.*?\n)+))?type[ ]+([A-Z]\\w*)[ ]+(\\w+)[ ]*(\\{)?")
+	REXType = regexp.MustCompile(`(/\*\*[\s]*(?:[ ]+.*?\n)+[ ]*\*/[ ]*\n|(?:(?:[ ]*//.*?\n)+))?type[ ]+([A-Z]\w*)[ ]+(\w+)[ ]*(\{)?`)
 	// e.g.: package main
-	REXPackage = regexp.MustCompile("package (\\w+)\\s*")
+	REXPackage = regexp.MustCompile(`package (\w+)\s*`)
 	// e.g.: /** ... */[\n]package main; //...[\n]package main
-	REXPackageInfo = regexp.MustCompile("(/\\*\\*[\\S\\s]+?\\*/\n|(?:(?:[ ]*//.*?\n)+))[ ]*package \\w+")
+	REXPackageInfo = regexp.MustCompile(`(/\*\*[\s]*(?:[ ]+.*?\n)+[ ]*\*/[ ]*\n|(?:(?:[ ]*//.*?\n)+))[ ]*package \w+`)
 	// e.g.: /** ... */[\n]const|var TConst = 1; //...[\n]const (
 	// https://www.debuggex.com/r/2qeKD9vwnBjkgORT
 	// [0-1:prototype] [2-3:comment or null] [4-5:const|var] [6-7: define name]
-	REXDefine = regexp.MustCompile("(/\\*\\*[\\S\\s]+?\\*/\n|(?:(?:[ ]*//.*?\n)+))?[ ]*(const|var)\\s+(?:\\(|(?:([A-Z]\\w*)\\s*=.+))")
+	REXDefine = regexp.MustCompile(`(/\*\*[\s]*(?:[ ]+.*?\n)+[ ]*\*/[ ]*\n|(?:(?:[ ]*//.*?\n)+))?[ ]*(const|var)\s+(?:\(|(?:([A-Z]\w*)\s*=.+))`)
 	// e.g: rows data
 	REXRows = regexp.MustCompile("\\w+.*")
 
@@ -54,11 +53,11 @@ var (
 	SNBraces        = SFSubUtil.NewSubNest([]byte("{"), []byte("}"))
 	SNBetweens      = []*SFSubUtil.SubNest{
 		SFSubUtil.NewSubNest([]byte(`"`), []byte(`"`)),
-		SFSubUtil.NewSubNest([]byte("`"), []byte("`")),
 		SFSubUtil.NewSubNest([]byte(`'`), []byte(`'`)),
-		SNBraces,
+		SFSubUtil.NewSubNest([]byte("`"), []byte("`")),
 		SFSubUtil.NewSubNest([]byte("/*"), []byte("*/")),
-		SFSubUtil.NewSubNest([]byte("//"), []byte("\n")),
+		SFSubUtil.NewSubNotNest([]byte("//"), []byte("\n")),
+		SNBraces,
 	}
 )
 
@@ -69,11 +68,15 @@ var (
 		" ", "_",
 		".", "-",
 		"*", "+",
-		"(", "=",
-		")", "=",
-		"[", "=",
-		"]", "=",
+		"(", "_",
+		")", "_",
+		"[", "_",
+		"]", "_",
 		",", "",
+		",", "",
+		"\"", "_",
+		"/", "_",
+		"\\", "_",
 	)
 )
 
@@ -221,7 +224,7 @@ func (g *GolangParser) EachIndexFile(filebuf *gosfdoc.FileBuf) {
 
 	//	无效文件提示
 	if 0 == len(tempPackagePath) {
-		fmt.Println("InvalidFile: is not a valid golang working environment file. file path:", filebuf.Path())
+		fmt.Println("InvalidFile: is not a valid golang working environment file, may current project not set GOPATH. file path:", filebuf.Path())
 		return
 	}
 
@@ -275,9 +278,9 @@ func sortPreviewAndCodeblock(gd *goDefine, gt *goType, gf *goFunc) string {
 	// 3. var var   	  		 --sortTag: "1_0"
 	// 4. var var ( )	  		 --sortTag: "1_1"
 	// 5. func 					 --sortTag: "2_0"
-	// 6. type 					 --sortTag: "3_0_structtype"
-	// 7. 	return func type 	 --sortTag: "3_0_structtype_0_funcname"
-	// 8. 	type func 			 --sortTag: "3_0_structtype_1_funcname"
+	// 6. type 					 --sortTag: "3_0_structtype_1_"
+	// 7. 	return func type 	 --sortTag: "3_0_structtype_2_funcname"
+	// 8. 	type func 			 --sortTag: "3_0_structtype_3_funcname"
 	sortTag := ""
 
 	if nil != gd {
@@ -300,7 +303,7 @@ func sortPreviewAndCodeblock(gd *goDefine, gt *goType, gf *goFunc) string {
 			sortTag = "2_0_func_"
 		} else {
 			// 7. return func type  --sortTag: "3_0_structtype_0_funcname" 这个排序处理不了，需要在自行处理
-			sortTag = "3_0_func_"
+			sortTag = "3_0_type_"
 		}
 	}
 
@@ -367,6 +370,138 @@ func parseDefineAnchorShowTextSortTag(define goDefine, filebuf *gosfdoc.FileBuf)
 }
 
 /**
+ *	parse type private set
+ *
+ *	@return anchor and show text and sort tag string
+ */
+func parseTypeAnchorShowTextSortTag(got goType, filebuf *gosfdoc.FileBuf) (anchor, showText, sortTag string) {
+	typeName := string(filebuf.SubBytes(got.typeNameIndex[0], got.typeNameIndex[1]))
+
+	showText = "type " + typeName + " " + string(filebuf.SubBytes(got.typeIndex[0], got.typeIndex[1]))
+	anchor = _nameTextReplacer.Replace(showText)
+
+	sortText := "type " + typeName
+	sortText = _nameTextReplacer.Replace(sortText)
+	sortTag = sortPreviewAndCodeblock(nil, &got, nil) + sortText + "_1_"
+
+	return
+}
+
+/**
+ *	parse func private set
+ *
+ *	@return `anchor`
+ *	@return `showText` 返回函数主体名称，包括函数类型、函数名、参数、返回值
+ *	@return `showText` 返回函数名称，包括函数类型、函数名
+ *	@return `sortTag`
+ *	@return `level`
+ */
+func parseFuncAnchorShowTextSortTag(gof goFunc, filebuf *gosfdoc.FileBuf, g *GolangParser, gomen goMemory) (anchor, showText, showText2, sortTag string, level int) {
+
+	// get func string value
+	funcType := ""
+	funcName := ""
+	funcParam := ""
+	funcReturn := ""
+	if 0 != len(gof.funcTypeIndex) {
+		funcType = string(filebuf.SubBytes(gof.funcTypeIndex[0], gof.funcTypeIndex[1]))
+
+		//	除去类型的命名 func (t *TStruct) func 将"t "去除
+		starIndex := strings.Index(funcType, "*")
+		if -1 != starIndex {
+			funcType = funcType[starIndex:]
+		} else {
+			blankIndex := strings.Index(funcType, " ")
+			if -1 != blankIndex {
+				funcType = funcType[blankIndex+1:]
+			}
+		}
+
+	}
+	if 0 != len(gof.paramIndex) {
+		funcParam = string(filebuf.SubBytes(gof.paramIndex[0], gof.paramIndex[1]))
+	}
+	if 0 != len(gof.returnIndex) {
+		funcReturn = string(filebuf.SubBytes(gof.returnIndex[0], gof.returnIndex[1]))
+	}
+	funcName = string(filebuf.SubBytes(gof.funcNameIndex[0], gof.funcNameIndex[1]))
+
+	// preview struct value
+	showText = "func "
+	showText2 = "func "
+	anchor = ""
+	sortTag = ""
+	level = 0
+
+	// set showText
+	if 0 != len(funcType) {
+		showText += "(" + funcType + ") "
+		showText2 += "(" + funcType + ") "
+	}
+	showText += funcName
+	showText2 += funcName
+
+	if 0 != len(funcParam) {
+		showText += "(" + funcParam + ") "
+	} else {
+		showText += "() "
+	}
+	if 0 != len(funcReturn) {
+		if -1 != strings.Index(funcReturn, ",") {
+			showText += "(" + funcReturn + ")"
+		} else {
+			showText += funcReturn
+		}
+	}
+
+	// set anchor
+	anchor = _nameTextReplacer.Replace(showText)
+
+	// set level and sortTag
+	// sortTag主要参考 sortPreviewAndCodeblock
+	// 5. func 					 --sortTag: "2_0_funcname"
+	// 6. type 					 --sortTag: "3_0_0_structtype_1_"
+	// 7. 	return func type 	 --sortTag: "3_0_structtype_2_funcname"
+	// 8. 	type func 			 --sortTag: "3_0_structtype_3_funcname"
+
+	if 0 != len(gof.funcTypeIndex) {
+
+		if 0 == strings.Index(funcType, "*") {
+			funcType = funcType[1:]
+		}
+
+		level = 1
+		sortTag = sortPreviewAndCodeblock(nil, nil, &gof) + funcType + "_3_" + funcName
+	} else if 0 != len(funcReturn) && -1 == strings.Index(funcReturn, ",") && -1 == strings.Index(funcReturn, ".") {
+		// 判断返回值为一个参数
+
+		//	除去类型的命名 func fname() (t string) 将"t "去除或指针符号
+		if index := strings.Index(funcReturn, "*"); -1 != index {
+			funcReturn = funcReturn[index+1:]
+		} else if index := strings.Index(funcReturn, "]"); -1 != index {
+			funcReturn = funcReturn[index+1:]
+		} else if index := strings.Index(funcReturn, " "); -1 != index {
+			funcReturn = funcReturn[index+1:]
+		}
+
+		// 查询方法的返回值是否在当前包和路径中查询到，查询到的话就归类到该类型下显示。
+		if _, ok := g.indexDB.Type(gomen.packageName, gomen.packagePath, funcReturn); ok {
+			level = 1
+
+			gof.funcTypeIndex = make([]int, 1) // 由于排除逻辑处理有些困难，所以做个处理。看一下sortPreviewAndCodeblock处理排序的要求就明白了。
+			sortTag = sortPreviewAndCodeblock(nil, nil, &gof) + funcReturn + "_2_" + funcName
+			gof.funcTypeIndex = nil
+		} else {
+			sortTag = sortPreviewAndCodeblock(nil, nil, &gof) + funcName
+		}
+	} else {
+		sortTag = sortPreviewAndCodeblock(nil, nil, &gof) + funcName
+	}
+
+	return
+}
+
+/**
  *	see DocParser interface
  */
 func (g *GolangParser) ParsePreview(filebuf *gosfdoc.FileBuf) []gosfdoc.Preview {
@@ -406,14 +541,13 @@ func (g *GolangParser) ParsePreview(filebuf *gosfdoc.FileBuf) []gosfdoc.Preview 
 				if 0 == len(got.bodyIndex) {
 					continue
 				}
-				typeName := string(filebuf.SubBytes(got.typeNameIndex[0], got.typeNameIndex[1]))
-				showText := "type " + typeName + " " + string(filebuf.SubBytes(got.typeIndex[0], got.typeIndex[1]))
-				sortTag := sortPreviewAndCodeblock(nil, &got, nil)
+
+				anchor, showText, sortTag := parseTypeAnchorShowTextSortTag(got, filebuf)
 
 				pre := gosfdoc.Preview{}
 				pre.ShowText = showText
-				pre.Anchor = _nameTextReplacer.Replace(pre.ShowText)
-				pre.SortTag = sortTag + pre.Anchor
+				pre.Anchor = anchor
+				pre.SortTag = sortTag
 				pre.Level = 0
 				result = append(result, pre)
 			}
@@ -421,105 +555,14 @@ func (g *GolangParser) ParsePreview(filebuf *gosfdoc.FileBuf) []gosfdoc.Preview 
 			// add func
 			for i := 0; i < funcsLen; i++ {
 				gof := gomen.funcs[i]
-
-				// get func string value
-				funcType := ""
-				funcName := ""
-				funcParam := ""
-				funcReturn := ""
-				if 0 != len(gof.funcTypeIndex) {
-					funcType = string(filebuf.SubBytes(gof.funcTypeIndex[0], gof.funcTypeIndex[1]))
-
-					//	除去类型的命名 func (t *TStruct) func 将"t "去除
-					starIndex := strings.Index(funcType, "*")
-					if -1 != starIndex {
-						funcType = funcType[starIndex:]
-					} else {
-						blankIndex := strings.Index(funcType, " ")
-						if -1 != blankIndex {
-							funcType = funcType[blankIndex+1:]
-						}
-					}
-
-				}
-				if 0 != len(gof.paramIndex) {
-					funcParam = string(filebuf.SubBytes(gof.paramIndex[0], gof.paramIndex[1]))
-				}
-				if 0 != len(gof.returnIndex) {
-					funcReturn = string(filebuf.SubBytes(gof.returnIndex[0], gof.returnIndex[1]))
-				}
-				funcName = string(filebuf.SubBytes(gof.funcNameIndex[0], gof.funcNameIndex[1]))
-
-				// preview struct value
-				showText := "func "
-				anchor := ""
-				sortTag := ""
-				level := 0
-
-				// set showText
-				if 0 != len(funcType) {
-					showText += "(" + funcType + ") "
-				}
-				showText += funcName
-				if 0 != len(funcParam) {
-					showText += "(" + funcParam + ") "
-				} else {
-					showText += "() "
-				}
-				if 0 != len(funcReturn) {
-					if -1 != strings.Index(funcReturn, ",") {
-						showText += "(" + funcReturn + ")"
-					} else {
-						showText += funcReturn
-					}
+				if 0 == len(gof.bodyIndex) {
+					continue
 				}
 
-				// set anchor
-				anchor = _nameTextReplacer.Replace(showText)
-
-				// set level and sortTag
-				// sortTag主要参考 sortPreviewAndCodeblock
-				// 5. func 					 --sortTag: "2_0_funcname"
-				// 6. type 					 --sortTag: "3_0_structtype"
-				// 7. 	return func type 	 --sortTag: "3_0_structtype_0_funcname"
-				// 8. 	type func 			 --sortTag: "3_0_structtype_1_funcname"
-
-				if 0 != len(gof.funcTypeIndex) {
-
-					if 0 == strings.Index(funcType, "*") {
-						funcType = funcType[1:]
-					}
-
-					level = 1
-					sortTag = sortPreviewAndCodeblock(nil, nil, &gof) + funcType + "_1_" + funcName
-				} else if 0 != len(funcReturn) && -1 == strings.Index(funcReturn, ",") && -1 == strings.Index(funcReturn, ".") {
-					// 判断返回值为一个参数
-
-					//	除去类型的命名 func fname() (t string) 将"t "去除或指针符号
-					if index := strings.Index(funcReturn, "*"); -1 != index {
-						funcReturn = funcReturn[index+1:]
-					} else if index := strings.Index(funcReturn, "]"); -1 != index {
-						funcReturn = funcReturn[index+1:]
-					} else if index := strings.Index(funcReturn, " "); -1 != index {
-						funcReturn = funcReturn[index+1:]
-					}
-
-					// 查询方法的返回值是否在当前包和路径中查询到，查询到的话就归类到该类型下显示。
-					if _, ok := g.indexDB.Type(gomen.packageName, gomen.packagePath, funcReturn); ok {
-						level = 1
-
-						gof.funcTypeIndex = make([]int, 1) // 由于排除逻辑处理有些困难，所以做个处理。看一下sortPreviewAndCodeblock处理排序的要求就明白了。
-						sortTag = sortPreviewAndCodeblock(nil, nil, &gof) + funcReturn + "_0_" + funcName
-						gof.funcTypeIndex = nil
-					} else {
-						sortTag = sortPreviewAndCodeblock(nil, nil, &gof) + funcName
-					}
-				} else {
-					sortTag = sortPreviewAndCodeblock(nil, nil, &gof) + funcName
-				}
+				anchor, showText, _, sortTag, level := parseFuncAnchorShowTextSortTag(gof, filebuf, g, gomen)
 
 				pre := gosfdoc.Preview{}
-				pre.ShowText = showText
+				pre.ShowText = strings.Replace(showText, "*", "\\*", -1)
 				pre.Anchor = anchor
 				pre.SortTag = sortTag
 				pre.Level = level
@@ -564,7 +607,7 @@ func (g *GolangParser) ParseCodeblock(filebuf *gosfdoc.FileBuf) []gosfdoc.CodeBl
 				}
 
 				menuTitle := ""
-				title := " " // 注意空格，这个是需要的
+				title := "source code"
 				desc := ""
 				anchor := ""
 				sortTag := ""
@@ -615,11 +658,101 @@ func (g *GolangParser) ParseCodeblock(filebuf *gosfdoc.FileBuf) []gosfdoc.CodeBl
 				result = append(result, codeBlock)
 			}
 
-			// TODO
 			for i := 0; i < typesLen; i++ {
+				got := gomen.types[i]
+				if 0 == len(got.bodyIndex) {
+					continue
+				}
 
+				menuTitle := "Func Details"
+				title := ""
+				desc := ""
+				anchor := ""
+				sortTag := ""
+				code := ""
+				codeLang := "go"
+				var fileLines []int = nil
+				sourceFileName := ""
+
+				if nil != filebuf.FileInfo() {
+					sourceFileName = filebuf.FileInfo().Name()
+				}
+
+				anchor, title, sortTag = parseTypeAnchorShowTextSortTag(got, filebuf)
+
+				// set comment
+				if 0 != len(got.commentIndex) {
+					comt := handleComment(filebuf.SubBytes(got.commentIndex[0], got.commentIndex[1]))
+					desc = string(comt)
+				}
+
+				// set code
+				code = string(filebuf.SubBytes(got.bodyIndex[0], got.bodyIndex[1]))
+				// set fileLines
+				fileLines = filebuf.LineNumberByIndex(got.bodyIndex[0], got.bodyIndex[1])
+
+				codeBlock := gosfdoc.CodeBlock{}
+				codeBlock.SortTag = sortTag
+				codeBlock.MenuTitle = menuTitle
+				codeBlock.Title = strings.Replace(title, "*", "\\*", -1)
+				codeBlock.Anchor = anchor
+				codeBlock.Desc = desc
+				codeBlock.Code = code
+				codeBlock.CodeLang = codeLang
+				codeBlock.SourceFileName = sourceFileName
+				codeBlock.FileLines = fileLines
+
+				result = append(result, codeBlock)
 			}
 
+			for i := 0; i < funcsLen; i++ {
+				gof := gomen.funcs[i]
+				if 0 == len(gof.bodyIndex) {
+					continue
+				}
+
+				menuTitle := "Func Details"
+				codeTitle := ""
+				showTitle := ""
+				desc := ""
+				anchor := ""
+				sortTag := ""
+				code := ""
+				codeLang := "go"
+				var fileLines []int = nil
+				sourceFileName := ""
+
+				if nil != filebuf.FileInfo() {
+					sourceFileName = filebuf.FileInfo().Name()
+				}
+
+				// set title anchor sotrTag
+				anchor, codeTitle, showTitle, sortTag, _ = parseFuncAnchorShowTextSortTag(gof, filebuf, g, gomen)
+
+				// set comment
+				if 0 != len(gof.commentIndex) {
+					comt := handleComment(filebuf.SubBytes(gof.commentIndex[0], gof.commentIndex[1]))
+					desc = string(comt)
+				}
+
+				// set code
+				code = codeTitle + " { ...... }"
+
+				// set fileLines
+				fileLines = filebuf.LineNumberByIndex(gof.bodyIndex[0], gof.bodyIndex[1])
+
+				codeBlock := gosfdoc.CodeBlock{}
+				codeBlock.SortTag = sortTag
+				codeBlock.MenuTitle = menuTitle
+				codeBlock.Title = strings.Replace(showTitle, "*", "\\*", -1)
+				codeBlock.Anchor = anchor
+				codeBlock.Desc = desc
+				codeBlock.Code = code
+				codeBlock.CodeLang = codeLang
+				codeBlock.SourceFileName = sourceFileName
+				codeBlock.FileLines = fileLines
+				result = append(result, codeBlock)
+			}
 		}
 
 	}
@@ -971,17 +1104,7 @@ func findType(filebuf *gosfdoc.FileBuf, outBetweens [][]int) []goType {
  *	@return
  */
 func getOutBetweens(filebuf *gosfdoc.FileBuf) [][]int {
-
-	outBetweens := make([][]int, 0, 0)
-
-	for i := 0; i < len(SNBetweens); i++ {
-		tempIndexs := filebuf.SubNestAllIndex(SNBetweens[i], outBetweens)
-		if 0 != len(tempIndexs) {
-			outBetweens = append(outBetweens, tempIndexs...)
-		}
-	}
-
-	return outBetweens
+	return filebuf.SubNestGetOutBetweens(SNBetweens...)
 }
 
 /**
