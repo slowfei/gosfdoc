@@ -136,22 +136,6 @@
 
 >> [func (SortSet) Swap(i, j int) ](#f_func__SortSet__Swap_i_j_int__)<a name="p_func__SortSet__Swap_i_j_int__"><a/>
 
->> [func (\*nilDocParser) CheckFile(path string, info os.FileInfo) bool](#f_func__+nilDocParser__CheckFile_path_string_info_os-FileInfo__bool)<a name="p_func__+nilDocParser__CheckFile_path_string_info_os-FileInfo__bool"><a/>
-
->> [func (\*nilDocParser) EachIndexFile(filebuf \*FileBuf) ](#f_func__+nilDocParser__EachIndexFile_filebuf_+FileBuf__)<a name="p_func__+nilDocParser__EachIndexFile_filebuf_+FileBuf__"><a/>
-
->> [func (\*nilDocParser) Name() string](#f_func__+nilDocParser__Name___string)<a name="p_func__+nilDocParser__Name___string"><a/>
-
->> [func (\*nilDocParser) ParseCodeblock(filebuf \*FileBuf) []CodeBlock](#f_func__+nilDocParser__ParseCodeblock_filebuf_+FileBuf____CodeBlock)<a name="p_func__+nilDocParser__ParseCodeblock_filebuf_+FileBuf____CodeBlock"><a/>
-
->> [func (\*nilDocParser) ParseEnd() ](#f_func__+nilDocParser__ParseEnd___)<a name="p_func__+nilDocParser__ParseEnd___"><a/>
-
->> [func (\*nilDocParser) ParsePackageInfo(filebuf \*FileBuf) string](#f_func__+nilDocParser__ParsePackageInfo_filebuf_+FileBuf__string)<a name="p_func__+nilDocParser__ParsePackageInfo_filebuf_+FileBuf__string"><a/>
-
->> [func (\*nilDocParser) ParsePreview(filebuf \*FileBuf) []Preview](#f_func__+nilDocParser__ParsePreview_filebuf_+FileBuf____Preview)<a name="p_func__+nilDocParser__ParsePreview_filebuf_+FileBuf____Preview"><a/>
-
->> [func (\*nilDocParser) ParseStart(config MainConfig) ](#f_func__+nilDocParser__ParseStart_config_MainConfig__)<a name="p_func__+nilDocParser__ParseStart_config_MainConfig__"><a/>
-
 <br/>
 ### Directory files
 [config.go ](../../../../../src/github.com/slowfei/gosfdoc/config.go)[gosfdoc.go ](../../../../../src/github.com/slowfei/gosfdoc/gosfdoc.go)[parse.go ](../../../../../src/github.com/slowfei/gosfdoc/parse.go)[struct.go ](../../../../../src/github.com/slowfei/gosfdoc/struct.go)
@@ -887,12 +871,12 @@
 ### [func (MainConfig) GithubLink](../../../../../src/github.com/slowfei/gosfdoc/config.go#L193-L237) <a name="f_func__MainConfig__GithubLink_relMDPath_string_isToMarkdown_bool__string"><a/> [↩](#p_func__MainConfig__GithubLink_relMDPath_string_isToMarkdown_bool__string) | [#](#f_func__MainConfig__GithubLink_relMDPath_string_isToMarkdown_bool__string)
 > to github.com link path<br/>
 > use on a tag href<br/>
-> 												     append path       relative path<br/>
+>                                                      append path       relative path<br/>
 > e.g.: https://.../project/doc/v1_0_0/md/default/(github.com/slowfei)/(temp/gosfdoc.md)<br/>
 >   to: https://.../project/doc/v1_0_0/src/github.com/slowfei/gosfdoc.go (to source code path)<br/>
 >   to: https://.../project/doc/v1_0_0/md/default/github.com/test/test.md  (to markdown path)<br/>
 > @param `relMDPath` relative markdown out project path.<br/>
-> 				   relative path: $GOPATH/[github.com/slowfei]/projectname/( .../markdown.md )<br/>
+>                    relative path: $GOPATH/[github.com/slowfei]/projectname/( .../markdown.md )<br/>
 > @param `isToMarkdown` to markdown link? false is source code access path<br/>
 > @return use github.com to relative link. "../../../" or "../../src/[projectname]"<br/>
 > <br/>
@@ -995,69 +979,5 @@
 
 
 <pre><code class='go custom'>func (SortSet) Swap(i, j int)  { ...... }</code></pre>
-
-
-### [func (\*nilDocParser) CheckFile](../../../../../src/github.com/slowfei/gosfdoc/parse.go#L69-L71) <a name="f_func__+nilDocParser__CheckFile_path_string_info_os-FileInfo__bool"><a/> [↩](#p_func__+nilDocParser__CheckFile_path_string_info_os-FileInfo__bool) | [#](#f_func__+nilDocParser__CheckFile_path_string_info_os-FileInfo__bool)
-> see DocParser interface<br/>
-> <br/>
-
-
-<pre><code class='go custom'>func (*nilDocParser) CheckFile(path string, info os.FileInfo) bool { ...... }</code></pre>
-
-
-### [func (\*nilDocParser) EachIndexFile](../../../../../src/github.com/slowfei/gosfdoc/parse.go#L76-L78) <a name="f_func__+nilDocParser__EachIndexFile_filebuf_+FileBuf__"><a/> [↩](#p_func__+nilDocParser__EachIndexFile_filebuf_+FileBuf__) | [#](#f_func__+nilDocParser__EachIndexFile_filebuf_+FileBuf__)
-> see DocParser interface<br/>
-> <br/>
-
-
-<pre><code class='go custom'>func (*nilDocParser) EachIndexFile(filebuf *FileBuf)  { ...... }</code></pre>
-
-
-### [func (\*nilDocParser) Name](../../../../../src/github.com/slowfei/gosfdoc/parse.go#L62-L64) <a name="f_func__+nilDocParser__Name___string"><a/> [↩](#p_func__+nilDocParser__Name___string) | [#](#f_func__+nilDocParser__Name___string)
-> see DocParser interface<br/>
-> <br/>
-
-
-<pre><code class='go custom'>func (*nilDocParser) Name() string { ...... }</code></pre>
-
-
-### [func (\*nilDocParser) ParseCodeblock](../../../../../src/github.com/slowfei/gosfdoc/parse.go#L90-L92) <a name="f_func__+nilDocParser__ParseCodeblock_filebuf_+FileBuf____CodeBlock"><a/> [↩](#p_func__+nilDocParser__ParseCodeblock_filebuf_+FileBuf____CodeBlock) | [#](#f_func__+nilDocParser__ParseCodeblock_filebuf_+FileBuf____CodeBlock)
-> see DocParser interface<br/>
-> <br/>
-
-
-<pre><code class='go custom'>func (*nilDocParser) ParseCodeblock(filebuf *FileBuf) []CodeBlock { ...... }</code></pre>
-
-
-### [func (\*nilDocParser) ParseEnd](../../../../../src/github.com/slowfei/gosfdoc/parse.go#L111-L113) <a name="f_func__+nilDocParser__ParseEnd___"><a/> [↩](#p_func__+nilDocParser__ParseEnd___) | [#](#f_func__+nilDocParser__ParseEnd___)
-> see DocParser interface<br/>
-> <br/>
-
-
-<pre><code class='go custom'>func (*nilDocParser) ParseEnd()  { ...... }</code></pre>
-
-
-### [func (\*nilDocParser) ParsePackageInfo](../../../../../src/github.com/slowfei/gosfdoc/parse.go#L97-L99) <a name="f_func__+nilDocParser__ParsePackageInfo_filebuf_+FileBuf__string"><a/> [↩](#p_func__+nilDocParser__ParsePackageInfo_filebuf_+FileBuf__string) | [#](#f_func__+nilDocParser__ParsePackageInfo_filebuf_+FileBuf__string)
-> see DocParser interface<br/>
-> <br/>
-
-
-<pre><code class='go custom'>func (*nilDocParser) ParsePackageInfo(filebuf *FileBuf) string { ...... }</code></pre>
-
-
-### [func (\*nilDocParser) ParsePreview](../../../../../src/github.com/slowfei/gosfdoc/parse.go#L83-L85) <a name="f_func__+nilDocParser__ParsePreview_filebuf_+FileBuf____Preview"><a/> [↩](#p_func__+nilDocParser__ParsePreview_filebuf_+FileBuf____Preview) | [#](#f_func__+nilDocParser__ParsePreview_filebuf_+FileBuf____Preview)
-> see DocParser interface<br/>
-> <br/>
-
-
-<pre><code class='go custom'>func (*nilDocParser) ParsePreview(filebuf *FileBuf) []Preview { ...... }</code></pre>
-
-
-### [func (\*nilDocParser) ParseStart](../../../../../src/github.com/slowfei/gosfdoc/parse.go#L104-L106) <a name="f_func__+nilDocParser__ParseStart_config_MainConfig__"><a/> [↩](#p_func__+nilDocParser__ParseStart_config_MainConfig__) | [#](#f_func__+nilDocParser__ParseStart_config_MainConfig__)
-> see DocParser interface<br/>
-> <br/>
-
-
-<pre><code class='go custom'>func (*nilDocParser) ParseStart(config MainConfig)  { ...... }</code></pre>
 
 

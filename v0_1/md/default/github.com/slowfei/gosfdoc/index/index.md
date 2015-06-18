@@ -14,14 +14,6 @@
 
 > [type TypeInfo struct](#f_type_TypeInfo_struct)<a name="p_type_TypeInfo_struct"><a/>
 
->> [func (\*mendb) Close() ](#f_func__+mendb__Close___)<a name="p_func__+mendb__Close___"><a/>
-
->> [func (\*mendb) Open() error](#f_func__+mendb__Open___error)<a name="p_func__+mendb__Open___error"><a/>
-
->> [func (\*mendb) SetType(t TypeInfo) error](#f_func__+mendb__SetType_t_TypeInfo__error)<a name="p_func__+mendb__SetType_t_TypeInfo__error"><a/>
-
->> [func (\*mendb) Type(packageName, packagePath, typeName string) (TypeInfo, bool)](#f_func__+mendb__Type_packageName_packagePath_typeName_string___TypeInfo_bool_)<a name="p_func__+mendb__Type_packageName_packagePath_typeName_string___TypeInfo_bool_"><a/>
-
 <br/>
 ### Directory files
 [index.go ](../../../../../src/github.com/slowfei/gosfdoc/index/index.go)[memory.go ](../../../../../src/github.com/slowfei/gosfdoc/index/memory.go)
@@ -129,25 +121,5 @@
 	LineStart   int    // line number start
 	LineEnd     int    // line number end
 }</code></pre>
-
-
-### [func (\*mendb) Close](../../../../../src/github.com/slowfei/gosfdoc/index/memory.go#L33-L35) <a name="f_func__+mendb__Close___"><a/> [↩](#p_func__+mendb__Close___) | [#](#f_func__+mendb__Close___)
-
-<pre><code class='go custom'>func (*mendb) Close()  { ...... }</code></pre>
-
-
-### [func (\*mendb) Open](../../../../../src/github.com/slowfei/gosfdoc/index/memory.go#L29-L31) <a name="f_func__+mendb__Open___error"><a/> [↩](#p_func__+mendb__Open___error) | [#](#f_func__+mendb__Open___error)
-
-<pre><code class='go custom'>func (*mendb) Open() error { ...... }</code></pre>
-
-
-### [func (\*mendb) SetType](../../../../../src/github.com/slowfei/gosfdoc/index/memory.go#L37-L46) <a name="f_func__+mendb__SetType_t_TypeInfo__error"><a/> [↩](#p_func__+mendb__SetType_t_TypeInfo__error) | [#](#f_func__+mendb__SetType_t_TypeInfo__error)
-
-<pre><code class='go custom'>func (*mendb) SetType(t TypeInfo) error { ...... }</code></pre>
-
-
-### [func (\*mendb) Type](../../../../../src/github.com/slowfei/gosfdoc/index/memory.go#L48-L82) <a name="f_func__+mendb__Type_packageName_packagePath_typeName_string___TypeInfo_bool_"><a/> [↩](#p_func__+mendb__Type_packageName_packagePath_typeName_string___TypeInfo_bool_) | [#](#f_func__+mendb__Type_packageName_packagePath_typeName_string___TypeInfo_bool_)
-
-<pre><code class='go custom'>func (*mendb) Type(packageName, packagePath, typeName string) (TypeInfo, bool) { ...... }</code></pre>
 
 
