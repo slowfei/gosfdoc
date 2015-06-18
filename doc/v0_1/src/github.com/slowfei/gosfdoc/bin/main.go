@@ -9,6 +9,7 @@ import (
 	_ "github.com/slowfei/gosfdoc/lang/golang"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -46,6 +47,7 @@ func usage() {
 	fmt.Println("usage help:")
 	fmt.Println("'create' command init create default gosfdoc.json file, can be custom to modify file content.")
 	fmt.Println("'output' command by gosfdoc.json output document ")
+	fmt.Println("'web [8080]' run web server can specify port, default 8080, command by gosfdoc.json ")
 	fmt.Println("")
 	fmt.Println("other param:")
 	flag.PrintDefaults()
@@ -81,6 +83,26 @@ func parseCommond(args []string) {
 	}
 }
 
+func checkConfigPath() string {
+
+	configPath := *_configFile
+	if 0 == len(configPath) {
+		configPath = DEFAULT_GOSFDOC_JSON
+	}
+
+	if !filepath.IsAbs(configPath) {
+		configPath = filepath.Join(SFFileManager.GetCmdDir(), configPath)
+	}
+
+	exists, isDir, readErr := SFFileManager.Exists(configPath)
+
+	if !exists || isDir || nil != readErr {
+		return ""
+	}
+
+	return configPath
+}
+
 func main() {
 	flag.Usage = usage
 	flag.Parse()
@@ -100,6 +122,44 @@ func main() {
 			flag.Usage()
 		case "version":
 			fmt.Println(gosfdoc.APPNAME, "v"+gosfdoc.VERSION)
+		case "web":
+			port := 8080
+			if 2 == len(args) {
+				i, err := strconv.Atoi(args[1])
+				if nil != err {
+					fmt.Println("will be used port 8080, error port command input.")
+				} else {
+					port = i
+				}
+			}
+
+			configPath := checkConfigPath()
+			if 0 == len(configPath) {
+				fmt.Println(DEFAULT_GOSFDOC_JSON, "file can not be found.")
+				return
+			}
+
+			config, err, pass := gosfdoc.ReadConfigFile(configPath)
+			if !pass {
+				fmt.Println(err.Error())
+				return
+			}
+			path := ""
+			expandPath := ""
+			if filepath.IsAbs(config.Outpath) {
+				path = config.Outpath
+			} else {
+				expandPath = config.Outpath
+				path = config.ScanPath
+			}
+
+			fmt.Println("\nweb server run path:", path)
+			if 0 == len(expandPath) {
+				fmt.Printf("Browser path: http://localhost:%v%v\n", port, "/index.html")
+			} else {
+				fmt.Printf("Browser path: http://localhost:%v%v%v\n", port, "/"+expandPath, "/index.html")
+			}
+			startWeb(path, expandPath, port)
 		case "create":
 			lang := ""
 			if 0 != len(*_lang) {
@@ -127,18 +187,8 @@ func main() {
 				return
 			}
 
-			configPath := *_configFile
+			configPath := checkConfigPath()
 			if 0 == len(configPath) {
-				configPath = DEFAULT_GOSFDOC_JSON
-			}
-
-			if !filepath.IsAbs(configPath) {
-				configPath = filepath.Join(SFFileManager.GetCmdDir(), configPath)
-			}
-
-			exists, isDir, readErr := SFFileManager.Exists(configPath)
-
-			if !exists || isDir || nil != readErr {
 				fmt.Println(DEFAULT_GOSFDOC_JSON, "file invalid, please use 'create' command create config file.")
 				return
 			}

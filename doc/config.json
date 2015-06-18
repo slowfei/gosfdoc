@@ -23,7 +23,7 @@
 				},
 				{
 					"Name": "github.com/slowfei/gosfdoc/bin/bin",
-					"Desc": ""
+					"Desc": "gosfdoc web server handle"
 				},
 				{
 					"Name": "github.com/slowfei/gosfdoc/index/index",
@@ -72,6 +72,10 @@
 				{
 					"Filename": "github.com/slowfei/gosfdoc/bin/main.go",
 					"Link": "github.com/slowfei/gosfdoc/bin/main.go"
+				},
+				{
+					"Filename": "github.com/slowfei/gosfdoc/bin/web.go",
+					"Link": "github.com/slowfei/gosfdoc/bin/web.go"
 				},
 				{
 					"Filename": "github.com/slowfei/gosfdoc/index/index.go",

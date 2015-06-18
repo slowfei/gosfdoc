@@ -227,7 +227,7 @@ func MapParser() map[string]DocParser {
  *  @return `err`   contains warn info
  *  @return `pass`  true is valid file (pass does not mean that there are no errors)
  */
-func readConfigFile(filepath string) (config *MainConfig, err error, pass bool) {
+func ReadConfigFile(filepath string) (config *MainConfig, err error, pass bool) {
 	result := false
 
 	isExists, isDir, _ := SFFileManager.Exists(filepath)
@@ -324,7 +324,7 @@ func dirpathAssets(config *MainConfig) string {
  */
 func CheckExistVersion(configPath, version string) bool {
 	result := false
-	config, _, pass := readConfigFile(configPath)
+	config, _, pass := ReadConfigFile(configPath)
 	if pass {
 		config.setAbspath()
 		checkPath := filepath.Join(config.Outpath, ConverToVersionPath(version))
@@ -424,7 +424,7 @@ func CreateConfigFile(dirPath string, langs []string) (error, bool) {
 			return ErrFilePathOccupied, false
 		}
 
-		_, err, _ := readConfigFile(filePath)
+		_, err, _ := ReadConfigFile(filePath)
 		if nil != err {
 			isCreateFile = false
 			errBuf.WriteString(err.Error())
@@ -450,7 +450,7 @@ func CreateConfigFile(dirPath string, langs []string) (error, bool) {
  *  @return `bool`  true is operation success
  */
 func Output(configPath, version string, fileFunc FileResultFunc) (error, bool) {
-	config, err, pass := readConfigFile(configPath)
+	config, err, pass := ReadConfigFile(configPath)
 	if !pass {
 		return err, pass
 	}
