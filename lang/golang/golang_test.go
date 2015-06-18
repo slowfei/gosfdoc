@@ -445,6 +445,14 @@ func TestFindFunc(t *testing.T) {
 	testFile := `
 
 /**
+ *  main config info
+ *  output  use
+ */
+type MainConfig struct {
+	
+}
+
+/**
  * new parser
  */
 func NewParser() *GolangParser {
@@ -460,6 +468,10 @@ func (g *GolangParser) ParseStart(config gosfdoc.MainConfig) {
  *	see DocParser interface
  */
 func (g *GolangParser) CheckFile(filePath string, info os.FileInfo) bool {
+}
+
+func (t *tempInterface) CheckFile() bool {
+
 }
 
 //注意单引号，别过滤的

@@ -454,33 +454,39 @@
             }else{
                 codehtml = hljs.fixMarkup(hljs.highlightAuto(text).value);
             }
-
+            
             var codeArray = new Array();
             var codeLines = codehtml.split(/\n/g);
             var linesCount = codeLines.length;
+            var tagStart = "";
+            var tagEnd = "";
 
             for (var i = 0; i < linesCount; i++) {
                 var codeLine = codeLines[i];
                 if ( !codeLine || 0 == codeLine.length ) { codeLine = "&nbsp;"};
 
-                if ( -1 != codeLine.indexOf('>/*') &&  -1 == codeLine.indexOf('*/<') ) {
+                if ( -1 != codeLine.indexOf('<span class="hljs-comment">/*') &&  -1 == codeLine.indexOf('*/<') ) {
                     // handle <span class="hljs-comment">/** 
-                    var space = '';
-                    var spaceCount = codeLine.indexOf('<');
-                    for (var j = 0; j < spaceCount; j++) {
-                        space += ' ';
-                    }
-                    if ( -1 != spaceCount ) {
-                         codeLine = codeLine.substring(spaceCount,codeLine.length);
-                    };
-                    codeLine = codeLine.replace('>/*','><span class="line_code"><a class="line_number" L="'+(i+1)+'"></a>'+space+'/*') + "\n</span>";
-                    
-                }else if( -1 != codeLine.indexOf('*/<') && -1 == codeLine.indexOf('>/*') ){
+                    tagStart = '<span class="hljs-comment">';
+                    tagEnd = '</span>';
+                    codeLine = '<span class="line_code"><a class="line_number" L="'+(i+1)+'"></a>'+codeLine+'\n</span></span>';
+                }else if( -1 != codeLine.indexOf('*/<') && -1 == codeLine.indexOf('<span class="hljs-comment">/*') ){
                     //  handle */</span> 
-                    codeLine = '<span class="line_code"><a class="line_number" L="'+(i+1)+'"></a>' + codeLine.replace('*/<','*/\n</span><');
-
+                    codeLine = '<span class="line_code"><a class="line_number" L="'+(i+1)+'"></a>' +tagStart+codeLine+"\n"+tagEnd;
+                    tagStart = '';
+                    tagEnd = '';
+                }else if ( -1 != codeLine.indexOf('<span class="hljs-string">`') &&  -1 == codeLine.indexOf('`<') ) {
+                    // handle <span class="hljs-string">`
+                    tagStart = '<span class="hljs-string">';
+                    tagEnd = '</span>';
+                    codeLine = '<span class="line_code"><a class="line_number" L="'+(i+1)+'"></a>'+codeLine+'\n</span></span>';
+                }else if( -1 != codeLine.indexOf('`</span>') && -1 == codeLine.indexOf('<span class="hljs-string">`') ){
+                    //  handle `</span> 
+                    codeLine = '<span class="line_code"><a class="line_number" L="'+(i+1)+'"></a>' +tagStart+codeLine+"\n"+tagEnd;
+                    tagStart = '';
+                    tagEnd = '';
                 }else{
-                    codeLine = '<span class="line_code"><a class="line_number" L="'+(i+1)+'"></a>'+codeLine+'\n</span>';
+                    codeLine = '<span class="line_code"><a class="line_number" L="'+(i+1)+'"></a>'+tagStart+codeLine+tagEnd+'\n</span>';
                 }
 
                 codeArray.push(codeLine);

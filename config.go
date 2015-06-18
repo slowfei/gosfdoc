@@ -38,8 +38,8 @@ var (
     "DocTitle"         : "<b>Document:</b>",
     "MenuTitle"        : "<center><b>package</b></center>",
     "Languages"        : [
-						 	{"default" : "Default"}
-   						 ],
+                            {"default" : "Default"}
+                         ],
     "FilterPaths"      : []
 }`
 )
@@ -66,7 +66,7 @@ type MainConfig struct {
 }
 
 /**
- *	set absolute path
+ *  set absolute path
  */
 func (mc *MainConfig) setAbspath() {
 
@@ -126,7 +126,7 @@ func (mc *MainConfig) Check() (error, bool) {
 	if 0 != len(mc.OutAppendPath) && filepath.IsAbs(mc.OutAppendPath) {
 		errBuf.WriteString("OutAppendPath: please use relative path.\n")
 
-		//	这里主要怕效验不通过后强制执行，所以强行修改默认的OutAppendPath
+		//  这里主要怕效验不通过后强制执行，所以强行修改默认的OutAppendPath
 		tempPath := filepath.Base(mc.path)
 		if "src" == tempPath {
 			tempPath = ""
@@ -177,18 +177,18 @@ func (mc *MainConfig) Check() (error, bool) {
 }
 
 /**
- *	to github.com link path
- *	use on a tag href
+ *  to github.com link path
+ *  use on a tag href
  *
- *													     append path       relative path
- *	e.g.: https://.../project/doc/v1_0_0/md/default/(github.com/slowfei)/(temp/gosfdoc.md)
- *	  to: https://.../project/doc/v1_0_0/src/github.com/slowfei/gosfdoc.go (to source code path)
- *	  to: https://.../project/doc/v1_0_0/md/default/github.com/test/test.md  (to markdown path)
+ *                                                       append path       relative path
+ *  e.g.: https://.../project/doc/v1_0_0/md/default/(github.com/slowfei)/(temp/gosfdoc.md)
+ *    to: https://.../project/doc/v1_0_0/src/github.com/slowfei/gosfdoc.go (to source code path)
+ *    to: https://.../project/doc/v1_0_0/md/default/github.com/test/test.md  (to markdown path)
  *
- *	@param `relMDPath` relative markdown out project path.
- *					   relative path: $GOPATH/[github.com/slowfei]/projectname/( .../markdown.md )
- *	@param `isToMarkdown` to markdown link? false is source code access path
- *	@return use github.com to relative link. "../../../" or "../../src/[projectname]"
+ *  @param `relMDPath` relative markdown out project path.
+ *                     relative path: $GOPATH/[github.com/slowfei]/projectname/( .../markdown.md )
+ *  @param `isToMarkdown` to markdown link? false is source code access path
+ *  @return use github.com to relative link. "../../../" or "../../src/[projectname]"
  */
 func (m MainConfig) GithubLink(relMDPath string, isToMarkdown bool) string {
 	resultPath := ""
@@ -208,27 +208,27 @@ func (m MainConfig) GithubLink(relMDPath string, isToMarkdown bool) string {
 	relMDPath = path.Dir(relMDPath)
 	relMDPath = strings.TrimPrefix(relMDPath, "/")
 	relMDPath = strings.TrimSuffix(relMDPath, "/")
-	// //	可能出现的问题，Dir("") == "."
-	// //	所以需要判断"."的处理
+	// //   可能出现的问题，Dir("") == "."
+	// //   所以需要判断"."的处理
 	// if 0 != len(relMDPath) && "." != relMDPath {
-	// 	pathSplit = strings.Split(relMDPath, "/")
-	// 	for _, p := range pathSplit {
-	// 		if 0 != len(p) {
-	// 			backRel += "../"
-	// 		}
-	// 	}
+	//  pathSplit = strings.Split(relMDPath, "/")
+	//  for _, p := range pathSplit {
+	//      if 0 != len(p) {
+	//          backRel += "../"
+	//      }
+	//  }
 	// }
 
 	if isToMarkdown {
-		//	https://.../project/doc/v1_0_0/md/default/
+		//  https://.../project/doc/v1_0_0/md/default/
 		resultPath = backRel
 	} else if m.CodeLinkRoot {
-		//	https://.../project/blob/master/doc/v1_0_0/src/packagepath/file.go
+		//  https://.../project/blob/master/doc/v1_0_0/src/packagepath/file.go
 		//  to
 		resultPath = path.Join("../../../../", backRel, relMDPath)
 		// resultPath = "../../../../" + backRel
 	} else {
-		//	https://.../project/blob/master/doc/v1_0_0/src/packagepath/file.go
+		//  https://.../project/blob/master/doc/v1_0_0/src/packagepath/file.go
 		// resultPath = "../../" + backRel + "src" + relMDPath
 		resultPath = path.Join("../../", backRel, "src", path.Join(appendPath, relMDPath))
 	}
@@ -237,8 +237,8 @@ func (m MainConfig) GithubLink(relMDPath string, isToMarkdown bool) string {
 }
 
 /**
- *	html menu show helper struct
- *	index.html Markdown struct
+ *  html menu show helper struct
+ *  index.html Markdown struct
  */
 type MenuMarkdown struct {
 	MenuName string
@@ -247,8 +247,8 @@ type MenuMarkdown struct {
 }
 
 /**
- *	html menu show helper struct
- *	src.html File list struct
+ *  html menu show helper struct
+ *  src.html File list struct
  */
 type MenuFile struct {
 	MenuName string
@@ -274,10 +274,10 @@ type DocConfig struct {
 }
 
 /**
- *	read document config `config.json`
+ *  read document config `config.json`
  *
- *	@param `path`
- *	@return
+ *  @param `path`
+ *  @return
  */
 func readDocConifg(path string) DocConfig {
 	result := DocConfig{}

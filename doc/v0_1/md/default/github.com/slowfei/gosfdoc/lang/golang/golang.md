@@ -49,11 +49,11 @@
 
 <pre><code class='go custom'>var (
 	// e.g.: func (t type)funcname(params) return val{;
-	// https://www.debuggex.com/r/Su6Ns1LhVxpfD_Di
+	// https://www.debuggex.com/r/Sa2KPZ0kLvlBeB_0
 	// [0-1:prototype] [2-3:comment or null] [4-5:func type or null]
 	// [6-7:func name] [8-9:func params] [10-11:single return value or null]
 	// [12-13:multi return value or null] [14-15:"{"]
-	REXFunc = regexp.MustCompile(`(/\*\*[\s]*(?:[ ]+.*?\n)+[ ]*\*/[ ]*\n|(?:(?:[ ]*//.*?\n)+))?func[ ]*(?:\(([\w \*\n\r\.\[\]]*)\))?[ \n]*([A-Z]\w*)[ \n]*(?:\(([\w ,\*\n\r\.\{\}\[\]]*)\))+?[ \n]*(?:([\w\.\*\{\}\[\]]*)|(?:\(([\w ,\*\n\r\.\{\}\[\]]*)\)))?[ \n]*({)`)
+	REXFunc = regexp.MustCompile(`(/\*\*[\s]*(?:[ ]+.*?\n)+[ ]*\*/[ ]*\n|(?:(?:[ ]*//.*?\n)+))?func[ ]*(?:\(([a-zA-Z]+[ \s]+[*]?(?:\w+\.)?[A-Z]+\w*)\))?[ \n]*([A-Z]\w*)[ \n]*(?:\(([\w ,\*\n\r\.\{\}\[\]]*)\))+?[ \n]*(?:([\w\.\*\{\}\[\]]*)|(?:\(([\w ,\*\n\r\.\{\}\[\]]*)\)))?[ \n]*({)`)
 	// e.g.: type Temp struct {; [0-1:prototype][2-3:comment][4-5:type define name][6-7:type name][8-9:"{"]
 	REXType = regexp.MustCompile(`(/\*\*[\s]*(?:[ ]+.*?\n)+[ ]*\*/[ ]*\n|(?:(?:[ ]*//.*?\n)+))?type[ ]+([A-Z]\w*)[ ]+(\w+)[ ]*(\{)?`)
 	// e.g.: package main
