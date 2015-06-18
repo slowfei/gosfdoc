@@ -26,6 +26,8 @@
 
 > [func OutputWithConfig(config \*MainConfig, version string, fileFunc FileResultFunc) (error, bool)](#f_func_OutputWithConfig_config_+MainConfig_version_string_fileFunc_FileResultFunc___error_bool_)<a name="p_func_OutputWithConfig_config_+MainConfig_version_string_fileFunc_FileResultFunc___error_bool_"><a/>
 
+> [func ReadConfigFile(filepath string) (config \*MainConfig, err error, pass bool)](#f_func_ReadConfigFile_filepath_string___config_+MainConfig_err_error_pass_bool_)<a name="p_func_ReadConfigFile_filepath_string___config_+MainConfig_err_error_pass_bool_"><a/>
+
 > [type About struct](#f_type_About_struct)<a name="p_type_About_struct"><a/>
 
 >> [func NewDefaultAbout() \*About](#f_func_NewDefaultAbout___+About)<a name="p_func_NewDefaultAbout___+About"><a/>
@@ -313,6 +315,18 @@
 
 
 <pre><code class='go custom'>func OutputWithConfig(config *MainConfig, version string, fileFunc FileResultFunc) (error, bool) { ...... }</code></pre>
+
+
+### [func ReadConfigFile](../../../../../src/github.com/slowfei/gosfdoc/gosfdoc.go#L230-L254) <a name="f_func_ReadConfigFile_filepath_string___config_+MainConfig_err_error_pass_bool_"><a/> [↩](#p_func_ReadConfigFile_filepath_string___config_+MainConfig_err_error_pass_bool_) | [#](#f_func_ReadConfigFile_filepath_string___config_+MainConfig_err_error_pass_bool_)
+> read config file<br/>
+> @param `filepath`<br/>
+> @return `config`<br/>
+> @return `err`   contains warn info<br/>
+> @return `pass`  true is valid file (pass does not mean that there are no errors)<br/>
+> <br/>
+
+
+<pre><code class='go custom'>func ReadConfigFile(filepath string) (config *MainConfig, err error, pass bool) { ...... }</code></pre>
 
 
 ### [type About struct](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L485-L487) <a name="f_type_About_struct"><a/> [↩](#p_type_About_struct) | [#](#f_type_About_struct)
