@@ -95,7 +95,16 @@ func (n *nilDocParser) ParseCodeblock(filebuf *FileBuf) []CodeBlock {
  *	see DocParser interface
  */
 func (n *nilDocParser) ParsePackageInfo(filebuf *FileBuf) string {
-	return ""
+
+	result := ""
+
+	infoIndex := filebuf.FindSubmatchIndex(REXDCPackageInfo)
+
+	if 4 == len(infoIndex) {
+		str := filebuf.SubBytes(infoIndex[2], infoIndex[3])
+		result = strings.Trim(string(str), " ")
+	}
+	return result
 }
 
 /**

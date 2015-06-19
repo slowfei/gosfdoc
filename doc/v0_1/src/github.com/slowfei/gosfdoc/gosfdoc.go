@@ -79,6 +79,9 @@ var (
 	// private block tag ( //# private * //# private-end)
 	REXPrivateBlock = regexp.MustCompile("[^\\n][\\s]?")
 
+	// parse separate document file package info( //# package-info brief intro row)
+	REXDCPackageInfo = regexp.MustCompile("#package-info (.+)")
+
 	// parse about and intro block
 	/* * [About|Intro]
 	 *  content text or markdown text
@@ -710,7 +713,6 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, keys []string
 
 		//  handle source code link path
 		browseSrcJoinPath := config.GithubLink(path.Join(relativeDirPath, mdFileName), false)
-		// browseSrcJoinPath = path.Join(appendPath, browseSrcJoinPath)
 		// fmt.Println("browseSrcJoinPath: ", browseSrcJoinPath)
 
 		// 5.output markdown
@@ -726,7 +728,8 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, keys []string
 			} else {
 				info := PackageInfo{}
 
-				info.Name = path.Join(appendPath, relativeDirPath, mdFileName[:len(mdFileName)-len(FILE_SUFFIX_MARKDOWN)])
+				info.Name = path.Join(appendPath, relativeDirPath)
+				info.Link = path.Join(appendPath, relativeDirPath, mdFileName)
 
 				joinStr := strings.Join(packStrList, ";")
 				newStr := strings.Replace(joinStr, "\n", ", ", -1)

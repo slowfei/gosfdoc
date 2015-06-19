@@ -544,6 +544,7 @@ type PackageInfo struct {
 	menuName string `json:"-"` // type belongs
 	Name     string // package name plain text
 	Desc     string // description plain text
+	Link     string // markdown link
 }
 
 type FileLink struct {

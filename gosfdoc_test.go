@@ -65,7 +65,7 @@ type TestStruct struct{
 		blocks = append(blocks, block)
 	}
 
-	body := ParseMarkdown(docs, pres, blocks, filesName, relPath)
+	body := ParseMarkdown(docs, pres, blocks, filesName, "1.0", relPath)
 	t.Log(string(body))
 }
 
@@ -134,6 +134,25 @@ func test2(){
 		t.Fatalf("ErrorParse: %v %v \n%v", documents[2].SortTag, documents[2].Title, documents[2].Content)
 	}
 
+}
+
+func TestREXDCPackageInfo(t *testing.T) {
+	str := `
+//#package-info use helper     
+
+`
+
+	result := REXDCPackageInfo.FindSubmatchIndex([]byte(str))
+
+	if 4 != len(result) {
+		t.Fatal()
+		return
+	}
+	t.Log(result)
+
+	restr := str[result[2]:result[3]]
+	restr = strings.Trim(restr, " ")
+	t.Log(restr)
 }
 
 /**

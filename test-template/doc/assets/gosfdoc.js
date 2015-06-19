@@ -477,7 +477,7 @@
             $.each(val.List, function(listIndex, packageInfo) {
                 var packageName = packageInfo.Name;
                 var packageDesc = packageInfo.Desc;
-                var mdpath = packageName + MD_FILE_SUFFIX;
+                var mdpath = packageInfo.Link;
           
                 var $item = $('<div class="item"><div class="content"><a class="header" href=?p='+mdpath+'>'+packageName+'</a><div class="description">'+packageDesc+'</div></div></div>')
                 
@@ -890,7 +890,7 @@
 
             $.each(val.List, function(listIndex, packageInfo) {
                 var packageName = packageInfo.Name;
-                var mdpath = packageName + MD_FILE_SUFFIX;
+                var mdpath = packageInfo.Link;
 
                 if ( findPackage ) {
                     if (mdpath == findPackage) {
