@@ -435,6 +435,29 @@ func (c *CodeFiles) addFile(file CodeFile) {
 }
 
 /**
+ *	is all document files
+ *
+ *	@return all document is true
+ */
+func (c *CodeFiles) IsAllDocFile() bool {
+
+	if 0 == c.files.Len() {
+		return false
+	}
+
+	result := true
+	for e := c.files.Front(); e != nil; e = e.Next() {
+		cf := e.Value.(CodeFile)
+		if _, ok := cf.parser.(*nilDocParser); !ok {
+			result = false
+			break
+		}
+	}
+
+	return result
+}
+
+/**
  *  each CodeFile
  *
  *  @param `f` func return true continue

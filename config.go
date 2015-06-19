@@ -36,7 +36,7 @@ var (
     "CodeLinkRoot"     : false,
     "HtmlTitle"        : "Document",
     "DocTitle"         : "<b>Document:</b>",
-    "MenuTitle"        : "<center><b>package</b></center>",
+    "MenuTitle"        : "<center><b>markdown</b></center>",
     "Languages"        : [
                             {"default" : "Default"}
                          ],

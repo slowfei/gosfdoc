@@ -582,8 +582,21 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, keys []string
 	packInfos = make([]PackageInfo, 0, len(files))
 	fileLinks = make([]FileLink, 0, 0)
 
-	// 1.FOR Directory
+	// sort keys all document file first place
+	newKeys := make([]string, 0, len(keys))
+	tempKeys := make([]string, 0, len(keys))
 	for _, key := range keys {
+		codefiles := files[key]
+		if codefiles.IsAllDocFile() {
+			newKeys = append(newKeys, key)
+		} else {
+			tempKeys = append(tempKeys, key)
+		}
+	}
+	newKeys = append(newKeys, tempKeys...)
+
+	// 1.FOR Directory
+	for _, key := range newKeys {
 		// dirPath, codefiles
 		dirPath := key
 		codefiles := files[key]
@@ -631,7 +644,12 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, keys []string
 		       github.com/slowfei/gosfdoc/lang/javascript/javascript.go
 		       github.com/slowfei/gosfdoc/lang/objc/objc.go
 		*/
-		menuName := "" // 暂时设定空字符串
+		menuName := "package" // 暂时设定空字符串
+
+		// 如果全部是文档文件则视为帮助文档
+		if codefiles.IsAllDocFile() {
+			menuName = "help document"
+		}
 
 		previews := make([]Preview, 0, 0)
 		blocks := make([]CodeBlock, 0, 0)

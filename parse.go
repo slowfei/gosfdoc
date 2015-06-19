@@ -51,7 +51,7 @@ var (
 
 /**
  *	nil document parser
- *	specifically for .doc file serve
+ *	specifically for .dc file serve
  */
 type nilDocParser struct {
 }

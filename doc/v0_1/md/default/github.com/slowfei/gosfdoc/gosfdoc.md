@@ -46,6 +46,8 @@
 
 >> [func (\*CodeFiles) FilesLen() int](#f_func__+CodeFiles__FilesLen___int)<a name="p_func__+CodeFiles__FilesLen___int"><a/>
 
+>> [func (\*CodeFiles) IsAllDocFile() bool](#f_func__+CodeFiles__IsAllDocFile___bool)<a name="p_func__+CodeFiles__IsAllDocFile___bool"><a/>
+
 > [type ContentJson struct](#f_type_ContentJson_struct)<a name="p_type_ContentJson_struct"><a/>
 
 >> [func (ContentJson) WriteFilepath(path string) error](#f_func__ContentJson__WriteFilepath_path_string__error)<a name="p_func__ContentJson__WriteFilepath_path_string__error"><a/>
@@ -332,7 +334,7 @@
 <pre><code class='go custom'>func ReadConfigFile(filepath string) (config *MainConfig, err error, pass bool) { ...... }</code></pre>
 
 
-### [type About struct](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L485-L487) <a name="f_type_About_struct"><a/> [↩](#p_type_About_struct) | [#](#f_type_About_struct)
+### [type About struct](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L508-L510) <a name="f_type_About_struct"><a/> [↩](#p_type_About_struct) | [#](#f_type_About_struct)
 > markdown about<br/>
 > <br/>
 
@@ -342,7 +344,7 @@
 }</code></pre>
 
 
-### [func NewDefaultAbout](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L494-L496) <a name="f_func_NewDefaultAbout___+About"><a/> [↩](#p_func_NewDefaultAbout___+About) | [#](#f_func_NewDefaultAbout___+About)
+### [func NewDefaultAbout](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L517-L519) <a name="f_func_NewDefaultAbout___+About"><a/> [↩](#p_func_NewDefaultAbout___+About) | [#](#f_func_NewDefaultAbout___+About)
 > new default about<br/>
 > @return pointer type<br/>
 > <br/>
@@ -361,7 +363,7 @@
 <pre><code class='go custom'>func ParseAbout(fileBuf *FileBuf) *About { ...... }</code></pre>
 
 
-### [func (\*About) WriteFilepath](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L504-L509) <a name="f_func__+About__WriteFilepath_path_string__error"><a/> [↩](#p_func__+About__WriteFilepath_path_string__error) | [#](#f_func__+About__WriteFilepath_path_string__error)
+### [func (\*About) WriteFilepath](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L527-L532) <a name="f_func__+About__WriteFilepath_path_string__error"><a/> [↩](#p_func__+About__WriteFilepath_path_string__error) | [#](#f_func__+About__WriteFilepath_path_string__error)
 > output file<br/>
 > @param `path` output full path<br/>
 > @return<br/>
@@ -371,7 +373,7 @@
 <pre><code class='go custom'>func (*About) WriteFilepath(path string) error { ...... }</code></pre>
 
 
-### [type CodeBlock struct](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L580-L590) <a name="f_type_CodeBlock_struct"><a/> [↩](#p_type_CodeBlock_struct) | [#](#f_type_CodeBlock_struct)
+### [type CodeBlock struct](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L603-L613) <a name="f_type_CodeBlock_struct"><a/> [↩](#p_type_CodeBlock_struct) | [#](#f_type_CodeBlock_struct)
 > body code block struct<br/>
 > <br/>
 
@@ -421,7 +423,7 @@
 <pre><code class='go custom'>func NewCodeFiles() *CodeFiles { ...... }</code></pre>
 
 
-### [func (\*CodeFiles) FilesLen](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L458-L460) <a name="f_func__+CodeFiles__FilesLen___int"><a/> [↩](#p_func__+CodeFiles__FilesLen___int) | [#](#f_func__+CodeFiles__FilesLen___int)
+### [func (\*CodeFiles) FilesLen](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L481-L483) <a name="f_func__+CodeFiles__FilesLen___int"><a/> [↩](#p_func__+CodeFiles__FilesLen___int) | [#](#f_func__+CodeFiles__FilesLen___int)
 > file list storage length<br/>
 > @return file number<br/>
 > <br/>
@@ -430,7 +432,16 @@
 <pre><code class='go custom'>func (*CodeFiles) FilesLen() int { ...... }</code></pre>
 
 
-### [type ContentJson struct](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L465-L469) <a name="f_type_ContentJson_struct"><a/> [↩](#p_type_ContentJson_struct) | [#](#f_type_ContentJson_struct)
+### [func (\*CodeFiles) IsAllDocFile](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L442-L458) <a name="f_func__+CodeFiles__IsAllDocFile___bool"><a/> [↩](#p_func__+CodeFiles__IsAllDocFile___bool) | [#](#f_func__+CodeFiles__IsAllDocFile___bool)
+> is all document files<br/>
+> @return all document is true<br/>
+> <br/>
+
+
+<pre><code class='go custom'>func (*CodeFiles) IsAllDocFile() bool { ...... }</code></pre>
+
+
+### [type ContentJson struct](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L488-L492) <a name="f_type_ContentJson_struct"><a/> [↩](#p_type_ContentJson_struct) | [#](#f_type_ContentJson_struct)
 > output `content.json`<br/>
 > <br/>
 
@@ -442,7 +453,7 @@
 }</code></pre>
 
 
-### [func (ContentJson) WriteFilepath](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L474-L480) <a name="f_func__ContentJson__WriteFilepath_path_string__error"><a/> [↩](#p_func__ContentJson__WriteFilepath_path_string__error) | [#](#f_func__ContentJson__WriteFilepath_path_string__error)
+### [func (ContentJson) WriteFilepath](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L497-L503) <a name="f_func__ContentJson__WriteFilepath_path_string__error"><a/> [↩](#p_func__ContentJson__WriteFilepath_path_string__error) | [#](#f_func__ContentJson__WriteFilepath_path_string__error)
 > output write file path<br/>
 > <br/>
 
@@ -549,7 +560,7 @@
 <pre><code class='go custom'>func MapParser() map[string]DocParser { ...... }</code></pre>
 
 
-### [type Document struct](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L560-L564) <a name="f_type_Document_struct"><a/> [↩](#p_type_Document_struct) | [#](#f_type_Document_struct)
+### [type Document struct](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L583-L587) <a name="f_type_Document_struct"><a/> [↩](#p_type_Document_struct) | [#](#f_type_Document_struct)
 > document struct info<br/>
 > <br/>
 
@@ -791,7 +802,7 @@
 <pre><code class='go custom'>func (*FileBuf) WriteFilepath(path string) error { ...... }</code></pre>
 
 
-### [type FileLink struct](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L550-L555) <a name="f_type_FileLink_struct"><a/> [↩](#p_type_FileLink_struct) | [#](#f_type_FileLink_struct)
+### [type FileLink struct](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L573-L578) <a name="f_type_FileLink_struct"><a/> [↩](#p_type_FileLink_struct) | [#](#f_type_FileLink_struct)
 
 <pre><code class='go custom'>type FileLink struct {
 	menuName string `json:"-"` // type belongs
@@ -811,7 +822,7 @@
 <pre><code class='go custom'>type FileResultFunc func</code></pre>
 
 
-### [type Intro struct](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L514-L516) <a name="f_type_Intro_struct"><a/> [↩](#p_type_Intro_struct) | [#](#f_type_Intro_struct)
+### [type Intro struct](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L537-L539) <a name="f_type_Intro_struct"><a/> [↩](#p_type_Intro_struct) | [#](#f_type_Intro_struct)
 > markdown intro<br/>
 > <br/>
 
@@ -821,7 +832,7 @@
 }</code></pre>
 
 
-### [func NewDefaultIntro](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L523-L525) <a name="f_func_NewDefaultIntro___+Intro"><a/> [↩](#p_func_NewDefaultIntro___+Intro) | [#](#f_func_NewDefaultIntro___+Intro)
+### [func NewDefaultIntro](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L546-L548) <a name="f_func_NewDefaultIntro___+Intro"><a/> [↩](#p_func_NewDefaultIntro___+Intro) | [#](#f_func_NewDefaultIntro___+Intro)
 > new default intro<br/>
 > @return pointer type<br/>
 > <br/>
@@ -840,7 +851,7 @@
 <pre><code class='go custom'>func ParseIntro(fileBuf *FileBuf) *Intro { ...... }</code></pre>
 
 
-### [func (\*Intro) WriteFilepath](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L533-L538) <a name="f_func__+Intro__WriteFilepath_path_string__error"><a/> [↩](#p_func__+Intro__WriteFilepath_path_string__error) | [#](#f_func__+Intro__WriteFilepath_path_string__error)
+### [func (\*Intro) WriteFilepath](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L556-L561) <a name="f_func__+Intro__WriteFilepath_path_string__error"><a/> [↩](#p_func__+Intro__WriteFilepath_path_string__error) | [#](#f_func__+Intro__WriteFilepath_path_string__error)
 > output file<br/>
 > @param `path` output full path<br/>
 > @return<br/>
@@ -936,7 +947,7 @@
 <pre><code class='go custom'>type OperateResult int</code></pre>
 
 
-### [type PackageInfo struct](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L543-L548) <a name="f_type_PackageInfo_struct"><a/> [↩](#p_type_PackageInfo_struct) | [#](#f_type_PackageInfo_struct)
+### [type PackageInfo struct](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L566-L571) <a name="f_type_PackageInfo_struct"><a/> [↩](#p_type_PackageInfo_struct) | [#](#f_type_PackageInfo_struct)
 > package info<br/>
 > <br/>
 
@@ -949,7 +960,7 @@
 }</code></pre>
 
 
-### [type Preview struct](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L569-L575) <a name="f_type_Preview_struct"><a/> [↩](#p_type_Preview_struct) | [#](#f_type_Preview_struct)
+### [type Preview struct](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L592-L598) <a name="f_type_Preview_struct"><a/> [↩](#p_type_Preview_struct) | [#](#f_type_Preview_struct)
 > preview struct info<br/>
 > <br/>
 
@@ -963,7 +974,7 @@
 }</code></pre>
 
 
-### [type SortSet struct](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L595-L599) <a name="f_type_SortSet_struct"><a/> [↩](#p_type_SortSet_struct) | [#](#f_type_SortSet_struct)
+### [type SortSet struct](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L618-L622) <a name="f_type_SortSet_struct"><a/> [↩](#p_type_SortSet_struct) | [#](#f_type_SortSet_struct)
 > Preview,CodeBlock,Document sort implement<br/>
 > <br/>
 
@@ -975,7 +986,7 @@
 }</code></pre>
 
 
-### [func (SortSet) Len](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L604-L616) <a name="f_func__SortSet__Len___int"><a/> [↩](#p_func__SortSet__Len___int) | [#](#f_func__SortSet__Len___int)
+### [func (SortSet) Len](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L627-L639) <a name="f_func__SortSet__Len___int"><a/> [↩](#p_func__SortSet__Len___int) | [#](#f_func__SortSet__Len___int)
 > sort Len() implement<br/>
 > <br/>
 
@@ -983,7 +994,7 @@
 <pre><code class='go custom'>func (SortSet) Len() int { ...... }</code></pre>
 
 
-### [func (SortSet) Less](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L621-L633) <a name="f_func__SortSet__Less_i_j_int__bool"><a/> [↩](#p_func__SortSet__Less_i_j_int__bool) | [#](#f_func__SortSet__Less_i_j_int__bool)
+### [func (SortSet) Less](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L644-L656) <a name="f_func__SortSet__Less_i_j_int__bool"><a/> [↩](#p_func__SortSet__Less_i_j_int__bool) | [#](#f_func__SortSet__Less_i_j_int__bool)
 > sort Less(...) implement<br/>
 > <br/>
 
@@ -991,7 +1002,7 @@
 <pre><code class='go custom'>func (SortSet) Less(i, j int) bool { ...... }</code></pre>
 
 
-### [func (SortSet) Swap](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L638-L648) <a name="f_func__SortSet__Swap_i_j_int__"><a/> [↩](#p_func__SortSet__Swap_i_j_int__) | [#](#f_func__SortSet__Swap_i_j_int__)
+### [func (SortSet) Swap](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L661-L671) <a name="f_func__SortSet__Swap_i_j_int__"><a/> [↩](#p_func__SortSet__Swap_i_j_int__) | [#](#f_func__SortSet__Swap_i_j_int__)
 > sort Swap(...) implement<br/>
 > <br/>
 

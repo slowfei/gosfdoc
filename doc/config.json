@@ -14,18 +14,24 @@
 	],
 	"Markdowns": [
 		{
-			"MenuName": "",
+			"MenuName": "help document",
+			"Version": "0.1",
+			"List": [
+				{
+					"Name": "github.com/slowfei/gosfdoc/help",
+					"Desc": "gosfdoc use intro",
+					"Link": "github.com/slowfei/gosfdoc/help/help.md"
+				}
+			]
+		},
+		{
+			"MenuName": "package",
 			"Version": "0.1",
 			"List": [
 				{
 					"Name": "github.com/slowfei/gosfdoc",
 					"Desc": "",
 					"Link": "github.com/slowfei/gosfdoc/gosfdoc.md"
-				},
-				{
-					"Name": "github.com/slowfei/gosfdoc/0_help",
-					"Desc": "gosfdoc use intro",
-					"Link": "github.com/slowfei/gosfdoc/0_help/0_help.md"
 				},
 				{
 					"Name": "github.com/slowfei/gosfdoc/bin",
@@ -62,7 +68,7 @@
 	],
 	"Files": [
 		{
-			"MenuName": "",
+			"MenuName": "package",
 			"Version": "0.1",
 			"List": [
 				{
