@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-16
-//  Update on 2016-06-24
+//  Update on 2016-06-30
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -225,22 +225,22 @@ func MapParser() map[string]DocParser {
 /**
  *  read config file
  *
- *  @param `filepath`
+ *  @param `configFilePath`
  *  @return `config`
  *  @return `err`   contains warn info
  *  @return `pass`  true is valid file (pass does not mean that there are no errors)
  */
-func ReadConfigFile(filepath string) (config *MainConfig, err error, pass bool) {
+func ReadConfigFile(configFilePath string) (config *MainConfig, err error, pass bool) {
 	result := false
 
-	isExists, isDir, _ := SFFileManager.Exists(filepath)
+	isExists, isDir, _ := SFFileManager.Exists(configFilePath)
 	if !isExists || isDir {
 		err = ErrConfigNotRead
 		pass = result
 		return
 	}
 
-	jsonData, readErr := ioutil.ReadFile(filepath)
+	jsonData, readErr := ioutil.ReadFile(configFilePath)
 	if nil != readErr {
 		err = ErrConfigNotRead
 		pass = result
@@ -248,6 +248,7 @@ func ReadConfigFile(filepath string) (config *MainConfig, err error, pass bool) 
 	}
 
 	mainConfig := new(MainConfig)
+	mainConfig.path = filepath.Dir(configFilePath)
 	json.Unmarshal(jsonData, mainConfig)
 
 	err, pass = mainConfig.Check()
@@ -995,10 +996,21 @@ func scanFiles(config *MainConfig, fileFunc FileResultFunc) (
 	}
 
 	scanPath := config.ScanPath
+
+	//	防止扫描到liunx 或 unix 系统级别的目录
+	if 0 == len(scanPath) || "/" == scanPath {
+		resultErr = errors.New("ScanPath Error: System-level directory. ")
+		return
+	}
+	if !filepath.IsAbs(scanPath) {
+		resultErr = errors.New("ScanPath Error: Can not scan path. " + scanPath)
+		return
+	}
+
+	// 过滤系统文件的操作
 	if scanPath[len(scanPath)-1] != '/' {
 		scanPath += "/"
 	}
-
 	sysDirLen := len(_sysDirFileters)
 	sysDirAbs := make([]string, sysDirLen, sysDirLen)
 	for i := 0; i < sysDirLen; i++ {

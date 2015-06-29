@@ -150,7 +150,13 @@ func main() {
 				path = config.Outpath
 			} else {
 				expandPath = config.Outpath
-				path = config.ScanPath
+
+				scanPath := config.ScanPath
+				if filepath.IsAbs(scanPath) && "/" != scanPath {
+					path = scanPath
+				} else {
+					path = filepath.Join(filepath.Dir(configPath), scanPath)
+				}
 			}
 
 			fmt.Println("\nweb server run path:", path)

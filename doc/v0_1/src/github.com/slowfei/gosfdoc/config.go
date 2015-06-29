@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-16
-//  Update on 2015-06-12
+//  Update on 2015-06-30
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -52,7 +52,7 @@ type MainConfig struct {
 	path           string              `json:"-"` // private handle path, save console command path.
 	currentVersion string              `json:"-"` // current output version, private record.
 	DocUrl         string              // custom link url to document http. e.g.: http://slowfei.github.io/gosfdoc/index.html
-	ScanPath       string              // scan document info file path, relative or absolute path, is "/" scan current console path.
+	ScanPath       string              // scan document info file path, relative or absolute path, is "/" scan current config file directory path.
 	CodeLang       []string            // code languages
 	Outpath        string              // output document path, relative or absolute path.
 	OutAppendPath  string              // append output source code and markdown relative path(scan path join). defalut ""
@@ -70,7 +70,9 @@ type MainConfig struct {
  */
 func (mc *MainConfig) setAbspath() {
 
-	mc.path = SFFileManager.GetCmdDir()
+	if 0 == len(mc.path) {
+		mc.path = SFFileManager.GetCmdDir()
+	}
 
 	if 0 == len(mc.ScanPath) || "/" == mc.ScanPath {
 		mc.ScanPath = mc.path
@@ -103,7 +105,9 @@ func (mc *MainConfig) Check() (error, bool) {
 	errBuf := bytes.NewBufferString("")
 	pass := true
 
-	mc.path = SFFileManager.GetCmdDir()
+	if 0 == len(mc.path) {
+		mc.path = SFFileManager.GetCmdDir()
+	}
 
 	if 0 == len(mc.ScanPath) {
 		errBuf.WriteString("ScanPath: please set document scan path.\n")

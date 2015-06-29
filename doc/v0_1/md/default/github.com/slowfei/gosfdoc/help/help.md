@@ -48,12 +48,38 @@ go build -o="指定的文件名或绝对路径文件"<br/>
 
 
 ##### `$ gosfdoc create`
-　　创建配置文件命令，在命令行输入`cd`转到需要需要生成项目的目录中，然后再执行 `$ gosfdoc create` 此命令可选参数`-lang`（根据指定语言生成文档，目前只支持go语言），执行后会在当前目录中生成默认的配置文件，后续会讲解配置属性参数。
+　　创建配置文件命令，在命令行输入`cd`转到需要需要生成项目的目录中，然后再执行 `$ gosfdoc create` 此命令可选参数`-lang`（根据指定语言生成文档，目前只支持go语言），执行后会在当前目录中生成默认的配置文件(gosfdoc.json)，查看配置文件详细说明。
 
 ##### `$ gosfdoc output -v="1.0"`
 　　生成文档命令，必须指定生成的版本号，版本号出现重复会提示是否覆盖。此命令可选参数`-config="gosfdoc.json"`（指定配置文件），默认会寻找当前目录的配置文件，也可以指定绝对路径的配置文件。
 
 ##### `$ gosfdoc web 8080`
 　　运行web服务，可在浏览器中浏览项目文档，`8080`为端口号，可根据需求进行更改。此命令可选参数`-config="gosfdoc.json"`，默认会寻找当前目录的配置文件，也可以指定绝对路径的配置文件。
+
+
+## gosfdoc.json配置说明
+------
+
+    {
+        
+        "ScanPath"         : "/",
+
+        "CodeLang"         : ["go"],
+
+        "Outpath"          : "doc",
+        "OutAppendPath"    : "github.com/slowfei/gosfdoc",
+        "CopyCode"         : true,
+        "CodeLinkRoot"     : false,
+        "HtmlTitle"        : "gosfdoc document",
+        "DocTitle"         : "<b>Github: <a target='_blank' href='https://github.com/slowfei/gosfdoc'>https://github.com/slowfei/gosfdoc</a></b>",
+        "MenuTitle"        : "<center><b>markdown</b></center>",
+        "Languages"        : [
+                                {"default" : "Default"}
+                             ],
+        "FilterPaths"      : [
+                                "assets",
+                                "test-template"
+                             ] 
+    }
 
 

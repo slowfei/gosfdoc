@@ -26,7 +26,7 @@
 
 > [func OutputWithConfig(config \*MainConfig, version string, fileFunc FileResultFunc) (error, bool)](#f_func_OutputWithConfig_config_+MainConfig_version_string_fileFunc_FileResultFunc___error_bool_)<a name="p_func_OutputWithConfig_config_+MainConfig_version_string_fileFunc_FileResultFunc___error_bool_"><a/>
 
-> [func ReadConfigFile(filepath string) (config \*MainConfig, err error, pass bool)](#f_func_ReadConfigFile_filepath_string___config_+MainConfig_err_error_pass_bool_)<a name="p_func_ReadConfigFile_filepath_string___config_+MainConfig_err_error_pass_bool_"><a/>
+> [func ReadConfigFile(configFilePath string) (config \*MainConfig, err error, pass bool)](#f_func_ReadConfigFile_configFilePath_string___config_+MainConfig_err_error_pass_bool_)<a name="p_func_ReadConfigFile_configFilePath_string___config_+MainConfig_err_error_pass_bool_"><a/>
 
 > [type About struct](#f_type_About_struct)<a name="p_type_About_struct"><a/>
 
@@ -255,7 +255,7 @@
 <pre><code class='go custom'>func AddParser(parser DocParser)  { ...... }</code></pre>
 
 
-### [func CheckExistVersion](../../../../../src/github.com/slowfei/gosfdoc/gosfdoc.go#L328-L338) <a name="f_func_CheckExistVersion_configPath_version_string__bool"><a/> [↩](#p_func_CheckExistVersion_configPath_version_string__bool) | [#](#f_func_CheckExistVersion_configPath_version_string__bool)
+### [func CheckExistVersion](../../../../../src/github.com/slowfei/gosfdoc/gosfdoc.go#L329-L339) <a name="f_func_CheckExistVersion_configPath_version_string__bool"><a/> [↩](#p_func_CheckExistVersion_configPath_version_string__bool) | [#](#f_func_CheckExistVersion_configPath_version_string__bool)
 > check whether there are version info<br/>
 > @param `configPath` config path<br/>
 > @param `version` check version string<br/>
@@ -265,7 +265,7 @@
 <pre><code class='go custom'>func CheckExistVersion(configPath, version string) bool { ...... }</code></pre>
 
 
-### [func ConverToVersionPath](../../../../../src/github.com/slowfei/gosfdoc/gosfdoc.go#L343-L348) <a name="f_func_ConverToVersionPath_version_string__string"><a/> [↩](#p_func_ConverToVersionPath_version_string__string) | [#](#f_func_ConverToVersionPath_version_string__string)
+### [func ConverToVersionPath](../../../../../src/github.com/slowfei/gosfdoc/gosfdoc.go#L344-L349) <a name="f_func_ConverToVersionPath_version_string__string"><a/> [↩](#p_func_ConverToVersionPath_version_string__string) | [#](#f_func_ConverToVersionPath_version_string__string)
 > conver version to use the path info<br/>
 > <br/>
 
@@ -273,7 +273,7 @@
 <pre><code class='go custom'>func ConverToVersionPath(version string) string { ...... }</code></pre>
 
 
-### [func CreateConfigFile](../../../../../src/github.com/slowfei/gosfdoc/gosfdoc.go#L358-L444) <a name="f_func_CreateConfigFile_dirPath_string_langs___string___error_bool_"><a/> [↩](#p_func_CreateConfigFile_dirPath_string_langs___string___error_bool_) | [#](#f_func_CreateConfigFile_dirPath_string_langs___string___error_bool_)
+### [func CreateConfigFile](../../../../../src/github.com/slowfei/gosfdoc/gosfdoc.go#L359-L445) <a name="f_func_CreateConfigFile_dirPath_string_langs___string___error_bool_"><a/> [↩](#p_func_CreateConfigFile_dirPath_string_langs___string___error_bool_) | [#](#f_func_CreateConfigFile_dirPath_string_langs___string___error_bool_)
 > create config file<br/>
 > @param `dirPath` directory path<br/>
 > @param `langs`   specify code language, nil is all language, value is parser name.<br/>
@@ -297,7 +297,7 @@
 <pre><code class='go custom'>func FindPrefixFilterTag(src []byte) []byte { ...... }</code></pre>
 
 
-### [func Output](../../../../../src/github.com/slowfei/gosfdoc/gosfdoc.go#L455-L461) <a name="f_func_Output_configPath_version_string_fileFunc_FileResultFunc___error_bool_"><a/> [↩](#p_func_Output_configPath_version_string_fileFunc_FileResultFunc___error_bool_) | [#](#f_func_Output_configPath_version_string_fileFunc_FileResultFunc___error_bool_)
+### [func Output](../../../../../src/github.com/slowfei/gosfdoc/gosfdoc.go#L456-L462) <a name="f_func_Output_configPath_version_string_fileFunc_FileResultFunc___error_bool_"><a/> [↩](#p_func_Output_configPath_version_string_fileFunc_FileResultFunc___error_bool_) | [#](#f_func_Output_configPath_version_string_fileFunc_FileResultFunc___error_bool_)
 > build output document<br/>
 > @param `configPath` config file path<br/>
 > @param `version`    output document version<br/>
@@ -310,7 +310,7 @@
 <pre><code class='go custom'>func Output(configPath, version string, fileFunc FileResultFunc) (error, bool) { ...... }</code></pre>
 
 
-### [func OutputWithConfig](../../../../../src/github.com/slowfei/gosfdoc/gosfdoc.go#L471-L548) <a name="f_func_OutputWithConfig_config_+MainConfig_version_string_fileFunc_FileResultFunc___error_bool_"><a/> [↩](#p_func_OutputWithConfig_config_+MainConfig_version_string_fileFunc_FileResultFunc___error_bool_) | [#](#f_func_OutputWithConfig_config_+MainConfig_version_string_fileFunc_FileResultFunc___error_bool_)
+### [func OutputWithConfig](../../../../../src/github.com/slowfei/gosfdoc/gosfdoc.go#L472-L549) <a name="f_func_OutputWithConfig_config_+MainConfig_version_string_fileFunc_FileResultFunc___error_bool_"><a/> [↩](#p_func_OutputWithConfig_config_+MainConfig_version_string_fileFunc_FileResultFunc___error_bool_) | [#](#f_func_OutputWithConfig_config_+MainConfig_version_string_fileFunc_FileResultFunc___error_bool_)
 > build output document with config content<br/>
 > @param `config`<br/>
 > @param `version` e.g: "v=1.0"<br/>
@@ -322,16 +322,16 @@
 <pre><code class='go custom'>func OutputWithConfig(config *MainConfig, version string, fileFunc FileResultFunc) (error, bool) { ...... }</code></pre>
 
 
-### [func ReadConfigFile](../../../../../src/github.com/slowfei/gosfdoc/gosfdoc.go#L233-L257) <a name="f_func_ReadConfigFile_filepath_string___config_+MainConfig_err_error_pass_bool_"><a/> [↩](#p_func_ReadConfigFile_filepath_string___config_+MainConfig_err_error_pass_bool_) | [#](#f_func_ReadConfigFile_filepath_string___config_+MainConfig_err_error_pass_bool_)
+### [func ReadConfigFile](../../../../../src/github.com/slowfei/gosfdoc/gosfdoc.go#L233-L258) <a name="f_func_ReadConfigFile_configFilePath_string___config_+MainConfig_err_error_pass_bool_"><a/> [↩](#p_func_ReadConfigFile_configFilePath_string___config_+MainConfig_err_error_pass_bool_) | [#](#f_func_ReadConfigFile_configFilePath_string___config_+MainConfig_err_error_pass_bool_)
 > read config file<br/>
-> @param `filepath`<br/>
+> @param `configFilePath`<br/>
 > @return `config`<br/>
 > @return `err`   contains warn info<br/>
 > @return `pass`  true is valid file (pass does not mean that there are no errors)<br/>
 > <br/>
 
 
-<pre><code class='go custom'>func ReadConfigFile(filepath string) (config *MainConfig, err error, pass bool) { ...... }</code></pre>
+<pre><code class='go custom'>func ReadConfigFile(configFilePath string) (config *MainConfig, err error, pass bool) { ...... }</code></pre>
 
 
 ### [type About struct](../../../../../src/github.com/slowfei/gosfdoc/struct.go#L508-L510) <a name="f_type_About_struct"><a/> [↩](#p_type_About_struct) | [#](#f_type_About_struct)
@@ -461,7 +461,7 @@
 <pre><code class='go custom'>func (ContentJson) WriteFilepath(path string) error { ...... }</code></pre>
 
 
-### [type DocConfig struct](../../../../../src/github.com/slowfei/gosfdoc/config.go#L264-L274) <a name="f_type_DocConfig_struct"><a/> [↩](#p_type_DocConfig_struct) | [#](#f_type_DocConfig_struct)
+### [type DocConfig struct](../../../../../src/github.com/slowfei/gosfdoc/config.go#L268-L278) <a name="f_type_DocConfig_struct"><a/> [↩](#p_type_DocConfig_struct) | [#](#f_type_DocConfig_struct)
 > document directory html javascript use config<br/>
 > output `config.json`<br/>
 > <br/>
@@ -871,7 +871,7 @@
 	path           string              `json:"-"` // private handle path, save console command path.
 	currentVersion string              `json:"-"` // current output version, private record.
 	DocUrl         string              // custom link url to document http. e.g.: http://slowfei.github.io/gosfdoc/index.html
-	ScanPath       string              // scan document info file path, relative or absolute path, is "/" scan current console path.
+	ScanPath       string              // scan document info file path, relative or absolute path, is "/" scan current config file directory path.
 	CodeLang       []string            // code languages
 	Outpath        string              // output document path, relative or absolute path.
 	OutAppendPath  string              // append output source code and markdown relative path(scan path join). defalut ""
@@ -885,7 +885,7 @@
 }</code></pre>
 
 
-### [func (\*MainConfig) Check](../../../../../src/github.com/slowfei/gosfdoc/config.go#L102-L177) <a name="f_func__+MainConfig__Check____error_bool_"><a/> [↩](#p_func__+MainConfig__Check____error_bool_) | [#](#f_func__+MainConfig__Check____error_bool_)
+### [func (\*MainConfig) Check](../../../../../src/github.com/slowfei/gosfdoc/config.go#L104-L181) <a name="f_func__+MainConfig__Check____error_bool_"><a/> [↩](#p_func__+MainConfig__Check____error_bool_) | [#](#f_func__+MainConfig__Check____error_bool_)
 > check config param value<br/>
 > error value will update default.<br/>
 > @return error<br/>
@@ -896,7 +896,7 @@
 <pre><code class='go custom'>func (*MainConfig) Check() (error, bool) { ...... }</code></pre>
 
 
-### [func (MainConfig) GithubLink](../../../../../src/github.com/slowfei/gosfdoc/config.go#L193-L237) <a name="f_func__MainConfig__GithubLink_relMDPath_string_isToMarkdown_bool__string"><a/> [↩](#p_func__MainConfig__GithubLink_relMDPath_string_isToMarkdown_bool__string) | [#](#f_func__MainConfig__GithubLink_relMDPath_string_isToMarkdown_bool__string)
+### [func (MainConfig) GithubLink](../../../../../src/github.com/slowfei/gosfdoc/config.go#L197-L241) <a name="f_func__MainConfig__GithubLink_relMDPath_string_isToMarkdown_bool__string"><a/> [↩](#p_func__MainConfig__GithubLink_relMDPath_string_isToMarkdown_bool__string) | [#](#f_func__MainConfig__GithubLink_relMDPath_string_isToMarkdown_bool__string)
 > to github.com link path<br/>
 > use on a tag href<br/>
 >                                                      append path       relative path<br/>
@@ -913,7 +913,7 @@
 <pre><code class='go custom'>func (MainConfig) GithubLink(relMDPath string, isToMarkdown bool) string { ...... }</code></pre>
 
 
-### [type MenuFile struct](../../../../../src/github.com/slowfei/gosfdoc/config.go#L253-L257) <a name="f_type_MenuFile_struct"><a/> [↩](#p_type_MenuFile_struct) | [#](#f_type_MenuFile_struct)
+### [type MenuFile struct](../../../../../src/github.com/slowfei/gosfdoc/config.go#L257-L261) <a name="f_type_MenuFile_struct"><a/> [↩](#p_type_MenuFile_struct) | [#](#f_type_MenuFile_struct)
 > html menu show helper struct<br/>
 > src.html File list struct<br/>
 > <br/>
@@ -926,7 +926,7 @@
 }</code></pre>
 
 
-### [type MenuMarkdown struct](../../../../../src/github.com/slowfei/gosfdoc/config.go#L243-L247) <a name="f_type_MenuMarkdown_struct"><a/> [↩](#p_type_MenuMarkdown_struct) | [#](#f_type_MenuMarkdown_struct)
+### [type MenuMarkdown struct](../../../../../src/github.com/slowfei/gosfdoc/config.go#L247-L251) <a name="f_type_MenuMarkdown_struct"><a/> [↩](#p_type_MenuMarkdown_struct) | [#](#f_type_MenuMarkdown_struct)
 > html menu show helper struct<br/>
 > index.html Markdown struct<br/>
 > <br/>

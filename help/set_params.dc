@@ -2,8 +2,11 @@
 /***3-gosfdoc.json配置说明
 
     {
-        "ScanPath"         : "/Volumes/developer/DeveloperDirectory/IndividualWorkspace/Modules/golang/trunk/src/github.com/slowfei/gosfdoc",
+        
+        "ScanPath"         : "/",
+
         "CodeLang"         : ["go"],
+
         "Outpath"          : "doc",
         "OutAppendPath"    : "github.com/slowfei/gosfdoc",
         "CopyCode"         : true,
