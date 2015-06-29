@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-16
-//  Update on 2015-01-21
+//  Update on 2016-06-24
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -28,8 +28,8 @@ import (
 )
 
 const (
-	APPNAME = "gosfdoc"   //
-	VERSION = "0.0.1.000" //
+	APPNAME = "gosfdoc" //
+	VERSION = "0.1.000" //
 
 	DIR_NAME_MAIN_MARKDOWN    = "md"      // save markdown file main directory name
 	DIR_NAME_MARKDOWN_DEFAULT = "default" // markdown default directory
@@ -225,22 +225,22 @@ func MapParser() map[string]DocParser {
 /**
  *  read config file
  *
- *  @param `filepath`
+ *  @param `configFilePath`
  *  @return `config`
  *  @return `err`   contains warn info
  *  @return `pass`  true is valid file (pass does not mean that there are no errors)
  */
-func ReadConfigFile(filepath string) (config *MainConfig, err error, pass bool) {
+func ReadConfigFile(configFilePath string) (config *MainConfig, err error, pass bool) {
 	result := false
 
-	isExists, isDir, _ := SFFileManager.Exists(filepath)
+	isExists, isDir, _ := SFFileManager.Exists(configFilePath)
 	if !isExists || isDir {
 		err = ErrConfigNotRead
 		pass = result
 		return
 	}
 
-	jsonData, readErr := ioutil.ReadFile(filepath)
+	jsonData, readErr := ioutil.ReadFile(configFilePath)
 	if nil != readErr {
 		err = ErrConfigNotRead
 		pass = result
@@ -248,6 +248,7 @@ func ReadConfigFile(filepath string) (config *MainConfig, err error, pass bool) 
 	}
 
 	mainConfig := new(MainConfig)
+	mainConfig.path = filepath.Dir(configFilePath)
 	json.Unmarshal(jsonData, mainConfig)
 
 	err, pass = mainConfig.Check()

@@ -19,7 +19,7 @@
 			"List": [
 				{
 					"Name": "github.com/slowfei/gosfdoc/help",
-					"Desc": "gosfdoc use intro",
+					"Desc": "gosfdoc使用介绍",
 					"Link": "github.com/slowfei/gosfdoc/help/help.md"
 				}
 			]

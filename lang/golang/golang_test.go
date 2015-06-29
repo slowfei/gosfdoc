@@ -271,6 +271,19 @@ type TestInterface interface{
 	temp2() interface{}
 }
 
+/**
+ *  find type and function
+ */
+func findType() []goType {
+
+	// e.g.: type Temp struct {; [0-1:prototype][2-3:comment][4-5:type define name][6-7:type name][8-9:"{"]
+	if 0 != indexsLen && 10 == len(indexs[0]) {
+
+	}
+
+	return result
+}
+
 /*
 	/*
 		tempcomt
@@ -344,12 +357,18 @@ var (
 )
 
 /**
- * temp2
+ *	temp2
+ *	` + "```" + `
+ *	temp late
+ *	` + "```" + `
  */
 const (
 	Test2 = "2"
 )
 
+' const Temp6 = "6" '
+
+// temp3
 const Temp3 = "3"
 
 // VTest1 cont
@@ -389,8 +408,6 @@ var (
 	const Temp5 = "5"
 */
 
-' const Temp6 = "6" '
-
 // const Temp7 = "7"
 
 `
@@ -399,10 +416,10 @@ var (
 	outBetweens := getOutBetweens(buf)
 	result := findDefine(buf, outBetweens)
 
-	for i := 0; i < len(outBetweens); i++ {
-		i1, i2 := outBetweens[i][0], outBetweens[i][1]
-		t.Log(string(testFile[i1:i2]))
-	}
+	// for i := 0; i < len(outBetweens); i++ {
+	// 	i1, i2 := outBetweens[i][0], outBetweens[i][1]
+	// 	t.Log(string(testFile[i1:i2]))
+	// }
 
 	if 4 != len(result) {
 		t.Log(len(result))
@@ -466,6 +483,9 @@ func (g *GolangParser) ParseStart(config gosfdoc.MainConfig) {
 
 /**
  *	see DocParser interface
+ *  ` + "```" + `
+ *	temp late
+ *	` + "```" + `
  */
 func (g *GolangParser) CheckFile(filePath string, info os.FileInfo) bool {
 }

@@ -70,7 +70,9 @@ type MainConfig struct {
  */
 func (mc *MainConfig) setAbspath() {
 
-	mc.path = SFFileManager.GetCmdDir()
+	if 0 == len(mc.path) {
+		mc.path = SFFileManager.GetCmdDir()
+	}
 
 	if 0 == len(mc.ScanPath) || "/" == mc.ScanPath {
 		mc.ScanPath = mc.path
@@ -103,7 +105,9 @@ func (mc *MainConfig) Check() (error, bool) {
 	errBuf := bytes.NewBufferString("")
 	pass := true
 
-	mc.path = SFFileManager.GetCmdDir()
+	if 0 == len(mc.path) {
+		mc.path = SFFileManager.GetCmdDir()
+	}
 
 	if 0 == len(mc.ScanPath) {
 		errBuf.WriteString("ScanPath: please set document scan path.\n")

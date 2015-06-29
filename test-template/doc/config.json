@@ -21,43 +21,43 @@
             "MenuName":"project name",
             "Version":"1.0.0",
             "List":[
-                {"Name":"github.com/slowfei/gosfdoc","Desc":"gosfdoc document generator"},
-                {"Name":"github.com/slowfei/leafveingo","Desc":"golang web framework"},
-                {"Name":"github.com/slowfei/leafveingo1","Desc":"golang web framework"},
-                {"Name":"github.com/slowfei/leafveingo2","Desc":"golang web framework"}
+                {"Name":"github.com/slowfei/gosfdoc","Link": "github.com/slowfei/gosfdoc.md","Desc":"gosfdoc document generator"},
+                {"Name":"github.com/slowfei/leafveingo","Link":"","Desc":"golang web framework"},
+                {"Name":"github.com/slowfei/leafveingo1","Link":"","Desc":"golang web framework"},
+                {"Name":"github.com/slowfei/leafveingo2","Link":"","Desc":"golang web framework"}
             ]
         },
         {
             "MenuName":"project name-1-",
             "Version":"1.0.0",
             "List":[
-                {"Name":"github.com/slowfei/gosfdoc3","Desc":"gosfdoc document generator"},
-                {"Name":"github.com/slowfei/leafveingo4","Desc":"golang web framework"}
+                {"Name":"github.com/slowfei/gosfdoc3","Link":"","Desc":"gosfdoc document generator"},
+                {"Name":"github.com/slowfei/leafveingo4","Link":"","Desc":"golang web framework"}
             ]
         },
         {
             "MenuName":"project name-2",
             "Version":"1.0.0",
             "List":[
-                {"Name":"github.com/slowfei/gosfdoc5","Desc":"gosfdoc document generator"},
-                {"Name":"github.com/slowfei/leafveingo6","Desc":"golang web framework"}
+                {"Name":"github.com/slowfei/gosfdoc5","Link":"","Desc":"gosfdoc document generator"},
+                {"Name":"github.com/slowfei/leafveingo6","Link":"","Desc":"golang web framework"}
             ]
         },
         {
             "MenuName":"project name-3",
             "Version":"1.0.0",
             "List":[
-                {"Name":"github.com/slowfei/gosfdoc7","Desc":"gosfdoc document generator"},
-                {"Name":"github.com/slowfei/leafveingo8","Desc":"golang web framework"}
+                {"Name":"github.com/slowfei/gosfdoc7","Link":"","Desc":"gosfdoc document generator"},
+                {"Name":"github.com/slowfei/leafveingo8","Link":"","Desc":"golang web framework"}
             ]
         },
         {
             "MenuName":"project name",
             "Version":"1.0.1",
             "List":[
-                {"Name":"github.com/slowfei/gosfdoc","Desc":"gosfdoc document generator version 1.0.1"},
-                {"Name":"github.com/slowfei/leafveingo-1.0.1","Desc":"golang web framework"},
-                {"Name":"github.com/test/test","Desc":"golang web framework"}
+                {"Name":"github.com/slowfei/gosfdoc","Link": "github.com/slowfei/gosfdoc.md","Desc":"gosfdoc document generator version 1.0.1"},
+                {"Name":"github.com/slowfei/leafveingo-1.0.1","Link":"","Desc":"golang web framework"},
+                {"Name":"github.com/test/test","Link":"","Desc":"golang web framework"}
             ]
         }
 	],
@@ -67,24 +67,24 @@
             "MenuName":"project name",
             "Version":"1.0.0",
             "List":[
-                {"Filename":"gosfdoc.go"},
-                {"Filename":"gosfdoc1.go"}
+                {"Filename":"gosfdoc.go","Link":"gosfdoc.go"},
+                {"Filename":"gosfdoc1.go","Link":"gosfdoc1.go"}
             ]
         },
         {
             "MenuName":"project name-2-",
             "Version":"1.0.0",
             "List":[
-                {"Filename":"github.com/slowfei/gosfdoc.go"},
-                {"Filename":"gosfdoc3.go"}
+                {"Filename":"github.com/slowfei/gosfdoc.go","Link":"github.com/slowfei/gosfdoc.go"},
+                {"Filename":"gosfdoc3.go","Link":"gosfdoc3.go"}
             ]
         },
         {
             "MenuName":"project name",
             "Version":"1.0.1",
             "List":[
-                {"Filename":"gosfdoc.go"},
-                {"Filename":"gosfdoc1.go"}
+                {"Filename":"gosfdoc.go","Link":"gosfdoc.go"},
+                {"Filename":"gosfdoc1.go","Link":"gosfdoc1.go"}
             ]
         }
     ]

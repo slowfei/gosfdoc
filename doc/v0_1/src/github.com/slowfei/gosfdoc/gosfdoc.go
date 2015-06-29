@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-16
-//  Update on 2015-01-21
+//  Update on 2016-06-24
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -28,8 +28,8 @@ import (
 )
 
 const (
-	APPNAME = "gosfdoc"   //
-	VERSION = "0.0.1.000" //
+	APPNAME = "gosfdoc" //
+	VERSION = "0.1.000" //
 
 	DIR_NAME_MAIN_MARKDOWN    = "md"      // save markdown file main directory name
 	DIR_NAME_MARKDOWN_DEFAULT = "default" // markdown default directory

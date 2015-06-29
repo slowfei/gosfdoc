@@ -1,0 +1,23 @@
+
+/***3-gosfdoc.json配置说明
+
+    {
+        "ScanPath"         : "/Volumes/developer/DeveloperDirectory/IndividualWorkspace/Modules/golang/trunk/src/github.com/slowfei/gosfdoc",
+        "CodeLang"         : ["go"],
+        "Outpath"          : "doc",
+        "OutAppendPath"    : "github.com/slowfei/gosfdoc",
+        "CopyCode"         : true,
+        "CodeLinkRoot"     : false,
+        "HtmlTitle"        : "gosfdoc document",
+        "DocTitle"         : "<b>Github: <a target='_blank' href='https://github.com/slowfei/gosfdoc'>https://github.com/slowfei/gosfdoc</a></b>",
+        "MenuTitle"        : "<center><b>markdown</b></center>",
+        "Languages"        : [
+                                {"default" : "Default"}
+                             ],
+        "FilterPaths"      : [
+                                "assets",
+                                "test-template"
+                             ] 
+    }
+
+*/

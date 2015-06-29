@@ -149,8 +149,8 @@
 ### [source code](../../../../../src/github.com/slowfei/gosfdoc/gosfdoc.go#L30-L53) <a name="f_const___APPNAME---_---FILE_NAME_HTML_CONFIG_JSON__"><a/> [↩](#p_const___APPNAME---_---FILE_NAME_HTML_CONFIG_JSON__) | [#](#f_const___APPNAME---_---FILE_NAME_HTML_CONFIG_JSON__)
 
 <pre><code class='go custom'>const (
-	APPNAME = "gosfdoc"   //
-	VERSION = "0.0.1.000" //
+	APPNAME = "gosfdoc" //
+	VERSION = "0.1.000" //
 
 	DIR_NAME_MAIN_MARKDOWN    = "md"      // save markdown file main directory name
 	DIR_NAME_MARKDOWN_DEFAULT = "default" // markdown default directory
@@ -885,7 +885,7 @@
 }</code></pre>
 
 
-### [func (\*MainConfig) Check](../../../../../src/github.com/slowfei/gosfdoc/config.go#L102-L168) <a name="f_func__+MainConfig__Check____error_bool_"><a/> [↩](#p_func__+MainConfig__Check____error_bool_) | [#](#f_func__+MainConfig__Check____error_bool_)
+### [func (\*MainConfig) Check](../../../../../src/github.com/slowfei/gosfdoc/config.go#L102-L177) <a name="f_func__+MainConfig__Check____error_bool_"><a/> [↩](#p_func__+MainConfig__Check____error_bool_) | [#](#f_func__+MainConfig__Check____error_bool_)
 > check config param value<br/>
 > error value will update default.<br/>
 > @return error<br/>

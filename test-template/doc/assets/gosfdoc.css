@@ -465,7 +465,7 @@ a{
 }
 .md.common_md h5,
 .md.common_md h6 {
-    font-size:0.9em;
+    /*font-size:0.9em;*/
     line-height:1.0em;
 }
 /* end of headings */

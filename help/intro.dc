@@ -1,3 +1,4 @@
+/**Intro
 　　gosfdoc是一个项目帮助文档和代码文档的生成器，它可以在编写代码的同时与项目文档的编写兼顾其中。在团队进行协同操作或是API项目中可以很好的利用文档信息进行有效的交流。gosfdoc利用markdown格式规范编写文档内容，甚至可以将文档直接写在代码文件中。
 
 　　gosfdoc是使用golang语言进行开发，并支持多种语言的文档解析（目前只支持go）。
@@ -7,3 +8,4 @@
 
 #### MIT LICENSE
 　　This library is licensed under MIT license. See LICENSE for details.
+*/

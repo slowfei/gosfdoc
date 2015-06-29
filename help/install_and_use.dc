@@ -1,6 +1,98 @@
-#package-info gosfdoc use intro
+#package-info gosfdoc使用介绍
+
+/***0-gosfdoc安装
+使用终端go命令
+
+##### 1.下载gosfdoc和web server使用的模版包
+
+    go get github.com/slowfei/gosfdoc
+    go get github.com/slowfei/leafveingo/template
+
+##### 2.安装可执行文件
+
+windows:
+
+    go build -o="gosfdoc.exe" github.com/slowfei/gosfdoc/bin
+
+linux or unix:
+
+    go build -o="gosfdoc" github.com/slowfei/gosfdoc/bin
+
+go build -o="指定的文件名或绝对路径文件"<br/>
+执行文件可以放入自定义的环境变量中，方便直接使用。
+
+##### 涉及包
+
+    github.com/slowfei/gosfcore
+    github.com/slowfei/leafveingo/template
+
+*/
 
 
-/***1-标题
- *  document text or markdown text
- */
+
+/***1-基本使用
+使用终端执行命令<br/>
+（注：gosfdoc默认放置在环境变量中，演示直接使用命令，如果未设置环境变量则需要加上文件全路径）
+
+    $ gosfdoc -h
+
+    gosfdoc v0.1.000
+
+    usage help:
+    'create' command init create default gosfdoc.json file, can be custom to modify file content.
+    'output' command by gosfdoc.json output document 
+    'web [8080]' run web server can specify port, default 8080, command by gosfdoc.json 
+
+    other param:
+      -config="gosfdoc.json": custom config file path.
+      -lang="": ["go"] specify code language type ',' separated, default all language.
+      -v="": output the document version string.
+
+
+##### `$ gosfdoc create`
+　　创建配置文件命令，在命令行输入`cd`转到需要需要生成项目的目录中，然后再执行 `$ gosfdoc create` 此命令可选参数`-lang`（根据指定语言生成文档，目前只支持go语言），执行后会在当前目录中生成默认的配置文件(gosfdoc.json)，查看配置文件详细说明。
+
+##### `$ gosfdoc output -v="1.0"`
+　　生成文档命令，必须指定生成的版本号，版本号出现重复会提示是否覆盖。此命令可选参数`-config="gosfdoc.json"`（指定配置文件），默认会寻找当前目录的配置文件，也可以指定绝对路径的配置文件。
+
+##### `$ gosfdoc web 8080`
+　　运行web服务，可在浏览器中浏览项目文档，`8080`为端口号，可根据需求进行更改。此命令可选参数`-config="gosfdoc.json"`，默认会寻找当前目录的配置文件，也可以指定绝对路径的配置文件。
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
