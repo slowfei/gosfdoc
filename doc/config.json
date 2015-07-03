@@ -21,6 +21,11 @@
 					"Name": "github.com/slowfei/gosfdoc/help",
 					"Desc": "gosfdoc使用介绍",
 					"Link": "github.com/slowfei/gosfdoc/help/help.md"
+				},
+				{
+					"Name": "github.com/slowfei/gosfdoc/help/golang",
+					"Desc": "",
+					"Link": "github.com/slowfei/gosfdoc/help/golang/golang.md"
 				}
 			]
 		},
