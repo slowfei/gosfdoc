@@ -12,7 +12,7 @@ gosfdoc - document generator
 
 #### [在线文档](https://slowfei.github.io/gosfdoc/index.html)
 
-#### [UPDATE LOG](https://github.com/slowfei/gosfdoc/blob/master/update.md)
+#### [UPDATE LOG](https://github.com/slowfei/gosfdoc/blob/master/update.md) Current version master v0.1.000
 
 
 ##
