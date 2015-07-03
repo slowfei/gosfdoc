@@ -3,7 +3,7 @@
 //  Copyright (c) 2014 slowfei
 //
 //  Create on 2014-08-16
-//  Update on 2015-01-21
+//  Update on 2016-06-30
 //  Email  slowfei#foxmail.com
 //  Home   http://www.slowfei.com
 
@@ -28,8 +28,8 @@ import (
 )
 
 const (
-	APPNAME = "gosfdoc"   //
-	VERSION = "0.0.1.000" //
+	APPNAME = "gosfdoc" //
+	VERSION = "0.1.000" //
 
 	DIR_NAME_MAIN_MARKDOWN    = "md"      // save markdown file main directory name
 	DIR_NAME_MARKDOWN_DEFAULT = "default" // markdown default directory
@@ -78,6 +78,9 @@ var (
 	TagPrivateDoc  = []byte("doc")
 	// private block tag ( //# private * //# private-end)
 	REXPrivateBlock = regexp.MustCompile("[^\\n][\\s]?")
+
+	// parse separate document file package info( //# package-info brief intro row)
+	REXDCPackageInfo = regexp.MustCompile("#package-info (.+)")
 
 	// parse about and intro block
 	/* * [About|Intro]
@@ -222,22 +225,22 @@ func MapParser() map[string]DocParser {
 /**
  *  read config file
  *
- *  @param `filepath`
+ *  @param `configFilePath`
  *  @return `config`
  *  @return `err`   contains warn info
  *  @return `pass`  true is valid file (pass does not mean that there are no errors)
  */
-func ReadConfigFile(filepath string) (config *MainConfig, err error, pass bool) {
+func ReadConfigFile(configFilePath string) (config *MainConfig, err error, pass bool) {
 	result := false
 
-	isExists, isDir, _ := SFFileManager.Exists(filepath)
+	isExists, isDir, _ := SFFileManager.Exists(configFilePath)
 	if !isExists || isDir {
 		err = ErrConfigNotRead
 		pass = result
 		return
 	}
 
-	jsonData, readErr := ioutil.ReadFile(filepath)
+	jsonData, readErr := ioutil.ReadFile(configFilePath)
 	if nil != readErr {
 		err = ErrConfigNotRead
 		pass = result
@@ -245,6 +248,7 @@ func ReadConfigFile(filepath string) (config *MainConfig, err error, pass bool) 
 	}
 
 	mainConfig := new(MainConfig)
+	mainConfig.path = filepath.Dir(configFilePath)
 	json.Unmarshal(jsonData, mainConfig)
 
 	err, pass = mainConfig.Check()
@@ -579,8 +583,21 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, keys []string
 	packInfos = make([]PackageInfo, 0, len(files))
 	fileLinks = make([]FileLink, 0, 0)
 
-	// 1.FOR Directory
+	// sort keys all document file first place
+	newKeys := make([]string, 0, len(keys))
+	tempKeys := make([]string, 0, len(keys))
 	for _, key := range keys {
+		codefiles := files[key]
+		if codefiles.IsAllDocFile() {
+			newKeys = append(newKeys, key)
+		} else {
+			tempKeys = append(tempKeys, key)
+		}
+	}
+	newKeys = append(newKeys, tempKeys...)
+
+	// 1.FOR Directory
+	for _, key := range newKeys {
 		// dirPath, codefiles
 		dirPath := key
 		codefiles := files[key]
@@ -628,7 +645,12 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, keys []string
 		       github.com/slowfei/gosfdoc/lang/javascript/javascript.go
 		       github.com/slowfei/gosfdoc/lang/objc/objc.go
 		*/
-		menuName := "" // 暂时设定空字符串
+		menuName := "package" // 暂时设定空字符串
+
+		// 如果全部是文档文件则视为帮助文档
+		if codefiles.IsAllDocFile() {
+			menuName = "help document"
+		}
 
 		previews := make([]Preview, 0, 0)
 		blocks := make([]CodeBlock, 0, 0)
@@ -710,7 +732,6 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, keys []string
 
 		//  handle source code link path
 		browseSrcJoinPath := config.GithubLink(path.Join(relativeDirPath, mdFileName), false)
-		// browseSrcJoinPath = path.Join(appendPath, browseSrcJoinPath)
 		// fmt.Println("browseSrcJoinPath: ", browseSrcJoinPath)
 
 		// 5.output markdown
@@ -726,7 +747,8 @@ func outCodeFiles(config *MainConfig, files map[string]*CodeFiles, keys []string
 			} else {
 				info := PackageInfo{}
 
-				info.Name = path.Join(appendPath, relativeDirPath, mdFileName[:len(mdFileName)-len(FILE_SUFFIX_MARKDOWN)])
+				info.Name = path.Join(appendPath, relativeDirPath)
+				info.Link = path.Join(appendPath, relativeDirPath, mdFileName)
 
 				joinStr := strings.Join(packStrList, ";")
 				newStr := strings.Replace(joinStr, "\n", ", ", -1)
@@ -974,10 +996,21 @@ func scanFiles(config *MainConfig, fileFunc FileResultFunc) (
 	}
 
 	scanPath := config.ScanPath
+
+	//	防止扫描到liunx 或 unix 系统级别的目录
+	if 0 == len(scanPath) || "/" == scanPath {
+		resultErr = errors.New("ScanPath Error: System-level directory. ")
+		return
+	}
+	if !filepath.IsAbs(scanPath) {
+		resultErr = errors.New("ScanPath Error: Can not scan path. " + scanPath)
+		return
+	}
+
+	// 过滤系统文件的操作
 	if scanPath[len(scanPath)-1] != '/' {
 		scanPath += "/"
 	}
-
 	sysDirLen := len(_sysDirFileters)
 	sysDirAbs := make([]string, sysDirLen, sysDirLen)
 	for i := 0; i < sysDirLen; i++ {

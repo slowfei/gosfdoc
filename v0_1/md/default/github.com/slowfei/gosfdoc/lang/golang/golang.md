@@ -26,8 +26,6 @@
 
 >> [func (\*GolangParser) ParseStart(config gosfdoc.MainConfig) ](#f_func__+GolangParser__ParseStart_config_gosfdoc-MainConfig__)<a name="p_func__+GolangParser__ParseStart_config_gosfdoc-MainConfig__"><a/>
 
-> [type Temp struct](#f_type_Temp_struct)<a name="p_type_Temp_struct"><a/>
-
 <br/>
 ### Directory files
 [golang.go ](../../../../../src/github.com/slowfei/gosfdoc/lang/golang/golang.go)
@@ -138,7 +136,7 @@
 <pre><code class='go custom'>func (*GolangParser) ParseEnd()  { ...... }</code></pre>
 
 
-### [func (\*GolangParser) ParsePackageInfo](../../../../../src/github.com/slowfei/gosfdoc/lang/golang/golang.go#L766-L813) <a name="f_func__+GolangParser__ParsePackageInfo_filebuf_+gosfdoc-FileBuf__string"><a/> [↩](#p_func__+GolangParser__ParsePackageInfo_filebuf_+gosfdoc-FileBuf__string) | [#](#f_func__+GolangParser__ParsePackageInfo_filebuf_+gosfdoc-FileBuf__string)
+### [func (\*GolangParser) ParsePackageInfo](../../../../../src/github.com/slowfei/gosfdoc/lang/golang/golang.go#L766-L816) <a name="f_func__+GolangParser__ParsePackageInfo_filebuf_+gosfdoc-FileBuf__string"><a/> [↩](#p_func__+GolangParser__ParsePackageInfo_filebuf_+gosfdoc-FileBuf__string) | [#](#f_func__+GolangParser__ParsePackageInfo_filebuf_+gosfdoc-FileBuf__string)
 > see DocParser interface<br/>
 > <br/>
 
@@ -160,10 +158,5 @@
 
 
 <pre><code class='go custom'>func (*GolangParser) ParseStart(config gosfdoc.MainConfig)  { ...... }</code></pre>
-
-
-### [type Temp struct](../../../../../src/github.com/slowfei/gosfdoc/lang/golang/golang.go#L1053-L1053) <a name="f_type_Temp_struct"><a/> [↩](#p_type_Temp_struct) | [#](#f_type_Temp_struct)
-
-<pre><code class='go custom'>type Temp struct</code></pre>
 
 

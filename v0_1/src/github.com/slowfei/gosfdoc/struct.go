@@ -4,7 +4,7 @@
 //
 //  Create on 2014-08-22
 //  Update on 2015-05-19
-//  Email  slowfei(#)foxmail.com
+//  Email  slowfei(#)nnyxing.com
 //  Home   http://www.slowfei.com
 
 //
@@ -30,8 +30,8 @@ gosfdoc document generator
 More references: [https://github.com/slowfei/gosfdoc][0]<br/>
 The MIT license (MIT) - [http://opensource.org/licenses/MIT][1]
 
-Copyright (c) 2014 slowfei<br/>
-Email: slowfei#foxmail.com
+Copyright (c) 2014-2015 slowfei<br/>
+Email: slowfei#nnyxing.com
 
 [0]:https://github.com/slowfei/gosfdoc
 [1]:http://opensource.org/licenses/MIT
@@ -435,6 +435,29 @@ func (c *CodeFiles) addFile(file CodeFile) {
 }
 
 /**
+ *	is all document files
+ *
+ *	@return all document is true
+ */
+func (c *CodeFiles) IsAllDocFile() bool {
+
+	if 0 == c.files.Len() {
+		return false
+	}
+
+	result := true
+	for e := c.files.Front(); e != nil; e = e.Next() {
+		cf := e.Value.(CodeFile)
+		if _, ok := cf.parser.(*nilDocParser); !ok {
+			result = false
+			break
+		}
+	}
+
+	return result
+}
+
+/**
  *  each CodeFile
  *
  *  @param `f` func return true continue
@@ -544,6 +567,7 @@ type PackageInfo struct {
 	menuName string `json:"-"` // type belongs
 	Name     string // package name plain text
 	Desc     string // description plain text
+	Link     string // markdown link
 }
 
 type FileLink struct {
